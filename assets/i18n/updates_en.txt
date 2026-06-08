@@ -1,0 +1,5 @@
+Current Version: {{version}}
+
+KrankyBear MediaPlayer URL
+
+{{releases_url}}

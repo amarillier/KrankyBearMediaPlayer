@@ -1,0 +1,66 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test files
+test/*
+test.log
+test-*.log
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# git setup stuff
+git.sh
+git.txt
+
+
+## Build artifacts
+bin/.DS_Store
+bin/
+build/
+dist/
+installers/
+vendor/*
+sync*.sh
+compile-all.sh
+compile-windows-ssh.sh
+rename-app.sh
+rsrc_windows_amd64.syso
+
+# ALLOWED
+!assets/*
+!Inno/*
+
+/KrankyBearMediaPlayer.db
+/KrankyBearMediaPlayer
+/mediaplayer
+/iconprep.sh
+/images-optimize.sh
+/build-config.sh
+/buildrun.sh
+/check-windows-env.ps1
+/compile-linux.sh
+/compile-mac.sh
+/compile-win.sh
+/compile-windows.bat
+/compile-windows.ps1
+/compile-windows.sh
+/install-fyne.sh
+/install-go.sh
+/Makefile
+/mkAllZip.sh
+/package.sh
+/prepare-deps.ps1
+/prepare-deps.sh
+/setIcon.sh
+/setver.sh
+/WINDOWS-SSH-SETUP.md

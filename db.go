@@ -1,0 +1,364 @@
+// Package main - db.go provides the SQLite-backed media library catalog.
+//
+// We use modernc.org/sqlite (pure-Go, no CGo) so the catalog layer stays
+// portable across the project's cross-compile targets. The schema tracks
+// each media file once along with the two pieces of play tracking the user
+// cares about: a play count and a manual star rating.
+//
+// PORTABILITY: tracks are stored as a path RELATIVE to their watched folder
+// (forward-slash normalized), never as an absolute path. The absolute path is
+// reconstructed at runtime as filepath.Join(folder.root, rel_path). That means
+// when the same library moves between machines - e.g. a USB drive that mounts
+// as D:\ on one PC and E:\ on another - only the folder's root needs updating
+// (DB.RelocateFolder), and every track under it follows automatically. This is
+// the fix for AIMP's habit of pinning absolute paths at discovery time.
+//
+// Effective rating = manual rating if set, otherwise an "auto" rating derived
+// from the play count (capped at 5). See rating.go.
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"path/filepath"
+	"strings"
+	"time"
+
+	_ "modernc.org/sqlite"
+)
+
+// Track is one media file in the catalog.
+type Track struct {
+	ID          int64
+	FolderID    int64
+	FolderRoot  string // watched-folder root, populated on read; not stored here
+	RelPath     string // path relative to FolderRoot, forward-slash normalized
+	Title       string
+	Artist      string
+	Album       string
+	AlbumArtist string
+	Genre       string
+	Year        int
+	TrackNo     int
+	Duration    int // seconds
+	FileSize    int64
+	FileMtime   int64
+	HasArt      bool
+	PlayCount   int
+	Rating      sql.NullInt64 // manual rating 1..5, NULL = not manually set
+	DateAdded   int64
+	LastSeen    int64
+}
+
+// AbsPath reconstructs the on-disk path from the current folder root. This is
+// where drive-letter / mount-point portability happens.
+func (t Track) AbsPath() string {
+	return filepath.Join(t.FolderRoot, filepath.FromSlash(t.RelPath))
+}
+
+// EffectiveRating returns the manual rating if set, else the play-count-derived
+// rating (capped at 5). Mirrors the SQL expression used for filtering.
+func (t Track) EffectiveRating() int {
+	if t.Rating.Valid {
+		return int(t.Rating.Int64)
+	}
+	return autoRating(t.PlayCount)
+}
+
+// DB wraps the catalog database connection.
+type DB struct {
+	sql *sql.DB
+}
+
+// effRatingExpr is the SQL form of Track.EffectiveRating, used in WHERE/ORDER.
+const effRatingExpr = "COALESCE(rating, MIN(play_count, 5))"
+
+const schema = `
+CREATE TABLE IF NOT EXISTS folders (
+	id           INTEGER PRIMARY KEY AUTOINCREMENT,
+	path         TEXT NOT NULL UNIQUE,   -- root; remap this to relocate a library
+	recursive    INTEGER NOT NULL DEFAULT 1,
+	last_scanned INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS tracks (
+	id           INTEGER PRIMARY KEY AUTOINCREMENT,
+	folder_id    INTEGER NOT NULL REFERENCES folders(id) ON DELETE CASCADE,
+	rel_path     TEXT NOT NULL,          -- relative to folders.path, '/'-normalized
+	title        TEXT NOT NULL DEFAULT '',
+	artist       TEXT NOT NULL DEFAULT '',
+	album        TEXT NOT NULL DEFAULT '',
+	album_artist TEXT NOT NULL DEFAULT '',
+	genre        TEXT NOT NULL DEFAULT '',
+	year         INTEGER NOT NULL DEFAULT 0,
+	track_no     INTEGER NOT NULL DEFAULT 0,
+	duration     INTEGER NOT NULL DEFAULT 0,
+	file_size    INTEGER NOT NULL DEFAULT 0,
+	file_mtime   INTEGER NOT NULL DEFAULT 0,
+	has_art      INTEGER NOT NULL DEFAULT 0,
+	play_count   INTEGER NOT NULL DEFAULT 0,
+	rating       INTEGER,                 -- NULL = no manual rating
+	date_added   INTEGER NOT NULL DEFAULT 0,
+	last_seen    INTEGER NOT NULL DEFAULT 0,
+	UNIQUE(folder_id, rel_path)
+);
+
+-- Album-art thumbnails kept in a side table so list queries stay light.
+CREATE TABLE IF NOT EXISTS thumbs (
+	track_id INTEGER PRIMARY KEY REFERENCES tracks(id) ON DELETE CASCADE,
+	png      BLOB NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS playlists (
+	id      INTEGER PRIMARY KEY AUTOINCREMENT,
+	name    TEXT NOT NULL,
+	created INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS playlist_tracks (
+	playlist_id INTEGER NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
+	track_id    INTEGER NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+	position    INTEGER NOT NULL DEFAULT 0,
+	PRIMARY KEY (playlist_id, track_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tracks_album  ON tracks(album);
+CREATE INDEX IF NOT EXISTS idx_tracks_artist ON tracks(artist);
+`
+
+// openDB opens (creating if needed) the catalog database at path.
+func openDB(path string) (*DB, error) {
+	sqldb, err := sql.Open("sqlite", path)
+	if err != nil {
+		return nil, fmt.Errorf("open db: %w", err)
+	}
+	// modernc sqlite is fine with a single connection; serialize to avoid
+	// "database is locked" under the playback goroutine writing play counts.
+	sqldb.SetMaxOpenConns(1)
+	if _, err := sqldb.Exec("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;"); err != nil {
+		sqldb.Close()
+		return nil, fmt.Errorf("set pragmas: %w", err)
+	}
+	if _, err := sqldb.Exec(schema); err != nil {
+		sqldb.Close()
+		return nil, fmt.Errorf("create schema: %w", err)
+	}
+	return &DB{sql: sqldb}, nil
+}
+
+func (d *DB) Close() error { return d.sql.Close() }
+
+// AddFolder records a watched folder, returning its id (existing or new).
+func (d *DB) AddFolder(path string, recursive bool) (int64, error) {
+	rec := 0
+	if recursive {
+		rec = 1
+	}
+	_, err := d.sql.Exec(
+		`INSERT INTO folders(path, recursive) VALUES(?, ?)
+		 ON CONFLICT(path) DO UPDATE SET recursive=excluded.recursive`,
+		path, rec)
+	if err != nil {
+		return 0, err
+	}
+	var id int64
+	err = d.sql.QueryRow(`SELECT id FROM folders WHERE path=?`, path).Scan(&id)
+	return id, err
+}
+
+// Folder is a watched library root.
+type Folder struct {
+	ID        int64
+	Path      string
+	Recursive bool
+}
+
+// Folders returns all watched folders.
+func (d *DB) Folders() ([]Folder, error) {
+	rows, err := d.sql.Query(`SELECT id, path, recursive FROM folders ORDER BY path`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Folder
+	for rows.Next() {
+		var f Folder
+		var rec int
+		if err := rows.Scan(&f.ID, &f.Path, &rec); err != nil {
+			return nil, err
+		}
+		f.Recursive = rec != 0
+		out = append(out, f)
+	}
+	return out, rows.Err()
+}
+
+// RelocateFolder changes a watched folder's root path. Because tracks store
+// paths relative to this root, every track under the folder is relocated by
+// this single update - the answer to "USB drive is D:\ here but E:\ there".
+func (d *DB) RelocateFolder(folderID int64, newRoot string) error {
+	_, err := d.sql.Exec(`UPDATE folders SET path=? WHERE id=?`, newRoot, folderID)
+	return err
+}
+
+func (d *DB) SetFolderScanned(id int64) error {
+	_, err := d.sql.Exec(`UPDATE folders SET last_scanned=? WHERE id=?`,
+		time.Now().Unix(), id)
+	return err
+}
+
+// UpsertTrack inserts or updates a track by (folder_id, rel_path). Play count
+// and manual rating are preserved across re-scans (never overwritten).
+func (d *DB) UpsertTrack(t *Track) error {
+	now := time.Now().Unix()
+	hasArt := 0
+	if t.HasArt {
+		hasArt = 1
+	}
+	res, err := d.sql.Exec(`
+		INSERT INTO tracks(folder_id, rel_path, title, artist, album, album_artist,
+			genre, year, track_no, duration, file_size, file_mtime, has_art,
+			date_added, last_seen)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		ON CONFLICT(folder_id, rel_path) DO UPDATE SET
+			title=excluded.title, artist=excluded.artist, album=excluded.album,
+			album_artist=excluded.album_artist, genre=excluded.genre,
+			year=excluded.year, track_no=excluded.track_no,
+			duration=excluded.duration, file_size=excluded.file_size,
+			file_mtime=excluded.file_mtime, has_art=excluded.has_art,
+			last_seen=excluded.last_seen`,
+		t.FolderID, t.RelPath, t.Title, t.Artist, t.Album, t.AlbumArtist,
+		t.Genre, t.Year, t.TrackNo, t.Duration, t.FileSize, t.FileMtime,
+		hasArt, now, now)
+	if err != nil {
+		return err
+	}
+	if id, err := res.LastInsertId(); err == nil && id != 0 {
+		t.ID = id
+	}
+	if t.ID == 0 {
+		_ = d.sql.QueryRow(`SELECT id FROM tracks WHERE folder_id=? AND rel_path=?`,
+			t.FolderID, t.RelPath).Scan(&t.ID)
+	}
+	return nil
+}
+
+// SetThumb stores (or replaces) a PNG album-art thumbnail for a track.
+func (d *DB) SetThumb(trackID int64, png []byte) error {
+	_, err := d.sql.Exec(
+		`INSERT INTO thumbs(track_id, png) VALUES(?, ?)
+		 ON CONFLICT(track_id) DO UPDATE SET png=excluded.png`,
+		trackID, png)
+	return err
+}
+
+// Thumb returns the PNG thumbnail for a track, or nil if none.
+func (d *DB) Thumb(trackID int64) []byte {
+	var png []byte
+	err := d.sql.QueryRow(`SELECT png FROM thumbs WHERE track_id=?`, trackID).Scan(&png)
+	if err != nil {
+		return nil
+	}
+	return png
+}
+
+// IncrementPlayCount bumps a track's play count by one (called when a track
+// finishes playing). Auto rating reflects the new count immediately.
+func (d *DB) IncrementPlayCount(trackID int64) error {
+	_, err := d.sql.Exec(`UPDATE tracks SET play_count=play_count+1 WHERE id=?`, trackID)
+	return err
+}
+
+// SetRating sets (rating 1..5) or clears (rating <= 0) the manual star rating.
+func (d *DB) SetRating(trackID int64, rating int) error {
+	if rating <= 0 {
+		_, err := d.sql.Exec(`UPDATE tracks SET rating=NULL WHERE id=?`, trackID)
+		return err
+	}
+	_, err := d.sql.Exec(`UPDATE tracks SET rating=? WHERE id=?`, rating, trackID)
+	return err
+}
+
+// TrackQuery selects which tracks to return and how to order them.
+type TrackQuery struct {
+	Filter  Filter // rating filter
+	Search  string // case-insensitive substring across title/artist/album/genre/filename
+	SortCol int    // a col* constant from mainwindow.go; -1 = default order
+	Desc    bool   // descending sort
+}
+
+// orderBy returns the SQL ORDER BY body for a sort column. Secondary keys keep
+// results stable/grouped. effRatingExpr lives above.
+func orderBy(col int, desc bool) string {
+	dir := "ASC"
+	if desc {
+		dir = "DESC"
+	}
+	switch col {
+	case colTrack:
+		return "t.track_no " + dir + ", t.artist, t.album"
+	case colFilename:
+		return "t.rel_path " + dir
+	case colTitle:
+		return "t.title " + dir + ", t.artist, t.album, t.track_no"
+	case colArtist:
+		return "t.artist " + dir + ", t.album, t.track_no, t.title"
+	case colAlbum:
+		return "t.album " + dir + ", t.track_no, t.title"
+	case colYear:
+		return "t.year " + dir + ", t.artist, t.album, t.track_no"
+	case colPlays:
+		return "t.play_count " + dir + ", t.artist, t.album, t.track_no"
+	case colRating:
+		return effRatingExpr + " " + dir + ", t.artist, t.album, t.track_no"
+	default:
+		return "t.artist, t.album, t.track_no, t.title"
+	}
+}
+
+// Tracks returns catalog tracks matching the query, joined to their folder root
+// so AbsPath works.
+func (d *DB) Tracks(q TrackQuery) ([]Track, error) {
+	sql := `SELECT t.id, t.folder_id, f.path, t.rel_path, t.title, t.artist,
+			t.album, t.album_artist, t.genre, t.year, t.track_no, t.duration,
+			t.file_size, t.file_mtime, t.has_art, t.play_count, t.rating,
+			t.date_added, t.last_seen
+		FROM tracks t JOIN folders f ON f.id = t.folder_id`
+
+	var conds []string
+	var args []any
+	if where := q.Filter.where(); where != "" {
+		conds = append(conds, where)
+	}
+	if s := strings.TrimSpace(q.Search); s != "" {
+		conds = append(conds,
+			`(t.title LIKE ? OR t.artist LIKE ? OR t.album LIKE ? OR t.genre LIKE ? OR t.rel_path LIKE ?)`)
+		like := "%" + s + "%"
+		args = append(args, like, like, like, like, like)
+	}
+	if len(conds) > 0 {
+		sql += " WHERE " + strings.Join(conds, " AND ")
+	}
+	sql += " ORDER BY " + orderBy(q.SortCol, q.Desc)
+
+	rows, err := d.sql.Query(sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []Track
+	for rows.Next() {
+		var t Track
+		var hasArt int
+		if err := rows.Scan(&t.ID, &t.FolderID, &t.FolderRoot, &t.RelPath,
+			&t.Title, &t.Artist, &t.Album, &t.AlbumArtist, &t.Genre, &t.Year,
+			&t.TrackNo, &t.Duration, &t.FileSize, &t.FileMtime, &hasArt,
+			&t.PlayCount, &t.Rating, &t.DateAdded, &t.LastSeen); err != nil {
+			return nil, err
+		}
+		t.HasArt = hasArt != 0
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}

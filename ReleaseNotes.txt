@@ -1,0 +1,47 @@
+Release notes
+KrankyBear MediaPlayer: - Windows, Linux and MacOS media player
+
+
+Future ideas:
+- Multi column sort - so e.g. album, shift click title, or shift click track for secondary sort, probably no need for more than 2 columns
+- Allow adding album art from image on disk, select one or more tracks, click add art and insert it
+- Allow selecting files, albums etc using filters and copy to alternate media. e.g. select all 5 star files, desle
+- Possible internationalization with assets/i18n language support - this is a bigger thing and will mean extracting menu items, main window messages, about, help, update checker etc to allow for alternate languages
+- Possible allow simple music video play, lower priority, even if only play music but not the video for example
+- Skins - maybe never, that becomes much more complex
+- Animations, cute, not necessary and becomes much more complex
+
+Version 0.1.0 - June 8, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW Cross platform media player
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- SQLite media catalog across multiple watched folders (pure-Go modernc driver)
+- Spreadsheet-style track table with embedded album-art thumbnails
+- Play tracking: play count + 1-5 star rating; manual stars or auto-rating from play count
+- Rating filters: exact stars, N-and-up, played, unplayed
+- In-row clickable stars + right-click row menu
+- Portable library: track paths stored relative to folder root; relocate a moved
+  drive (D: -> E:) via Library > Relocate Folder; DB location configurable (-db / KBMP_DB)
+- Sequence playback (MP3/FLAC/WAV/OGG) via gopxl/beep; double-click a row to play
+- Selection indicator follows the now-playing track as it changes
+- A play is credited after a configurable % of the track (View > Count play after:
+  25/50/75/90/end), updating play count + auto-stars live; manual ratings are never
+  changed; skipping never counts
+- Live search box (title / artist / album / genre / filename)
+- Click column headers to sort (tap again to reverse); Art column excluded
+- Volume slider and seek bar with elapsed/total time
+- System tray icon + menu (Show/Hide all windows, Play/Pause, Prev, Next, Stop, Quit)
+- Hide all / show all windows together (main + Help/About/Update) via menu + tray
+- Hotkeys: Alt+P play/pause; Alt+H "boss key" hides all windows AND pauses
+  (no hotkey to show/resume by design - reveal via tray/menu, then press play)
+- Remembers and restores the window size at next launch (size only; Fyne can't
+  save window position/display)
+- Optional Track # and Filename columns (View menu, off by default, remembered)
+- Smaller About and Update windows; icons sized to 128px (Contain)
+- Update checker shows the HardHat bear when the local build is newer than the
+  latest release, otherwise the normal app icon
+- Reliable quit on Windows/macOS/Linux via the window X, main menu, or system tray
+- Linux .deb/.rpm install an application-menu launcher (.desktop) + themed icon
+- Windows EXE icon embedded via go-winres and regenerated on every build
+
+# "Now this is not the end. It is not even the beginning of the end. But it is, perhaps, the end of the beginning." Winston Churchill, November 10, 1942
