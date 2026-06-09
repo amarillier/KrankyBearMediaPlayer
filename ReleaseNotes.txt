@@ -3,6 +3,7 @@ KrankyBear MediaPlayer: - Windows, Linux and MacOS media player
 
 
 Future ideas:
+- HIGH: Remember media player volume setting in preferences for next launch. Maybe also include a computer volume control option next to the media player volume control?
 - LATER: extend "Add album art" to multiple selected tracks at once, and optionally embed into the file (vs catalog-only)
 - MEDIUM: tag editor text components beyond just attaching album art
 - MEDIUM: Preferences or other option to show configured / previously added disks, folders etc
@@ -15,6 +16,35 @@ Future ideas:
 - LOW: Animations, cute, not necessary and becomes much more complex
 - LOW: Possibly never consider seriously - ability to convert audio formats, resample at ower bitrates? Probably not
 
+
+Version 0.3.0 - June 8, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- New Playback menu with Shuffle and Repeat (Off / All / One), both remembered
+  across launches. Shuffle keeps the current track playing then randomises the
+  rest; Repeat All loops the queue, Repeat One loops the current track. Next /
+  Previous always skip on, even under Repeat One. Transport (Play/Pause, Previous,
+  Next, Stop) is now in this menu too.
+- Play Queue window (Playback → Show Play Queue): shows the upcoming tracks in
+  play order with the current one marked ▶. Add to Queue from a track's right-click
+  menu, or Library → Add Selected / Add All Shown to Queue, appends without
+  interrupting playback. In the window you can Play a chosen track, Remove one,
+  move tracks Up/Down, or Clear All.
+- Playlists menu. Static playlists: Save Playlist… writes the current view to a
+  portable .m3u8 (paths relative to the file, so playlist + music travel together);
+  Open Playlist… loads and plays one (catalogued files keep their stars/plays).
+  Smart playlists: New Smart Playlist… saves filter criteria (rating + optional
+  Genre/Artist/Album, matched partially & case-insensitively, + Search) under a
+  name; picking it from the menu re-applies them live (status bar shows ♫ name).
+  Manage Smart Playlists… deletes.
+- Preferences window (View → Preferences…, Cmd/Ctrl+,): one place for theme,
+  "count a play after" threshold, the optional columns, the database location
+  (with a restart note), and playback volume — which is now remembered across
+  launches. The quick toggles stay on the View menu too.
+- Selection checkboxes are now instant: they toggle on mouse-down (previously the
+  double-click detection delayed each tick by the system double-click time) and
+  refresh only the tapped cell.
 
 Version 0.2.0 - June 8, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

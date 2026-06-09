@@ -3,7 +3,7 @@
 // Two ways to rate, as the user requested:
 //   - Manual: an explicit 1..5 star rating stored on the track.
 //   - Auto:   derived from play count when no manual rating is set, so that
-//             playing something 5 times makes it a 5-star track on its own.
+//     playing something 5 times makes it a 5-star track on its own.
 //
 // EffectiveRating (Track.EffectiveRating / effRatingExpr in SQL) is what the
 // UI shows and what filters operate on: manual if present, else auto.
@@ -97,6 +97,16 @@ func filterByLabel(label string) Filter {
 		}
 	}
 	return FilterAll
+}
+
+// filterLabelFor returns the dropdown label for a filter (for summaries).
+func filterLabelFor(f Filter) string {
+	for _, o := range filterOptions {
+		if o.Filter == f {
+			return o.Label
+		}
+	}
+	return ""
 }
 
 // filterLabels returns just the labels, for building the dropdown.

@@ -90,6 +90,14 @@ const (
 const prefPlayCountPct = "playCountPercent"
 const defaultPlayCountPct = 50
 
+// Playback mode preferences (remembered across launches).
+const prefShuffle = "shuffle"   // bool
+const prefRepeat = "repeatMode" // int: 0 off, 1 all, 2 one
+const prefVolume = "volume"     // float 0..1 linear gain
+
+// prefDBPath is the saved custom catalog-database path (empty = default location).
+const prefDBPath = "dbPath"
+
 const tableRowHeight = 52
 
 // maxArtBytes caps how much image data we read when adding album art (file or
@@ -106,12 +114,16 @@ type ui struct {
 	tracks       []Track
 	filter       Filter
 	search       string
-	sortCol      int   // primary sort column, -1 = default order
-	sortDesc     bool  // primary descending
-	sortCol2     int   // secondary sort column (shift-click), -1 = none
-	sortDesc2    bool  // secondary descending
-	selected     int   // selected table row, -1 if none
-	nowPlayingID int64 // track id last followed by the selection indicator
+	qGenre       string // active smart-playlist constraints (empty = none)
+	qArtist      string
+	qAlbum       string
+	smartName    string // name of the applied smart playlist, "" if none
+	sortCol      int    // primary sort column, -1 = default order
+	sortDesc     bool   // primary descending
+	sortCol2     int    // secondary sort column (shift-click), -1 = none
+	sortDesc2    bool   // secondary descending
+	selected     int    // selected table row, -1 if none
+	nowPlayingID int64  // track id last followed by the selection indicator
 
 	marked map[int64]markEntry // tracks ticked for copy: id -> path+artist+album
 
@@ -129,6 +141,12 @@ type ui struct {
 	seeking    bool // true while the user drags the seek slider
 	volSlider  *widget.Slider
 
+	// Play Queue window state (see queue.go).
+	queueList    *widget.List
+	queueTracks  []Track // queued tracks in play order (snapshot for the list)
+	queueCurrent int     // play-order position of the now-playing track, -1 if none
+	queueSel     int     // selected row in the queue list, -1 if none
+
 	tickerDone chan struct{} // closed to stop the progress ticker (on quit)
 	tickerOnce sync.Once     // guards closing tickerDone exactly once
 }
@@ -136,17 +154,19 @@ type ui struct {
 // buildMainWindow constructs and populates the main window content.
 func buildMainWindow(a fyne.App, win fyne.Window, db *DB, player *Player) *ui {
 	u := &ui{
-		app:        a,
-		win:        win,
-		db:         db,
-		player:     player,
-		filter:     FilterAll,
-		sortCol:    -1,
-		sortCol2:   -1,
-		selected:   -1,
-		marked:     map[int64]markEntry{},
-		thumbCache: map[int64]fyne.Resource{},
-		tickerDone: make(chan struct{}),
+		app:          a,
+		win:          win,
+		db:           db,
+		player:       player,
+		filter:       FilterAll,
+		sortCol:      -1,
+		sortCol2:     -1,
+		selected:     -1,
+		marked:       map[int64]markEntry{},
+		thumbCache:   map[int64]fyne.Resource{},
+		tickerDone:   make(chan struct{}),
+		queueCurrent: -1,
+		queueSel:     -1,
 	}
 
 	u.table = u.buildTable()
@@ -162,9 +182,15 @@ func buildMainWindow(a fyne.App, win fyne.Window, db *DB, player *Player) *ui {
 	// When a play is credited, update the in-memory count live (on the UI thread).
 	player.OnPlayCounted = func(id int64) { fyne.Do(func() { u.onPlayCounted(id) }) }
 
-	// Apply the saved play-count threshold.
-	pct := u.app.Preferences().IntWithFallback(prefPlayCountPct, defaultPlayCountPct)
+	// Apply the saved play-count threshold and playback modes.
+	prefs := u.app.Preferences()
+	pct := prefs.IntWithFallback(prefPlayCountPct, defaultPlayCountPct)
 	player.SetCountThreshold(float64(pct) / 100)
+	player.SetShuffle(prefs.BoolWithFallback(prefShuffle, false))
+	player.SetRepeat(RepeatMode(prefs.IntWithFallback(prefRepeat, int(RepeatOff))))
+	vol := prefs.FloatWithFallback(prefVolume, 1.0)
+	player.SetVolume(vol)
+	u.volSlider.SetValue(vol) // reflect the restored volume in the slider
 
 	u.reload()
 	u.startProgressTicker()
@@ -184,11 +210,34 @@ func (u *ui) onPlayCounted(id int64) {
 	u.table.Refresh()
 }
 
+// rebuildMenu rebuilds the main menu, deferred via fyne.Do (see toggleColumn for
+// the macOS menu-tracking reason). Used after state that the menu reflects
+// changes (toggles, smart-playlist list, etc.).
+func (u *ui) rebuildMenu() {
+	fyne.Do(func() { u.win.SetMainMenu(buildMenu(u.app, u)) })
+}
+
 // setPlayCountPct saves the play-count threshold preference and applies it. The
 // menu is rebuilt via fyne.Do (see toggleColumn for why - macOS menu tracking).
 func (u *ui) setPlayCountPct(pct int) {
 	u.app.Preferences().SetInt(prefPlayCountPct, pct)
 	u.player.SetCountThreshold(float64(pct) / 100)
+	fyne.Do(func() { u.win.SetMainMenu(buildMenu(u.app, u)) })
+}
+
+// toggleShuffle flips shuffle, persists it, and rebuilds the menu to update the
+// checkmark (deferred via fyne.Do - see toggleColumn for the macOS reason).
+func (u *ui) toggleShuffle() {
+	on := !u.player.Shuffle()
+	u.player.SetShuffle(on)
+	u.app.Preferences().SetBool(prefShuffle, on)
+	fyne.Do(func() { u.win.SetMainMenu(buildMenu(u.app, u)) })
+}
+
+// setRepeat sets the repeat mode, persists it, and rebuilds the menu.
+func (u *ui) setRepeat(m RepeatMode) {
+	u.player.SetRepeat(m)
+	u.app.Preferences().SetInt(prefRepeat, int(m))
 	fyne.Do(func() { u.win.SetMainMenu(buildMenu(u.app, u)) })
 }
 
@@ -273,6 +322,7 @@ func (u *ui) buildToolbar() fyne.CanvasObject {
 	filterSel.SetSelectedIndex(0)
 	filterSel.OnChanged = func(label string) {
 		u.filter = filterByLabel(label)
+		u.clearSmartCriteria() // a manual filter change leaves any smart playlist
 		u.reload()
 	}
 
@@ -284,6 +334,7 @@ func (u *ui) buildToolbar() fyne.CanvasObject {
 	search.SetPlaceHolder("Search title, artist, album, genre, filename…")
 	search.OnChanged = func(s string) {
 		u.search = s
+		u.clearSmartCriteria() // typing a search leaves any smart playlist
 		u.reload()
 	}
 	clearSearch := widget.NewButtonWithIcon("", theme.ContentClearIcon(), func() {
@@ -328,7 +379,10 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 	u.volSlider = widget.NewSlider(0, 1)
 	u.volSlider.Step = 0.01
 	u.volSlider.Value = u.player.Volume()
-	u.volSlider.OnChanged = func(v float64) { u.player.SetVolume(v) }
+	u.volSlider.OnChanged = func(v float64) {
+		u.player.SetVolume(v)
+		u.app.Preferences().SetFloat(prefVolume, v) // remember across launches
+	}
 	volBox := container.NewBorder(nil, nil, widget.NewIcon(theme.VolumeUpIcon()), nil,
 		container.NewGridWrap(fyne.NewSize(110, 28), u.volSlider))
 
@@ -553,7 +607,9 @@ func (c *cellWidget) Tapped(e *fyne.PointEvent) {
 	}
 	switch c.ui.visibleCols[c.id.Col].id {
 	case colSelect:
-		c.ui.toggleMark(c.id.Row)
+		// Handled instantly in MouseDown - see the comment there. Tapped is delayed
+		// by the double-tap window (we implement DoubleTapped), so doing it here
+		// made each checkbox click feel ~half a second slow.
 		return
 	case colRating:
 		w := c.Size().Width
@@ -580,6 +636,27 @@ func (c *cellWidget) Tapped(e *fyne.PointEvent) {
 func (c *cellWidget) TappedSecondary(e *fyne.PointEvent) {
 	c.ui.showRowMenu(c.id.Row, e.AbsolutePosition)
 }
+
+// MouseDown toggles the selection checkbox immediately on press. Because the cell
+// is DoubleTappable (double-click to play), Fyne delays the normal Tapped callback
+// by the double-tap window (~300ms+, the OS double-click speed on macOS) to tell a
+// single tap from a double - far too laggy for ticking a box. MouseDown fires at
+// once, so the checkbox feels instant; we refresh only that cell, not the table.
+func (c *cellWidget) MouseDown(e *desktop.MouseEvent) {
+	if e.Button != desktop.MouseButtonPrimary {
+		return
+	}
+	if c.id.Row < 0 || c.id.Row >= len(c.ui.tracks) ||
+		c.id.Col < 0 || c.id.Col >= len(c.ui.visibleCols) {
+		return
+	}
+	if c.ui.visibleCols[c.id.Col].id == colSelect {
+		c.ui.toggleMark(c.id.Row)
+		c.ui.table.RefreshItem(c.id)
+	}
+}
+
+func (c *cellWidget) MouseUp(*desktop.MouseEvent) {}
 
 // DoubleTapped starts playback from the double-clicked row through the rest of
 // the current (filtered/sorted) list. The Rating column is excluded so its
@@ -688,7 +765,8 @@ func (u *ui) toggleMark(row int) {
 	} else {
 		u.marked[tr.ID] = markEntryFor(tr)
 	}
-	u.table.Refresh()
+	// The caller refreshes just the toggled cell (RefreshItem); a full table
+	// Refresh here would redraw every visible row's album art on each click.
 	u.refreshStatus()
 }
 
@@ -834,6 +912,54 @@ func (u *ui) copyEntriesTo(entries []markEntry, destDir string, organize bool) {
 	}()
 }
 
+// enqueueRow appends a single library row to the play queue.
+func (u *ui) enqueueRow(row int) {
+	if row < 0 || row >= len(u.tracks) {
+		return
+	}
+	u.player.Enqueue([]Track{u.tracks[row]})
+	u.status.SetText("Added to queue: " + queueRowText(u.tracks[row]))
+}
+
+// enqueueShown appends every track in the current (filtered) view to the queue.
+func (u *ui) enqueueShown() {
+	if len(u.tracks) == 0 {
+		dialog.ShowInformation("Add to queue", "No tracks are shown.", u.win)
+		return
+	}
+	u.player.Enqueue(u.tracks)
+	u.status.SetText(fmt.Sprintf("Added %d track(s) to the queue", len(u.tracks)))
+}
+
+// enqueueSelected appends the marked tracks that are in the current view to the
+// queue (the filter → Select All Shown → Add to Queue workflow). Marked tracks
+// hidden by the current search/filter are reported but skipped.
+func (u *ui) enqueueSelected() {
+	if len(u.marked) == 0 {
+		dialog.ShowInformation("Add to queue",
+			"No tracks are marked. Turn on View → Selection checkboxes and tick some "+
+				"tracks (or Library → Select All Shown), then try again.", u.win)
+		return
+	}
+	var sel []Track
+	for i := range u.tracks {
+		if _, ok := u.marked[u.tracks[i].ID]; ok {
+			sel = append(sel, u.tracks[i])
+		}
+	}
+	if len(sel) == 0 {
+		dialog.ShowInformation("Add to queue",
+			"None of the marked tracks are in the current view. Clear the search/filter and try again.", u.win)
+		return
+	}
+	u.player.Enqueue(sel)
+	msg := fmt.Sprintf("Added %d marked track(s) to the queue", len(sel))
+	if miss := len(u.marked) - len(sel); miss > 0 {
+		msg += fmt.Sprintf(" (%d not in current view)", miss)
+	}
+	u.status.SetText(msg)
+}
+
 // sanitizeFolderName makes s safe as a single folder name (replacing characters
 // illegal on common filesystems), falling back when empty.
 func sanitizeFolderName(s, fallback string) string {
@@ -937,6 +1063,7 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 
 	menu := fyne.NewMenu("",
 		fyne.NewMenuItem("Play", func() { u.player.PlayQueue(u.tracks, r) }),
+		fyne.NewMenuItem("Add to Queue", func() { u.enqueueRow(r) }),
 		ratingItem,
 		artItem,
 		fyne.NewMenuItemSeparator(),
@@ -1120,6 +1247,9 @@ func (u *ui) reload() {
 	tracks, err := u.db.Tracks(TrackQuery{
 		Filter:    u.filter,
 		Search:    u.search,
+		Genre:     u.qGenre,
+		Artist:    u.qArtist,
+		Album:     u.qAlbum,
 		SortCol:   u.sortCol,
 		Desc:      u.sortDesc,
 		Sort2Col:  u.sortCol2,
@@ -1142,6 +1272,9 @@ func (u *ui) reload() {
 
 func (u *ui) refreshStatus() {
 	s := fmt.Sprintf("%d tracks", len(u.tracks))
+	if u.smartName != "" {
+		s = "♫ " + u.smartName + "  |  " + s
+	}
 	if len(u.marked) > 0 {
 		s += fmt.Sprintf("  |  %d marked for copy", len(u.marked))
 	}
@@ -1153,6 +1286,7 @@ func (u *ui) refreshStatus() {
 
 // refreshNowPlaying syncs the transport bar with the player. Runs on UI thread.
 func (u *ui) refreshNowPlaying() {
+	u.refreshQueue() // keep the Play Queue window in sync when it's open
 	tr, ok := u.player.Current()
 	if !ok {
 		u.nowPlaying.SetText("Nothing playing")

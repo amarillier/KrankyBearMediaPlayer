@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,13 +31,28 @@ import (
 // are resampled to it. 44.1kHz suits typical music.
 const playerSampleRate beep.SampleRate = 44100
 
+// RepeatMode controls what happens when a track (or the whole queue) ends.
+type RepeatMode int
+
+const (
+	RepeatOff RepeatMode = iota // stop at the end of the queue
+	RepeatAll                   // wrap around to the start of the queue
+	RepeatOne                   // replay the current track forever
+)
+
 // Player owns the speaker and the current play queue.
 type Player struct {
 	db *DB
 
-	mu        sync.Mutex
-	queue     []Track
-	index     int // -1 when nothing is loaded
+	mu    sync.Mutex
+	queue []Track
+	index int // index into queue of the current track; -1 when nothing loaded
+	// order is a permutation of queue indices giving the play order (identity when
+	// not shuffled); pos is the position within order, so order[pos] == index.
+	order     []int
+	pos       int
+	shuffle   bool
+	repeat    RepeatMode
 	streamer  beep.StreamSeekCloser
 	format    beep.Format     // decoder format of the current track (for seeking)
 	ctrl      *beep.Ctrl      // wraps the stream so we can pause/resume
@@ -119,9 +135,63 @@ func (p *Player) PlayQueue(tracks []Track, start int) {
 	p.mu.Lock()
 	p.queue = tracks
 	p.index = start
+	p.rebuildOrderLocked(start)
 	p.playLocked()
 	p.mu.Unlock()
 	p.fireChange() // fire AFTER unlocking - see fireChange's contract
+}
+
+// rebuildOrderLocked recomputes the play order over the current queue, leaving
+// the given queue index (the track to keep "current") at the front when shuffled
+// and pointing pos at it either way. Caller must hold p.mu.
+func (p *Player) rebuildOrderLocked(current int) {
+	n := len(p.queue)
+	p.order = make([]int, n)
+	for i := range p.order {
+		p.order[i] = i
+	}
+	if p.shuffle && n > 1 {
+		rand.Shuffle(n, func(i, j int) { p.order[i], p.order[j] = p.order[j], p.order[i] })
+		// Keep the current track playing: move it to the front of the order.
+		if current >= 0 {
+			for i, q := range p.order {
+				if q == current {
+					p.order[0], p.order[i] = p.order[i], p.order[0]
+					break
+				}
+			}
+		}
+	}
+	// Point pos at the current track's slot in the (possibly shuffled) order.
+	p.pos = 0
+	for i, q := range p.order {
+		if q == current {
+			p.pos = i
+			break
+		}
+	}
+}
+
+// stepLocked moves pos by delta (+1 next, -1 prev) within the play order and
+// starts the new track, honouring RepeatAll wrap-around. Returns false (and does
+// nothing) when stepping off either end without RepeatAll. Manual skips override
+// RepeatOne. Caller must hold p.mu.
+func (p *Player) stepLocked(delta int) bool {
+	n := len(p.order)
+	if n == 0 {
+		return false
+	}
+	np := p.pos + delta
+	if np < 0 || np >= n {
+		if p.repeat != RepeatAll {
+			return false
+		}
+		np = (np%n + n) % n
+	}
+	p.pos = np
+	p.index = p.order[p.pos]
+	p.playLocked()
+	return true
 }
 
 // playLocked starts playback of queue[index]. Caller must hold p.mu AND must
@@ -149,9 +219,12 @@ func (p *Player) playLocked() {
 	s, format, err := decodeFile(tr.AbsPath())
 	if err != nil {
 		log.Printf("player: decode %q: %v", tr.AbsPath(), err)
-		// Skip a bad file rather than stalling the queue.
-		if p.index+1 < len(p.queue) {
-			p.index++
+		// Skip a bad file rather than stalling the queue. Advance through the play
+		// order (so shuffle is honoured) but never wrap, even under RepeatAll - an
+		// all-bad queue must stop rather than loop forever.
+		if p.pos+1 < len(p.order) {
+			p.pos++
+			p.index = p.order[p.pos]
 			p.playLocked()
 		}
 		return
@@ -190,11 +263,10 @@ func (p *Player) trackFinished(id int64) {
 	// Credit at natural end if not already counted - covers the "end of track"
 	// threshold and tracks too short for a 500ms tick to catch the crossing.
 	credited, creditedID := p.creditPlayLocked()
-	if p.index+1 < len(p.queue) {
-		p.index++
-		p.playLocked()
-	} else {
-		p.playing = false // reached the end of the queue
+	if p.repeat == RepeatOne {
+		p.playLocked() // loop the same track
+	} else if !p.stepLocked(1) {
+		p.playing = false // reached the end of the queue (no RepeatAll)
 	}
 	p.mu.Unlock()
 	// Fire callbacks AFTER unlocking (see fireChange's contract).
@@ -281,12 +353,7 @@ func (p *Player) TogglePause() {
 // Next skips forward without counting the current track as played.
 func (p *Player) Next() {
 	p.mu.Lock()
-	changed := false
-	if p.index+1 < len(p.queue) {
-		p.index++
-		p.playLocked()
-		changed = true
-	}
+	changed := p.stepLocked(1)
 	p.mu.Unlock()
 	if changed {
 		p.fireChange()
@@ -296,9 +363,91 @@ func (p *Player) Next() {
 // Prev skips back without counting the current track as played.
 func (p *Player) Prev() {
 	p.mu.Lock()
+	changed := p.stepLocked(-1)
+	p.mu.Unlock()
+	if changed {
+		p.fireChange()
+	}
+}
+
+// SetShuffle turns shuffle on or off, rebuilding the play order while keeping the
+// current track playing. Persisted by the UI; safe to call any time.
+func (p *Player) SetShuffle(on bool) {
+	p.mu.Lock()
+	if p.shuffle != on {
+		p.shuffle = on
+		p.rebuildOrderLocked(p.index)
+	}
+	p.mu.Unlock()
+}
+
+// Shuffle reports whether shuffle is on.
+func (p *Player) Shuffle() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.shuffle
+}
+
+// SetRepeat sets the repeat mode (off / all / one).
+func (p *Player) SetRepeat(m RepeatMode) {
+	p.mu.Lock()
+	p.repeat = m
+	p.mu.Unlock()
+}
+
+// Repeat returns the current repeat mode.
+func (p *Player) Repeat() RepeatMode {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.repeat
+}
+
+// Enqueue appends tracks to the end of the play queue without interrupting the
+// current track. The new tracks play after everything already queued. If the
+// queue was empty, playback starts at the first appended track.
+func (p *Player) Enqueue(tracks []Track) {
+	if len(tracks) == 0 {
+		return
+	}
+	p.mu.Lock()
+	startEmpty := len(p.queue) == 0
+	base := len(p.queue)
+	p.queue = append(p.queue, tracks...)
+	for i := range tracks {
+		p.order = append(p.order, base+i)
+	}
+	if startEmpty {
+		p.pos = 0
+		p.index = p.order[0]
+		p.playLocked()
+	}
+	p.mu.Unlock()
+	p.fireChange()
+}
+
+// QueueView returns the queued tracks in play order, plus the order-position of
+// the currently-playing track (-1 if none). Used by the Play Queue window.
+func (p *Player) QueueView() (tracks []Track, current int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	tracks = make([]Track, len(p.order))
+	for i, qi := range p.order {
+		tracks[i] = p.queue[qi]
+	}
+	current = -1
+	if p.index >= 0 && p.pos >= 0 && p.pos < len(p.order) && p.order[p.pos] == p.index {
+		current = p.pos
+	}
+	return
+}
+
+// JumpTo starts playing the track at the given play-order position.
+func (p *Player) JumpTo(orderPos int) {
+	p.mu.Lock()
 	changed := false
-	if p.index > 0 {
-		p.index--
+	if orderPos >= 0 && orderPos < len(p.order) {
+		p.pos = orderPos
+		p.index = p.order[p.pos]
 		p.playLocked()
 		changed = true
 	}
@@ -308,9 +457,84 @@ func (p *Player) Prev() {
 	}
 }
 
-// Stop halts playback and releases the current stream.
-func (p *Player) Stop() {
+// RemoveAt removes the track at the given play-order position. Removing the
+// currently-playing track stops playback (the queue keeps its other entries).
+func (p *Player) RemoveAt(orderPos int) {
 	p.mu.Lock()
+	if orderPos < 0 || orderPos >= len(p.order) {
+		p.mu.Unlock()
+		return
+	}
+	qi := p.order[orderPos]
+	removingCurrent := qi == p.index
+	// Drop the queue entry and renumber every order index that pointed past it.
+	p.queue = append(p.queue[:qi], p.queue[qi+1:]...)
+	newOrder := make([]int, 0, len(p.order)-1)
+	for op, q := range p.order {
+		if op == orderPos {
+			continue
+		}
+		if q > qi {
+			q--
+		}
+		newOrder = append(newOrder, q)
+	}
+	p.order = newOrder
+	if orderPos < p.pos {
+		p.pos--
+	}
+	switch {
+	case removingCurrent:
+		p.stopStreamLocked()
+		p.index = -1
+		if p.pos >= len(p.order) {
+			p.pos = len(p.order) - 1 // clamp; -1 when the queue is now empty
+		}
+	case p.index > qi:
+		p.index--
+	}
+	p.mu.Unlock()
+	p.fireChange()
+}
+
+// MoveAt moves the queue entry at play-order position from to position to,
+// reordering the upcoming play order. The currently-playing track keeps playing.
+func (p *Player) MoveAt(from, to int) {
+	p.mu.Lock()
+	n := len(p.order)
+	if from < 0 || from >= n || to < 0 || to >= n || from == to {
+		p.mu.Unlock()
+		return
+	}
+	q := p.order[from]
+	p.order = append(p.order[:from], p.order[from+1:]...)
+	p.order = append(p.order[:to], append([]int{q}, p.order[to:]...)...)
+	// pos follows the currently-loaded track to its new slot.
+	for i, qi := range p.order {
+		if qi == p.index {
+			p.pos = i
+			break
+		}
+	}
+	p.mu.Unlock()
+	p.fireChange()
+}
+
+// ClearQueue stops playback and empties the queue.
+func (p *Player) ClearQueue() {
+	p.mu.Lock()
+	p.stopStreamLocked()
+	p.queue = nil
+	p.order = nil
+	p.pos = 0
+	p.index = -1
+	p.mu.Unlock()
+	p.fireChange()
+}
+
+// stopStreamLocked tears down the current stream and clears play state without
+// touching the queue. Caller must hold p.mu.
+func (p *Player) stopStreamLocked() {
 	speaker.Clear()
 	if p.streamer != nil {
 		p.streamer.Close()
@@ -322,6 +546,12 @@ func (p *Player) Stop() {
 	p.currentID = 0
 	p.counted = false
 	p.playing = false
+}
+
+// Stop halts playback and releases the current stream.
+func (p *Player) Stop() {
+	p.mu.Lock()
+	p.stopStreamLocked()
 	p.mu.Unlock()
 	p.fireChange()
 }

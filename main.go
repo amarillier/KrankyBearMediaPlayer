@@ -15,7 +15,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "0.2.0" // see FyneApp.toml
+	appVersion = "0.3.0" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -113,29 +113,31 @@ func setupSystemTray(a fyne.App, u *ui) {
 	desk.SetSystemTrayIcon(resourceKrankyBearMediaPlayerPng)
 }
 
+// defaultDBName is the catalog database's filename in default/portable locations.
+const defaultDBName = "KrankyBearMediaPlayer.db"
+
 // resolveDBPath picks where the catalog lives. Order of preference:
 //  1. KBMP_DB environment variable
-//  2. a saved "dbPath" preference (set when the user picks a custom location)
+//  2. a saved dbPath preference (set when the user picks a custom location)
 //  3. beside the executable - ideal for a portable app+DB on a USB drive
 //  4. the app's per-user storage dir (always writable) as a fallback
 func resolveDBPath(a fyne.App) string {
-	const dbName = "KrankyBearMediaPlayer.db"
 	if v := os.Getenv("KBMP_DB"); v != "" {
 		return v
 	}
-	if p := a.Preferences().String("dbPath"); p != "" {
+	if p := a.Preferences().String(prefDBPath); p != "" {
 		return p
 	}
 	if exe, err := os.Executable(); err == nil {
 		dir := filepath.Dir(exe)
 		if dirWritable(dir) {
-			return filepath.Join(dir, dbName)
+			return filepath.Join(dir, defaultDBName)
 		}
 	}
 	if root := a.Storage().RootURI(); root != nil {
-		return filepath.Join(root.Path(), dbName)
+		return filepath.Join(root.Path(), defaultDBName)
 	}
-	return dbName // last resort: current working directory
+	return defaultDBName // last resort: current working directory
 }
 
 // dirWritable reports whether we can create files in dir (probe + remove).
@@ -161,6 +163,8 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		fyne.NewMenuItem("Select All Shown", u.selectAllShown),
 		fyne.NewMenuItem("Clear Selection", u.clearSelection),
 		fyne.NewMenuItem("Copy Selected to…", u.copySelectedTo),
+		fyne.NewMenuItem("Add Selected to Queue", u.enqueueSelected),
+		fyne.NewMenuItem("Add All Shown to Queue", u.enqueueShown),
 		fyne.NewMenuItemSeparator(),
 		// Defer via fyne.Do: quitting directly from the menu popup's click handler
 		// hangs on Windows (closes the window from inside the popup callback).
@@ -171,6 +175,54 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 	hideItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyH, Modifier: fyne.KeyModifierAlt}
 	playPauseItem := fyne.NewMenuItem("Play / Pause", u.onPlayPause)
 	playPauseItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyP, Modifier: fyne.KeyModifierAlt}
+
+	// Playback menu: transport plus shuffle/repeat (state persists via prefs).
+	shuffleItem := fyne.NewMenuItem("Shuffle", u.toggleShuffle)
+	shuffleItem.Checked = u.player.Shuffle()
+	curRepeat := u.player.Repeat()
+	repeatItemFor := func(label string, m RepeatMode) *fyne.MenuItem {
+		it := fyne.NewMenuItem(label, func() { u.setRepeat(m) })
+		it.Checked = curRepeat == m
+		return it
+	}
+	repeatItem := fyne.NewMenuItem("Repeat", nil)
+	repeatItem.ChildMenu = fyne.NewMenu("",
+		repeatItemFor("Off", RepeatOff),
+		repeatItemFor("Repeat All", RepeatAll),
+		repeatItemFor("Repeat One", RepeatOne),
+	)
+	playbackMenu := fyne.NewMenu("Playback",
+		playPauseItem,
+		fyne.NewMenuItem("Previous", u.player.Prev),
+		fyne.NewMenuItem("Next", u.player.Next),
+		fyne.NewMenuItem("Stop", u.player.Stop),
+		fyne.NewMenuItemSeparator(),
+		shuffleItem,
+		repeatItem,
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("Show Play Queue", u.showQueue),
+	)
+
+	// Playlists menu: static .m3u8 files plus dynamic ("smart") playlists. Saved
+	// smart playlists are listed inline so a click applies them.
+	playlistItems := []*fyne.MenuItem{
+		fyne.NewMenuItem("Open Playlist…", u.openPlaylist),
+		fyne.NewMenuItem("Save Playlist…", u.savePlaylist),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("New Smart Playlist…", u.showNewSmartPlaylist),
+	}
+	if smarts, err := u.db.SmartPlaylists(); err == nil && len(smarts) > 0 {
+		playlistItems = append(playlistItems, fyne.NewMenuItemSeparator())
+		for _, s := range smarts {
+			s := s // capture per item
+			it := fyne.NewMenuItem(s.Name, func() { u.applySmartPlaylist(s) })
+			it.Checked = u.smartName == s.Name
+			playlistItems = append(playlistItems, it)
+		}
+		playlistItems = append(playlistItems, fyne.NewMenuItemSeparator(),
+			fyne.NewMenuItem("Manage Smart Playlists…", u.manageSmartPlaylists))
+	}
+	playlistsMenu := fyne.NewMenu("Playlists", playlistItems...)
 
 	// Checkable toggles for the optional columns (state persists via prefs).
 	prefs := a.Preferences()
@@ -197,8 +249,11 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		pctItem("End of track (100%)", 100),
 	)
 
+	prefItem := fyne.NewMenuItem("Preferences…", u.showPreferences)
+	prefItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyComma, Modifier: fyne.KeyModifierShortcutDefault}
+
 	viewMenu := fyne.NewMenu("View",
-		playPauseItem,
+		prefItem,
 		fyne.NewMenuItemSeparator(),
 		hideItem,
 		fyne.NewMenuItem("Show All Windows", u.showAllWindows),
@@ -225,7 +280,7 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		fyne.NewMenuItem("About", func() { showAbout(a) }),
 	)
 
-	return fyne.NewMainMenu(fileMenu, viewMenu, helpMenu)
+	return fyne.NewMainMenu(fileMenu, playbackMenu, playlistsMenu, viewMenu, helpMenu)
 }
 
 // "Now this is not the end. It is not even the beginning of the end. But it is, perhaps, the end of the beginning." Winston Churchill, November 10, 1942

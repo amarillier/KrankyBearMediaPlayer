@@ -48,6 +48,14 @@ PLAYING MUSIC:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Double-click any track to start playing from there through the rest of the list.
 • Transport (bottom bar): Previous, Play/Pause, Stop, Next.
+• Playback menu: Shuffle plays the queue in a random order; Repeat → Off / All
+  (loop the queue) / One (loop the current track). Both are remembered. Skipping
+  with Next/Previous always moves on, even with Repeat One.
+• Play Queue (Playback → Show Play Queue): see what's lined up in play order, with
+  the current track marked ▶. Right-click a track → Add to Queue (or Library → Add
+  Selected / Add All Shown to Queue) appends without interrupting what's playing.
+  In the queue window: Play the selected track, Remove it, move it Up/Down, or
+  Clear All.
 • Seek bar shows elapsed / total time — drag it to jump within a track.
 • Volume slider adjusts the playback level.
 • The selected-row indicator follows the track that is now playing.
@@ -79,6 +87,19 @@ FINDING & ORGANISING:
   stored in the library), Show in your file manager, and Show full path (with a
   Copy button). Rename and tag editing are coming soon.
 
+PLAYLISTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Static playlists (Playlists menu): Save Playlist… writes the tracks you're
+  currently viewing to a portable .m3u8 file, with paths relative to the file so a
+  playlist and its music travel together (e.g. on a USB stick). Open Playlist…
+  loads one and plays it; files still in your catalog keep their stars/play counts.
+• Smart playlists (Playlists → New Smart Playlist…): save filter criteria — a
+  rating, and optional Genre / Artist / Album (partial, case-insensitive — e.g.
+  "Wickham" matches "Phil Wickham"), plus free-text Search — under a name. Picking
+  it from the Playlists menu re-applies the criteria live (the status bar shows
+  ♫ <name>). They update automatically as your library changes. Manage Smart
+  Playlists… deletes ones you no longer want.
+
 WINDOWS & SYSTEM TRAY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • A system-tray icon + menu mirrors the controls: Show/Hide all windows,
@@ -93,8 +114,16 @@ PORTABLE LIBRARY (moving between machines or drives):
   drive mounts as D:\ on one PC and E:\ on another, just use
   Library → Relocate Folder to repoint the folder — every track under it follows,
   keeping its play counts and ratings.
-• The database location can be set with the -db command-line flag or the KBMP_DB
-  environment variable; by default it sits next to the app (handy on a USB stick).
+• The database location can be set with the -db command-line flag, the KBMP_DB
+  environment variable, or View → Preferences → Database location (restart to take
+  effect); by default it sits next to the app (handy on a USB stick).
+
+PREFERENCES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• View → Preferences… (Cmd/Ctrl+,) gathers the common settings in one place:
+  theme, "count a play after" threshold, playback volume (remembered across
+  launches), the optional columns, and the database location. The same toggles
+  remain on the View menu for quick one-off changes.
 
 SMART FEATURES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -107,12 +136,13 @@ KEYBOARD SHORTCUTS:
 • Alt+P — Play / Pause
 • Alt+H — Hide all windows (and pause). No shortcut to show again, by design —
   use the system tray or View → Show All Windows.
+• Cmd/Ctrl+, — Preferences
 • Cmd/Ctrl+Q — Quit   • Cmd/Ctrl+W — Close window   • Cmd/Ctrl+M — Minimize
 
 KNOWN LIMITATIONS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️  Supported audio formats: MP3, FLAC, WAV, OGG (M4A/AAC/ALAC not yet supported).
-⚠️  Playlists and music-video playback are planned but not yet available.
+⚠️  Music-video playback is planned but not yet available.
 
 MORE INFORMATION:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

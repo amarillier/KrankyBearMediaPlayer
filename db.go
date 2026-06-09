@@ -122,6 +122,21 @@ CREATE TABLE IF NOT EXISTS playlist_tracks (
 	PRIMARY KEY (playlist_id, track_id)
 );
 
+-- Dynamic ("smart") playlists store filter criteria, not a fixed track list, so
+-- they re-evaluate live against the catalog. Static playlists are .m3u8 files on
+-- disk instead (see playlist.go); the playlists/playlist_tracks tables above are
+-- reserved for a possible future in-DB static playlist.
+CREATE TABLE IF NOT EXISTS smart_playlists (
+	id      INTEGER PRIMARY KEY AUTOINCREMENT,
+	name    TEXT NOT NULL UNIQUE,
+	filter  INTEGER NOT NULL DEFAULT 0,  -- Filter enum (rating)
+	search  TEXT NOT NULL DEFAULT '',
+	genre   TEXT NOT NULL DEFAULT '',
+	artist  TEXT NOT NULL DEFAULT '',
+	album   TEXT NOT NULL DEFAULT '',
+	created INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE INDEX IF NOT EXISTS idx_tracks_album  ON tracks(album);
 CREATE INDEX IF NOT EXISTS idx_tracks_artist ON tracks(artist);
 `
@@ -292,12 +307,17 @@ func (d *DB) SetRating(trackID int64, rating int) error {
 
 // TrackQuery selects which tracks to return and how to order them.
 type TrackQuery struct {
-	Filter   Filter // rating filter
-	Search   string // case-insensitive substring across title/artist/album/genre/filename
-	SortCol  int    // primary sort: a col* constant; -1 = default order
-	Desc     bool   // primary descending
-	Sort2Col int    // secondary sort (shift-click); -1 = none
-	Sort2Desc bool  // secondary descending
+	Filter Filter // rating filter
+	Search string // case-insensitive substring across title/artist/album/genre/filename
+	// Exact-match (case-insensitive) constraints used by smart playlists; empty
+	// means "no constraint". Combined with Filter/Search via AND.
+	Genre     string
+	Artist    string
+	Album     string
+	SortCol   int  // primary sort: a col* constant; -1 = default order
+	Desc      bool // primary descending
+	Sort2Col  int  // secondary sort (shift-click); -1 = none
+	Sort2Desc bool // secondary descending
 }
 
 // sortExpr returns the ORDER BY term for one column (no tie-breaker tail).
@@ -342,6 +362,13 @@ func orderBy(q TrackQuery) string {
 	return terms + ", t.artist, t.album, t.track_no, t.title" // stable tie-breaker
 }
 
+// likeContains builds a case-insensitive "contains" LIKE pattern, escaping the
+// SQL wildcards (% _ \) in s so they match literally. Pair with ESCAPE '\'.
+func likeContains(s string) string {
+	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return "%" + r.Replace(s) + "%"
+}
+
 // Tracks returns catalog tracks matching the query, joined to their folder root
 // so AbsPath works.
 func (d *DB) Tracks(q TrackQuery) ([]Track, error) {
@@ -361,6 +388,21 @@ func (d *DB) Tracks(q TrackQuery) ([]Track, error) {
 			`(t.title LIKE ? OR t.artist LIKE ? OR t.album LIKE ? OR t.genre LIKE ? OR t.rel_path LIKE ?)`)
 		like := "%" + s + "%"
 		args = append(args, like, like, like, like, like)
+	}
+	// Partial, case-insensitive smart-playlist constraints (substring match, so
+	// "Wickham" matches "Phil Wickham"). LIKE is case-insensitive for ASCII in
+	// SQLite; wildcards in the user's text are escaped.
+	for _, c := range []struct {
+		col, val string
+	}{
+		{"t.genre", q.Genre},
+		{"t.artist", q.Artist},
+		{"t.album", q.Album},
+	} {
+		if v := strings.TrimSpace(c.val); v != "" {
+			conds = append(conds, c.col+` LIKE ? ESCAPE '\'`)
+			args = append(args, likeContains(v))
+		}
 	}
 	if len(conds) > 0 {
 		sql += " WHERE " + strings.Join(conds, " AND ")
@@ -387,4 +429,66 @@ func (d *DB) Tracks(q TrackQuery) ([]Track, error) {
 		out = append(out, t)
 	}
 	return out, rows.Err()
+}
+
+// SmartPlaylist is a named, saved set of filter criteria that re-evaluates live
+// against the catalog (a dynamic playlist). Empty string fields mean "no
+// constraint". It maps directly onto the relevant TrackQuery fields.
+type SmartPlaylist struct {
+	ID     int64
+	Name   string
+	Filter Filter
+	Search string
+	Genre  string
+	Artist string
+	Album  string
+}
+
+// Query returns the TrackQuery (default sort) that this smart playlist selects.
+func (s SmartPlaylist) Query() TrackQuery {
+	return TrackQuery{
+		Filter: s.Filter, Search: s.Search,
+		Genre: s.Genre, Artist: s.Artist, Album: s.Album,
+		SortCol: -1, Sort2Col: -1,
+	}
+}
+
+// SaveSmartPlaylist inserts a smart playlist, or replaces the criteria of an
+// existing one with the same name (names are unique).
+func (d *DB) SaveSmartPlaylist(s SmartPlaylist) error {
+	_, err := d.sql.Exec(`
+		INSERT INTO smart_playlists (name, filter, search, genre, artist, album, created)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(name) DO UPDATE SET
+			filter=excluded.filter, search=excluded.search, genre=excluded.genre,
+			artist=excluded.artist, album=excluded.album`,
+		s.Name, int(s.Filter), s.Search, s.Genre, s.Artist, s.Album, time.Now().Unix())
+	return err
+}
+
+// SmartPlaylists returns all saved smart playlists, ordered by name.
+func (d *DB) SmartPlaylists() ([]SmartPlaylist, error) {
+	rows, err := d.sql.Query(`SELECT id, name, filter, search, genre, artist, album
+		FROM smart_playlists ORDER BY name COLLATE NOCASE`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []SmartPlaylist
+	for rows.Next() {
+		var s SmartPlaylist
+		var f int
+		if err := rows.Scan(&s.ID, &s.Name, &f, &s.Search, &s.Genre, &s.Artist, &s.Album); err != nil {
+			return nil, err
+		}
+		s.Filter = Filter(f)
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
+// DeleteSmartPlaylist removes a smart playlist by id.
+func (d *DB) DeleteSmartPlaylist(id int64) error {
+	_, err := d.sql.Exec(`DELETE FROM smart_playlists WHERE id = ?`, id)
+	return err
 }
