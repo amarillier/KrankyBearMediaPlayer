@@ -252,6 +252,17 @@ func (d *DB) SetThumb(trackID int64, png []byte) error {
 	return err
 }
 
+// SetArt stores (or replaces) a track's album-art thumbnail and marks the track
+// as having art. Used when the user adds cover art from a file or URL; the art
+// lives in the catalog (it is not embedded into the audio file).
+func (d *DB) SetArt(trackID int64, png []byte) error {
+	if err := d.SetThumb(trackID, png); err != nil {
+		return err
+	}
+	_, err := d.sql.Exec(`UPDATE tracks SET has_art=1 WHERE id=?`, trackID)
+	return err
+}
+
 // Thumb returns the PNG thumbnail for a track, or nil if none.
 func (d *DB) Thumb(trackID int64) []byte {
 	var png []byte
@@ -281,39 +292,54 @@ func (d *DB) SetRating(trackID int64, rating int) error {
 
 // TrackQuery selects which tracks to return and how to order them.
 type TrackQuery struct {
-	Filter  Filter // rating filter
-	Search  string // case-insensitive substring across title/artist/album/genre/filename
-	SortCol int    // a col* constant from mainwindow.go; -1 = default order
-	Desc    bool   // descending sort
+	Filter   Filter // rating filter
+	Search   string // case-insensitive substring across title/artist/album/genre/filename
+	SortCol  int    // primary sort: a col* constant; -1 = default order
+	Desc     bool   // primary descending
+	Sort2Col int    // secondary sort (shift-click); -1 = none
+	Sort2Desc bool  // secondary descending
 }
 
-// orderBy returns the SQL ORDER BY body for a sort column. Secondary keys keep
-// results stable/grouped. effRatingExpr lives above.
-func orderBy(col int, desc bool) string {
+// sortExpr returns the ORDER BY term for one column (no tie-breaker tail).
+// effRatingExpr lives above.
+func sortExpr(col int, desc bool) string {
 	dir := "ASC"
 	if desc {
 		dir = "DESC"
 	}
 	switch col {
 	case colTrack:
-		return "t.track_no " + dir + ", t.artist, t.album"
+		return "t.track_no " + dir
 	case colFilename:
 		return "t.rel_path " + dir
 	case colTitle:
-		return "t.title " + dir + ", t.artist, t.album, t.track_no"
+		return "t.title " + dir
 	case colArtist:
-		return "t.artist " + dir + ", t.album, t.track_no, t.title"
+		return "t.artist " + dir
 	case colAlbum:
-		return "t.album " + dir + ", t.track_no, t.title"
+		return "t.album " + dir
 	case colYear:
-		return "t.year " + dir + ", t.artist, t.album, t.track_no"
+		return "t.year " + dir
 	case colPlays:
-		return "t.play_count " + dir + ", t.artist, t.album, t.track_no"
+		return "t.play_count " + dir
 	case colRating:
-		return effRatingExpr + " " + dir + ", t.artist, t.album, t.track_no"
+		return effRatingExpr + " " + dir
 	default:
-		return "t.artist, t.album, t.track_no, t.title"
+		return "t.artist " + dir
 	}
+}
+
+// orderBy builds the full SQL ORDER BY body: primary, optional secondary
+// (shift-click) key, then a stable tie-breaker tail. effRatingExpr lives above.
+func orderBy(q TrackQuery) string {
+	if q.SortCol < 0 {
+		return "t.artist, t.album, t.track_no, t.title" // default grouping
+	}
+	terms := sortExpr(q.SortCol, q.Desc)
+	if q.Sort2Col >= 0 && q.Sort2Col != q.SortCol {
+		terms += ", " + sortExpr(q.Sort2Col, q.Sort2Desc)
+	}
+	return terms + ", t.artist, t.album, t.track_no, t.title" // stable tie-breaker
 }
 
 // Tracks returns catalog tracks matching the query, joined to their folder root
@@ -339,7 +365,7 @@ func (d *DB) Tracks(q TrackQuery) ([]Track, error) {
 	if len(conds) > 0 {
 		sql += " WHERE " + strings.Join(conds, " AND ")
 	}
-	sql += " ORDER BY " + orderBy(q.SortCol, q.Desc)
+	sql += " ORDER BY " + orderBy(q)
 
 	rows, err := d.sql.Query(sql, args...)
 	if err != nil {

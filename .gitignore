@@ -28,6 +28,7 @@ bin/.DS_Store
 bin/
 build/
 dist/
+docs/
 installers/
 vendor/*
 sync*.sh

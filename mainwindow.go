@@ -5,15 +5,24 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -31,6 +40,7 @@ const (
 	colPlays
 	colRating
 	colFilename
+	colSelect // checkbox column for marking tracks (copy to media)
 )
 
 // columnDef describes one library column. text==nil marks the Art column (an
@@ -46,6 +56,7 @@ type columnDef struct {
 // allColumns lists every column in display order. Optional ones (Track #,
 // Filename) default off to keep the view uncluttered.
 var allColumns = []columnDef{
+	{colSelect, "✓", 44, true, nil}, // marking checkbox (rendered specially); leftmost
 	{colArt, "Art", 56, false, nil},
 	{colTrack, "#", 44, true, func(tr Track) string {
 		if tr.TrackNo > 0 {
@@ -71,6 +82,7 @@ var allColumns = []columnDef{
 const (
 	prefShowTrackCol    = "showTrackColumn"
 	prefShowFilenameCol = "showFilenameColumn"
+	prefShowSelectCol   = "showSelectColumn"
 )
 
 // prefPlayCountPct is the percentage of a track that must play before it counts
@@ -79,6 +91,10 @@ const prefPlayCountPct = "playCountPercent"
 const defaultPlayCountPct = 50
 
 const tableRowHeight = 52
+
+// maxArtBytes caps how much image data we read when adding album art (file or
+// URL), so a huge/hostile image can't exhaust memory.
+const maxArtBytes = 25 << 20 // 25 MB
 
 // ui holds the live widgets and state of the main window.
 type ui struct {
@@ -90,10 +106,14 @@ type ui struct {
 	tracks       []Track
 	filter       Filter
 	search       string
-	sortCol      int   // active sort column, -1 = default order
-	sortDesc     bool  // descending sort
+	sortCol      int   // primary sort column, -1 = default order
+	sortDesc     bool  // primary descending
+	sortCol2     int   // secondary sort column (shift-click), -1 = none
+	sortDesc2    bool  // secondary descending
 	selected     int   // selected table row, -1 if none
 	nowPlayingID int64 // track id last followed by the selection indicator
+
+	marked map[int64]markEntry // tracks ticked for copy: id -> path+artist+album
 
 	table       *widget.Table
 	visibleCols []columnDef // currently shown columns, in physical order
@@ -122,7 +142,9 @@ func buildMainWindow(a fyne.App, win fyne.Window, db *DB, player *Player) *ui {
 		player:     player,
 		filter:     FilterAll,
 		sortCol:    -1,
+		sortCol2:   -1,
 		selected:   -1,
+		marked:     map[int64]markEntry{},
 		thumbCache: map[int64]fyne.Resource{},
 		tickerDone: make(chan struct{}),
 	}
@@ -337,6 +359,7 @@ func (u *ui) buildRatingBar() fyne.CanvasObject {
 func (u *ui) rebuildColumns() {
 	showTrack := u.app.Preferences().BoolWithFallback(prefShowTrackCol, false)
 	showFile := u.app.Preferences().BoolWithFallback(prefShowFilenameCol, false)
+	showSelect := u.app.Preferences().BoolWithFallback(prefShowSelectCol, false)
 
 	u.visibleCols = u.visibleCols[:0]
 	for _, c := range allColumns {
@@ -346,12 +369,49 @@ func (u *ui) rebuildColumns() {
 		if c.id == colFilename && !showFile {
 			continue
 		}
+		if c.id == colSelect && !showSelect {
+			continue
+		}
 		u.visibleCols = append(u.visibleCols, c)
 	}
 	for i, c := range u.visibleCols {
 		u.table.SetColumnWidth(i, c.width)
 	}
+	u.autosizeFilenameColumn() // widen Filename to fit content (table scrolls if needed)
 	u.table.Refresh()
+}
+
+// autosizeFilenameColumn widens the Filename column to fit the longest filename
+// currently shown (clamped to a sane range), so names aren't truncated. The
+// table scrolls horizontally when the window is narrower than the total column
+// width; a wide-enough window shows everything without scrolling. No-op when the
+// Filename column isn't visible.
+func (u *ui) autosizeFilenameColumn() {
+	idx := -1
+	for i, c := range u.visibleCols {
+		if c.id == colFilename {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		return
+	}
+	const minW, maxW float32 = 160, 640
+	size := theme.TextSize()
+	widest := fyne.MeasureText("Filename", size, fyne.TextStyle{Bold: true}).Width // at least the header
+	for i := range u.tracks {
+		if w := fyne.MeasureText(filepath.Base(u.tracks[i].RelPath), size, fyne.TextStyle{}).Width; w > widest {
+			widest = w
+		}
+	}
+	w := widest + theme.Padding()*4 // cell insets
+	if w < minW {
+		w = minW
+	} else if w > maxW {
+		w = maxW
+	}
+	u.table.SetColumnWidth(idx, w)
 }
 
 // toggleColumn flips an optional column's preference and rebuilds the table and
@@ -388,11 +448,19 @@ func (u *ui) buildTable() *widget.Table {
 		if id.Row == -1 && id.Col >= 0 && id.Col < len(u.visibleCols) {
 			c := u.visibleCols[id.Col]
 			title := c.title
-			if u.sortCol == c.id {
+			// Primary sort: large arrow; secondary (shift-click): small arrow.
+			switch {
+			case u.sortCol == c.id:
 				if u.sortDesc {
 					title += " ▼"
 				} else {
 					title += " ▲"
+				}
+			case u.sortCol2 == c.id:
+				if u.sortDesc2 {
+					title += " ▾"
+				} else {
+					title += " ▴"
 				}
 			}
 			h.label.SetText(title)
@@ -435,9 +503,16 @@ func (u *ui) updateCell(id widget.TableCellID, o fyne.CanvasObject) {
 
 	img.Hide()
 	lbl.Show()
-	if col.text != nil {
+	switch {
+	case col.id == colSelect:
+		if _, ok := u.marked[tr.ID]; ok {
+			lbl.SetText("☑")
+		} else {
+			lbl.SetText("☐")
+		}
+	case col.text != nil:
 		lbl.SetText(col.text(tr))
-	} else {
+	default:
 		lbl.SetText("")
 	}
 }
@@ -476,7 +551,11 @@ func (c *cellWidget) Tapped(e *fyne.PointEvent) {
 		c.id.Col < 0 || c.id.Col >= len(c.ui.visibleCols) {
 		return
 	}
-	if c.ui.visibleCols[c.id.Col].id == colRating {
+	switch c.ui.visibleCols[c.id.Col].id {
+	case colSelect:
+		c.ui.toggleMark(c.id.Row)
+		return
+	case colRating:
 		w := c.Size().Width
 		if w <= 0 {
 			return
@@ -516,12 +595,14 @@ func (c *cellWidget) DoubleTapped(_ *fyne.PointEvent) {
 	c.ui.player.PlayQueue(c.ui.tracks, c.id.Row)
 }
 
-// headerWidget is a clickable column header used to drive sorting.
+// headerWidget is a clickable column header used to drive sorting. Plain click
+// sets the primary sort; Shift+click sets a secondary (tie-breaker) sort.
 type headerWidget struct {
 	widget.BaseWidget
-	ui    *ui
-	col   int
-	label *widget.Label
+	ui        *ui
+	col       int
+	label     *widget.Label
+	lastShift bool // Shift held at the most recent MouseDown (read by Tapped)
 }
 
 func newHeaderWidget(u *ui) *headerWidget {
@@ -536,27 +617,274 @@ func (h *headerWidget) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(h.label)
 }
 
+// MouseDown captures the Shift modifier (fyne.PointEvent in Tapped carries no
+// modifiers, but desktop.MouseEvent does). MouseDown always precedes Tapped.
+func (h *headerWidget) MouseDown(e *desktop.MouseEvent) {
+	h.lastShift = e.Modifier&fyne.KeyModifierShift != 0
+}
+
+func (h *headerWidget) MouseUp(*desktop.MouseEvent) {}
+
 func (h *headerWidget) Tapped(_ *fyne.PointEvent) {
 	if h.col < 0 || h.col >= len(h.ui.visibleCols) {
 		return
 	}
-	h.ui.sortByColumn(h.ui.visibleCols[h.col].id) // map physical index -> logical id
-}
-
-// sortByColumn sets the sort column (toggling direction if already active) and
-// reloads. The Art column isn't sortable.
-func (u *ui) sortByColumn(col int) {
-	if col == colArt {
+	id := h.ui.visibleCols[h.col].id // physical -> logical id
+	if id == colSelect {
+		h.ui.toggleMarkAllShown() // clicking the ✓ header marks/unmarks all shown
 		return
 	}
-	if u.sortCol == col {
-		u.sortDesc = !u.sortDesc
+	h.ui.sortByColumn(id, h.lastShift)
+	h.lastShift = false
+}
+
+// sortByColumn applies a sort. A plain click sets the primary sort (toggling its
+// direction if already primary, and clearing any secondary). A Shift+click sets
+// or toggles the secondary (tie-breaker) sort. The Art column isn't sortable.
+func (u *ui) sortByColumn(col int, secondary bool) {
+	if col == colArt || col == colSelect {
+		return
+	}
+	if secondary && u.sortCol != -1 && col != u.sortCol {
+		if u.sortCol2 == col {
+			u.sortDesc2 = !u.sortDesc2
+		} else {
+			u.sortCol2 = col
+			u.sortDesc2 = false
+		}
+	} else if u.sortCol == col {
+		u.sortDesc = !u.sortDesc // re-click primary: flip direction
 	} else {
 		u.sortCol = col
 		u.sortDesc = false
+		u.sortCol2 = -1 // a new primary clears the secondary
+		u.sortDesc2 = false
 	}
 	u.reload()
-	u.table.Refresh() // redraw headers with the updated sort arrow
+	u.table.Refresh() // redraw headers with the updated sort arrows
+}
+
+// --- Marking tracks for copy -------------------------------------------------
+
+// markEntry captures what's needed to copy a marked track later: its on-disk
+// path plus artist/album for the optional Artist/Album folder layout. Captured
+// at mark time so the selection survives filter/sort/reload changes.
+type markEntry struct {
+	path, artist, album string
+}
+
+func markEntryFor(tr Track) markEntry {
+	return markEntry{path: tr.AbsPath(), artist: tr.Artist, album: tr.Album}
+}
+
+// toggleMark ticks/unticks one row's track in the marked set (by id).
+func (u *ui) toggleMark(row int) {
+	if row < 0 || row >= len(u.tracks) {
+		return
+	}
+	tr := u.tracks[row]
+	if _, ok := u.marked[tr.ID]; ok {
+		delete(u.marked, tr.ID)
+	} else {
+		u.marked[tr.ID] = markEntryFor(tr)
+	}
+	u.table.Refresh()
+	u.refreshStatus()
+}
+
+// toggleMarkAllShown marks every currently-shown track, or unmarks them all if
+// they're already all marked (the ✓ header click).
+func (u *ui) toggleMarkAllShown() {
+	allMarked := len(u.tracks) > 0
+	for i := range u.tracks {
+		if _, ok := u.marked[u.tracks[i].ID]; !ok {
+			allMarked = false
+			break
+		}
+	}
+	for i := range u.tracks {
+		if allMarked {
+			delete(u.marked, u.tracks[i].ID)
+		} else {
+			u.marked[u.tracks[i].ID] = markEntryFor(u.tracks[i])
+		}
+	}
+	u.table.Refresh()
+	u.refreshStatus()
+}
+
+// selectAllShown marks all currently-shown tracks (Library menu).
+func (u *ui) selectAllShown() {
+	for i := range u.tracks {
+		u.marked[u.tracks[i].ID] = markEntryFor(u.tracks[i])
+	}
+	u.table.Refresh()
+	u.refreshStatus()
+}
+
+// clearSelection unmarks everything (Library menu).
+func (u *ui) clearSelection() {
+	u.marked = map[int64]markEntry{}
+	u.table.Refresh()
+	u.refreshStatus()
+}
+
+const (
+	copyLayoutFlat      = "Flat (all files in one folder)"
+	copyLayoutOrganized = "Organize into Artist/Album folders"
+)
+
+// copySelectedTo asks for a layout (flat vs Artist/Album) then a destination
+// folder, and copies the marked tracks' files there.
+func (u *ui) copySelectedTo() {
+	if len(u.marked) == 0 {
+		dialog.ShowInformation("Copy selected",
+			"No tracks are marked. Turn on View → Selection checkboxes and tick some "+
+				"tracks (or Library → Select all shown), then try again.", u.win)
+		return
+	}
+	entries := make([]markEntry, 0, len(u.marked))
+	for _, e := range u.marked {
+		entries = append(entries, e)
+	}
+
+	layout := widget.NewRadioGroup([]string{copyLayoutFlat, copyLayoutOrganized}, nil)
+	layout.SetSelected(copyLayoutFlat)
+	body := container.NewVBox(
+		widget.NewLabel(fmt.Sprintf("Copy %d track(s). Choose a layout, then a destination folder.", len(entries))),
+		layout,
+	)
+	dialog.ShowCustomConfirm("Copy selected", "Choose folder…", "Cancel", body, func(ok bool) {
+		if !ok {
+			return
+		}
+		organize := layout.Selected == copyLayoutOrganized
+		dialog.ShowFolderOpen(func(list fyne.ListableURI, err error) {
+			if err != nil || list == nil {
+				return
+			}
+			u.copyEntriesTo(entries, list.Path(), organize)
+		}, u.win)
+	}, u.win)
+}
+
+// copyEntriesTo copies the marked files into destDir on a background goroutine.
+// When organize is set, each file goes under <dest>/<Artist>/<Album>/. A modal
+// dialog shows a progress bar and the current filename, with a Cancel button
+// that stops before the next file. Filename collisions get a " (n)" suffix.
+func (u *ui) copyEntriesTo(entries []markEntry, destDir string, organize bool) {
+	total := len(entries)
+
+	statusLbl := widget.NewLabel(fmt.Sprintf("Copying %d file(s)…", total))
+	statusLbl.Truncation = fyne.TextTruncateEllipsis
+	prog := widget.NewProgressBar()
+	prog.Max = float64(total)
+	var canceled atomic.Bool
+	cancelBtn := widget.NewButton("Cancel", func() { canceled.Store(true) })
+	cancelBtn.Importance = widget.DangerImportance
+	d := dialog.NewCustomWithoutButtons("Copying files", container.NewVBox(
+		statusLbl, prog, container.NewCenter(cancelBtn),
+	), u.win)
+	d.Resize(fyne.NewSize(420, 150))
+	d.Show()
+
+	go func() {
+		var copied, failed int
+		for i, e := range entries {
+			if canceled.Load() {
+				break
+			}
+			n, name := i+1, filepath.Base(e.path)
+			fyne.Do(func() { statusLbl.SetText(fmt.Sprintf("Copying %d of %d: %s", n, total, name)) })
+			target := destDir
+			if organize {
+				target = filepath.Join(destDir,
+					sanitizeFolderName(e.artist, "Unknown Artist"),
+					sanitizeFolderName(e.album, "Unknown Album"))
+				if err := os.MkdirAll(target, 0o755); err != nil {
+					log.Printf("copy: mkdir %q: %v", target, err)
+					failed++
+					fyne.Do(func() { prog.SetValue(float64(n)) })
+					continue
+				}
+			}
+			if err := copyFileInto(e.path, target); err != nil {
+				log.Printf("copy %q -> %q: %v", e.path, target, err)
+				failed++
+			} else {
+				copied++
+			}
+			fyne.Do(func() { prog.SetValue(float64(n)) })
+		}
+		wasCanceled := canceled.Load()
+		fyne.Do(func() {
+			d.Hide()
+			summary := fmt.Sprintf("Copied %d file(s) to %s", copied, destDir)
+			if failed > 0 {
+				summary += fmt.Sprintf("; %d failed (see log)", failed)
+			}
+			title := "Copy complete"
+			if wasCanceled {
+				title = "Copy cancelled"
+				summary = "Cancelled before finishing. " + summary
+			}
+			u.status.SetText(summary)
+			dialog.ShowInformation(title, summary, u.win)
+		})
+	}()
+}
+
+// sanitizeFolderName makes s safe as a single folder name (replacing characters
+// illegal on common filesystems), falling back when empty.
+func sanitizeFolderName(s, fallback string) string {
+	s = strings.Map(func(r rune) rune {
+		switch r {
+		case '/', '\\', ':', '*', '?', '"', '<', '>', '|':
+			return '_'
+		}
+		if r < 0x20 {
+			return '_'
+		}
+		return r
+	}, strings.TrimSpace(s))
+	s = strings.Trim(s, " .") // trailing dots/spaces are problematic on Windows
+	if s == "" {
+		return fallback
+	}
+	return s
+}
+
+// copyFileInto copies src into destDir using src's base name, avoiding overwrite
+// by appending " (n)" before the extension on collision.
+func copyFileInto(src, destDir string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.Create(uniqueDestPath(destDir, filepath.Base(src)))
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, in)
+	return err
+}
+
+// uniqueDestPath returns dir/name, or dir/name (n).ext if that already exists.
+func uniqueDestPath(dir, name string) string {
+	target := filepath.Join(dir, name)
+	if !checkFileExists(target) {
+		return target
+	}
+	ext := filepath.Ext(name)
+	base := strings.TrimSuffix(name, ext)
+	for n := 2; ; n++ {
+		cand := filepath.Join(dir, fmt.Sprintf("%s (%d)%s", base, n, ext))
+		if !checkFileExists(cand) {
+			return cand
+		}
+	}
 }
 
 // setRowRating sets (1..5) or clears (0) the manual rating of a row, then reloads.
@@ -599,25 +927,93 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 		return it
 	}
 
+	// Album art is stored in the catalog (shown everywhere), not embedded into
+	// the audio file. Source: a local image or an explicit URL - no online search.
+	artItem := fyne.NewMenuItem("Add album art", nil)
+	artItem.ChildMenu = fyne.NewMenu("",
+		fyne.NewMenuItem("From image file…", func() { u.addArtFromFile(r) }),
+		fyne.NewMenuItem("From URL…", func() { u.addArtFromURL(r) }),
+	)
+
 	menu := fyne.NewMenu("",
 		fyne.NewMenuItem("Play", func() { u.player.PlayQueue(u.tracks, r) }),
 		ratingItem,
+		artItem,
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("Show in "+fileManagerName(), func() { u.revealRow(r) }),
+		fyne.NewMenuItem("Show full path…", func() { u.showFullPath(r) }),
 		fyne.NewMenuItemSeparator(),
 		soon("Rename file…  (coming soon)"),
 		soon("Edit tags…  (coming soon)"),
-		soon("Add album art…  (coming soon)"),
 	)
 	widget.ShowPopUpMenuAtPosition(menu, u.win.Canvas(), pos)
 }
 
-// thumb returns (and caches) the album-art thumbnail resource for a track.
+// fileManagerName is the OS file manager's name, for the right-click label.
+func fileManagerName() string {
+	switch runtime.GOOS {
+	case "darwin":
+		return "Finder"
+	case "windows":
+		return "Explorer"
+	default:
+		return "File Manager"
+	}
+}
+
+// revealInFileManager opens the OS file manager showing the given file. On macOS
+// and Windows the file is selected/highlighted; on Linux (no portable "reveal")
+// the containing folder is opened. Uses Start (fire-and-forget): the launchers
+// don't exit cleanly, and Windows' explorer returns a non-zero code on success.
+func revealInFileManager(path string) error {
+	switch runtime.GOOS {
+	case "darwin":
+		return exec.Command("open", "-R", path).Start()
+	case "windows":
+		return exec.Command("explorer", "/select,"+path).Start()
+	default:
+		return exec.Command("xdg-open", filepath.Dir(path)).Start()
+	}
+}
+
+// revealRow shows the row's file in the OS file manager.
+func (u *ui) revealRow(row int) {
+	if row < 0 || row >= len(u.tracks) {
+		return
+	}
+	if err := revealInFileManager(u.tracks[row].AbsPath()); err != nil {
+		dialog.ShowError(fmt.Errorf("could not open %s: %w", fileManagerName(), err), u.win)
+	}
+}
+
+// showFullPath shows the row's absolute path in a dialog, selectable and with a
+// Copy button (the catalog stores paths relative to the watched folder, so this
+// reconstructs the on-disk location).
+func (u *ui) showFullPath(row int) {
+	if row < 0 || row >= len(u.tracks) {
+		return
+	}
+	path := u.tracks[row].AbsPath()
+	box := widget.NewMultiLineEntry()
+	box.SetText(path)
+	box.Wrapping = fyne.TextWrapBreak
+	copyBtn := widget.NewButtonWithIcon("Copy", theme.ContentCopyIcon(), func() {
+		u.win.Clipboard().SetContent(path)
+	})
+	content := container.NewBorder(nil, copyBtn, nil, nil, box)
+	d := dialog.NewCustom("Full path", "Close", content, u.win)
+	d.Resize(fyne.NewSize(560, 200))
+	d.Show()
+}
+
+// thumb returns (and caches) the album-art thumbnail resource for a track, or
+// nil if the track has none. It always consults the DB on a cache miss (no
+// HasArt short-circuit) so art added at runtime shows up after the cache entry
+// is invalidated. Misses are cached as nil, so each track is queried at most
+// once per view.
 func (u *ui) thumb(tr Track) fyne.Resource {
 	if res, ok := u.thumbCache[tr.ID]; ok {
 		return res
-	}
-	if !tr.HasArt {
-		u.thumbCache[tr.ID] = nil
-		return nil
 	}
 	png := u.db.Thumb(tr.ID)
 	if png == nil {
@@ -629,13 +1025,105 @@ func (u *ui) thumb(tr Track) fyne.Resource {
 	return res
 }
 
+// addArtFromFile lets the user pick a local image and sets it as the track's art.
+func (u *ui) addArtFromFile(row int) {
+	if row < 0 || row >= len(u.tracks) {
+		return
+	}
+	id := u.tracks[row].ID
+	fd := dialog.NewFileOpen(func(rc fyne.URIReadCloser, err error) {
+		if err != nil || rc == nil {
+			return
+		}
+		defer rc.Close()
+		data, err := io.ReadAll(io.LimitReader(rc, maxArtBytes))
+		if err != nil {
+			dialog.ShowError(err, u.win)
+			return
+		}
+		u.applyArt(id, data)
+	}, u.win)
+	fd.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", ".jpeg", ".gif"}))
+	fd.Show()
+}
+
+// addArtFromURL fetches an image from a user-supplied URL and sets it as the art.
+func (u *ui) addArtFromURL(row int) {
+	if row < 0 || row >= len(u.tracks) {
+		return
+	}
+	id := u.tracks[row].ID
+	entry := widget.NewEntry()
+	entry.SetPlaceHolder("https://example.com/cover.jpg")
+	d := dialog.NewForm("Add album art from URL", "Fetch", "Cancel",
+		[]*widget.FormItem{widget.NewFormItem("Image URL", entry)},
+		func(ok bool) {
+			url := strings.TrimSpace(entry.Text)
+			if !ok || url == "" {
+				return
+			}
+			go func() { // network fetch off the UI thread
+				data, err := fetchImage(url)
+				fyne.Do(func() {
+					if err != nil {
+						dialog.ShowError(err, u.win)
+						return
+					}
+					u.applyArt(id, data)
+				})
+			}()
+		}, u.win)
+	d.Resize(fyne.NewSize(560, 160)) // wide enough to see/type a full URL
+	d.Show()
+}
+
+// applyArt thumbnails the image bytes, stores them as the track's art, and
+// refreshes the table + now-playing so the new art shows immediately.
+func (u *ui) applyArt(trackID int64, data []byte) {
+	png, err := makeThumbnail(data, thumbSize)
+	if err != nil {
+		dialog.ShowError(fmt.Errorf("could not read image: %w", err), u.win)
+		return
+	}
+	if err := u.db.SetArt(trackID, png); err != nil {
+		dialog.ShowError(err, u.win)
+		return
+	}
+	delete(u.thumbCache, trackID) // force re-read of the new art
+	for i := range u.tracks {
+		if u.tracks[i].ID == trackID {
+			u.tracks[i].HasArt = true
+			break
+		}
+	}
+	u.table.Refresh()
+	u.refreshNowPlaying()
+	u.status.SetText("Album art updated")
+}
+
+// fetchImage downloads image bytes from url with a timeout and a size cap.
+func fetchImage(url string) ([]byte, error) {
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("server returned %s", resp.Status)
+	}
+	return io.ReadAll(io.LimitReader(resp.Body, maxArtBytes))
+}
+
 // reload re-queries the catalog with the current filter and refreshes the table.
 func (u *ui) reload() {
 	tracks, err := u.db.Tracks(TrackQuery{
-		Filter:  u.filter,
-		Search:  u.search,
-		SortCol: u.sortCol,
-		Desc:    u.sortDesc,
+		Filter:    u.filter,
+		Search:    u.search,
+		SortCol:   u.sortCol,
+		Desc:      u.sortDesc,
+		Sort2Col:  u.sortCol2,
+		Sort2Desc: u.sortDesc2,
 	})
 	if err != nil {
 		dialog.ShowError(err, u.win)
@@ -644,6 +1132,7 @@ func (u *ui) reload() {
 	u.tracks = tracks
 	u.selected = -1
 	u.thumbCache = map[int64]fyne.Resource{}
+	u.autosizeFilenameColumn() // fit the Filename column to the loaded data
 	u.table.Refresh()
 	for r := range u.tracks {
 		u.table.SetRowHeight(r, tableRowHeight)
@@ -652,11 +1141,14 @@ func (u *ui) reload() {
 }
 
 func (u *ui) refreshStatus() {
-	sel := ""
-	if u.selected >= 0 && u.selected < len(u.tracks) {
-		sel = "  |  selected: " + u.tracks[u.selected].Title
+	s := fmt.Sprintf("%d tracks", len(u.tracks))
+	if len(u.marked) > 0 {
+		s += fmt.Sprintf("  |  %d marked for copy", len(u.marked))
 	}
-	u.status.SetText(fmt.Sprintf("%d tracks%s", len(u.tracks), sel))
+	if u.selected >= 0 && u.selected < len(u.tracks) {
+		s += "  |  selected: " + u.tracks[u.selected].Title
+	}
+	u.status.SetText(s)
 }
 
 // refreshNowPlaying syncs the transport bar with the player. Runs on UI thread.

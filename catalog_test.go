@@ -179,3 +179,55 @@ func TestVersionIsNewer(t *testing.T) {
 		}
 	}
 }
+
+func TestOrderByMultiColumn(t *testing.T) {
+	const tail = ", t.artist, t.album, t.track_no, t.title"
+	cases := []struct {
+		name string
+		q    TrackQuery
+		want string
+	}{
+		{"default", TrackQuery{SortCol: -1, Sort2Col: -1}, "t.artist, t.album, t.track_no, t.title"},
+		{"primary asc", TrackQuery{SortCol: colTitle, Sort2Col: -1}, "t.title ASC" + tail},
+		{"primary desc", TrackQuery{SortCol: colPlays, Desc: true, Sort2Col: -1}, "t.play_count DESC" + tail},
+		{"album then track", TrackQuery{SortCol: colAlbum, Sort2Col: colTrack}, "t.album ASC, t.track_no ASC" + tail},
+		{"rating desc then title", TrackQuery{SortCol: colRating, Desc: true, Sort2Col: colTitle}, effRatingExpr + " DESC, t.title ASC" + tail},
+		{"secondary same as primary omitted", TrackQuery{SortCol: colTitle, Sort2Col: colTitle}, "t.title ASC" + tail},
+	}
+	for _, c := range cases {
+		if got := orderBy(c.q); got != c.want {
+			t.Errorf("%s: orderBy = %q, want %q", c.name, got, c.want)
+		}
+	}
+}
+
+func TestCopyFileIntoCollision(t *testing.T) {
+	tmp := t.TempDir()
+	dst := filepath.Join(tmp, "dst")
+	if err := os.MkdirAll(dst, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// Two different source files sharing a base name (from different folders).
+	srcA := filepath.Join(tmp, "a", "song.mp3")
+	srcB := filepath.Join(tmp, "b", "song.mp3")
+	for p, content := range map[string]string{srcA: "AAA", srcB: "BBB"} {
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := copyFileInto(srcA, dst); err != nil {
+		t.Fatal(err)
+	}
+	if err := copyFileInto(srcB, dst); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(dst, "song.mp3")); string(b) != "AAA" {
+		t.Errorf("song.mp3 = %q, want AAA", b)
+	}
+	if b, _ := os.ReadFile(filepath.Join(dst, "song (2).mp3")); string(b) != "BBB" {
+		t.Errorf("song (2).mp3 = %q, want BBB (collision suffix)", b)
+	}
+}

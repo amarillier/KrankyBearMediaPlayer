@@ -41,7 +41,7 @@ func showAbout(a fyne.App) {
 	version.Alignment = fyne.TextAlignCenter
 
 	// Description - customize for your app
-	description := widget.NewLabel("A comprehensive media player")
+	description := widget.NewLabel("A comprehensive media player, and media management tool")
 	description.Alignment = fyne.TextAlignCenter
 	description.Wrapping = fyne.TextWrapWord
 

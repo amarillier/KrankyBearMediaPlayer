@@ -15,7 +15,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "0.1.0" // see FyneApp.toml
+	appVersion = "0.2.0" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -60,6 +60,7 @@ func main() {
 	win.SetMainMenu(buildMenu(a, u))
 	setupSystemTray(a, u)
 	registerHotkeys(win, u)
+	checkForUpdatesAuto(a) // discreet once-per-day check; dialog only if an update exists
 
 	// Closing the window quits the app (previously it only hid, so the process
 	// lingered). Defer via fyne.Do so the quit runs on a clean loop iteration,
@@ -157,6 +158,10 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		fyne.NewMenuItem("Rescan All", u.rescanAll),
 		fyne.NewMenuItem("Relocate Folder… (moved drive)", u.relocateFolder),
 		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("Select All Shown", u.selectAllShown),
+		fyne.NewMenuItem("Clear Selection", u.clearSelection),
+		fyne.NewMenuItem("Copy Selected to…", u.copySelectedTo),
+		fyne.NewMenuItemSeparator(),
 		// Defer via fyne.Do: quitting directly from the menu popup's click handler
 		// hangs on Windows (closes the window from inside the popup callback).
 		fyne.NewMenuItem("Quit", func() { fyne.Do(u.quit) }),
@@ -173,6 +178,8 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 	trackColItem.Checked = prefs.BoolWithFallback(prefShowTrackCol, false)
 	fileColItem := fyne.NewMenuItem("Show Filename Column", func() { u.toggleColumn(prefShowFilenameCol) })
 	fileColItem.Checked = prefs.BoolWithFallback(prefShowFilenameCol, false)
+	selColItem := fyne.NewMenuItem("Selection Checkboxes", func() { u.toggleColumn(prefShowSelectCol) })
+	selColItem.Checked = prefs.BoolWithFallback(prefShowSelectCol, false)
 
 	// "Count play after" submenu: how much of a track must play to count as a play.
 	curPct := prefs.IntWithFallback(prefPlayCountPct, defaultPlayCountPct)
@@ -198,6 +205,7 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		fyne.NewMenuItemSeparator(),
 		trackColItem,
 		fileColItem,
+		selColItem,
 		countAfterItem,
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem("Light Theme", func() { setLightTheme(a) }),
@@ -208,8 +216,9 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 	helpMenu := fyne.NewMenu("Help",
 		fyne.NewMenuItem("Help", func() { showHelp(a) }),
 		fyne.NewMenuItem("Check for Updates", func() {
-			msg, avail, remoteTag := updateChecker("amarillier", "KrankyBearMediaPlayer",
-				"KrankyBearMediaPlayer", "", "")
+			// Manual check is never throttled (minDays 0) but shares the cache file.
+			msg, avail, remoteTag := updateChecker(updateRepoOwner, updateRepoName,
+				updateRepoName, "", updateCheckStatePath(), 0)
 			ahead := versionIsNewer(appVersion, remoteTag)
 			showUpdateDialog(a, msg, avail, ahead)
 		}),

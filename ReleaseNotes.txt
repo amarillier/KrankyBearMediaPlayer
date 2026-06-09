@@ -3,13 +3,40 @@ KrankyBear MediaPlayer: - Windows, Linux and MacOS media player
 
 
 Future ideas:
-- Multi column sort - so e.g. album, shift click title, or shift click track for secondary sort, probably no need for more than 2 columns
-- Allow adding album art from image on disk, select one or more tracks, click add art and insert it
-- Allow selecting files, albums etc using filters and copy to alternate media. e.g. select all 5 star files, desle
-- Possible internationalization with assets/i18n language support - this is a bigger thing and will mean extracting menu items, main window messages, about, help, update checker etc to allow for alternate languages
-- Possible allow simple music video play, lower priority, even if only play music but not the video for example
-- Skins - maybe never, that becomes much more complex
-- Animations, cute, not necessary and becomes much more complex
+- LATER: extend "Add album art" to multiple selected tracks at once, and optionally embed into the file (vs catalog-only)
+- MEDIUM: tag editor text components beyond just attaching album art
+- MEDIUM: Preferences or other option to show configured / previously added disks, folders etc
+- MEDIUM: Possible internationalization with assets/i18n language support - this is a bigger thing and will mean extracting menu items, main window messages, about, help, update checker etc to allow for alternate languages
+- MEDIUM: Playlist create static and dynamic (e.g. 5 stars and genre= and aerist=) using filter and select logic, ability to save a playlist file to specified location
+- LOWER: Graphic equalizer possible, with presets?
+- LOWER: Possible allow simple music video play, lower priority, even if only play music but not the video for example
+- LOWER: Import star ratings, maybe play count from aimp database 
+- LOW: Skins - maybe never, that becomes much more complex
+- LOW: Animations, cute, not necessary and becomes much more complex
+- LOW: Possibly never consider seriously - ability to convert audio formats, resample at ower bitrates? Probably not
+
+
+Version 0.2.0 - June 8, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Multi-column sort: click a header to sort, Shift+click another for a secondary
+  tie-breaker (e.g. Album then Track #). Large arrow = primary, small = secondary.
+- Discreet update check: an automatic once-per-day check on launch (shows the
+  dialog only if an update is available); the manual "Check for Updates" still
+  works any time. Cache stored per-user as latestcheck-KrankyBearMediaPlayer.json.
+- Add album art (right-click a track) from a local image file or a URL; stored in
+  the library and shown in the table + now-playing. No online cover search.
+- Right-click: Show in Finder/Explorer/File Manager, and Show full path (copyable)
+- Select & copy: View > Selection checkboxes adds a tick column (or Library >
+  Select All Shown); Library > Copy Selected to… copies the marked files to a
+  chosen folder/drive (e.g. all 5-star tracks), either Flat or Organized into
+  Artist/Album folders. Collisions get a " (2)" suffix.
+- Filename column auto-sizes to fit the longest name; the table scrolls
+  horizontally on narrow windows.
+- Copy Selected now shows a progress dialog with a progress bar and the current
+  filename ("Copying 3 of 50: song.flac"), plus a Cancel button that stops before
+  the next file. A summary reports how many copied / failed (and if cancelled).
 
 Version 0.1.0 - June 8, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

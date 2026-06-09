@@ -69,8 +69,15 @@ FINDING & ORGANISING:
 • Click a column header to sort; click again to reverse (the Art column doesn't sort).
 • View menu: optionally show the Track # and Filename columns (off by default to
   reduce clutter; your choice is remembered).
-• Right-click a track for Play and rating actions (rename / tag edit / add album
-  art are coming soon).
+• Copy tracks to another place: View → Selection checkboxes adds a ✓ column; tick
+  rows (click the ✓ header to toggle all shown), or Library → Select All Shown.
+  Then Library → Copy Selected to… lets you choose Flat or Organize into
+  Artist/Album folders, then a destination - e.g. filter to 5 stars, mark all,
+  copy to a USB drive. A progress dialog shows each file and lets you Cancel.
+  (Name clashes get a " (2)" suffix; nothing is overwritten.)
+• Right-click a track for Play, rating, Add album art (local image file or URL,
+  stored in the library), Show in your file manager, and Show full path (with a
+  Copy button). Rename and tag editing are coming soon.
 
 WINDOWS & SYSTEM TRAY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -115,7 +122,8 @@ For documentation, bug reports, or feature requests:
 📝 Release Notes: Check "Help → Check for Updates"
 
 FREE SOFTWARE - Use anywhere, anytime, any purpose!
-No registration, no tracking, no phone-home (except manual update checks).
+No registration, no tracking. The only network use is a discreet update check -
+once per day on launch, plus the manual "Check for Updates".
 `
 
 	helpLabel := widget.NewLabel(helpText)
