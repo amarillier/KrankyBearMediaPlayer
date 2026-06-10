@@ -278,6 +278,56 @@ func (d *DB) SetArt(trackID int64, png []byte) error {
 	return err
 }
 
+// UpdateTrackTags writes a track's edited metadata fields to the catalog after
+// the tags have been saved to the file (see tagedit.go). It deliberately leaves
+// play_count, rating, and album art untouched - those are managed separately,
+// so editing tags never disturbs them.
+func (d *DB) UpdateTrackTags(trackID int64, t trackTags) error {
+	_, err := d.sql.Exec(`
+		UPDATE tracks SET title=?, artist=?, album=?, album_artist=?,
+			genre=?, year=?, track_no=? WHERE id=?`,
+		t.Title, t.Artist, t.Album, t.AlbumArtist, t.Genre, t.Year, t.Track, trackID)
+	return err
+}
+
+// TracksMissingDuration returns tracks whose playback length hasn't been
+// computed yet (duration <= 0), for the background enricher (enrich.go). Only
+// the fields needed to locate the file and derive bitrate are populated.
+func (d *DB) TracksMissingDuration() ([]Track, error) {
+	rows, err := d.sql.Query(`
+		SELECT t.id, f.path, t.rel_path, t.file_size
+		FROM tracks t JOIN folders f ON f.id = t.folder_id
+		WHERE t.duration <= 0`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Track
+	for rows.Next() {
+		var t Track
+		if err := rows.Scan(&t.ID, &t.FolderRoot, &t.RelPath, &t.FileSize); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
+// SetDuration stores a track's playback length in whole seconds.
+func (d *DB) SetDuration(trackID int64, seconds int) error {
+	_, err := d.sql.Exec(`UPDATE tracks SET duration=? WHERE id=?`, seconds, trackID)
+	return err
+}
+
+// ClearArt removes a track's album-art thumbnail and marks it as having none.
+func (d *DB) ClearArt(trackID int64) error {
+	if _, err := d.sql.Exec(`DELETE FROM thumbs WHERE track_id=?`, trackID); err != nil {
+		return err
+	}
+	_, err := d.sql.Exec(`UPDATE tracks SET has_art=0 WHERE id=?`, trackID)
+	return err
+}
+
 // Thumb returns the PNG thumbnail for a track, or nil if none.
 func (d *DB) Thumb(trackID int64) []byte {
 	var png []byte

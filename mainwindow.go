@@ -4,6 +4,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -39,6 +40,9 @@ const (
 	colYear
 	colPlays
 	colRating
+	colDuration // playback length (filled in by the background enricher)
+	colFormat   // file type (from extension)
+	colBitrate  // average kbps (derived from size + duration)
 	colFilename
 	colSelect // checkbox column for marking tracks (copy to media)
 )
@@ -75,7 +79,36 @@ var allColumns = []columnDef{
 	}},
 	{colPlays, "Plays", 64, false, func(tr Track) string { return fmt.Sprintf("%d", tr.PlayCount) }},
 	{colRating, "Rating", 96, false, func(tr Track) string { return starString(tr.EffectiveRating()) }},
+	{colDuration, "Length", 64, true, func(tr Track) string {
+		if tr.Duration > 0 {
+			return fmtDuration(time.Duration(tr.Duration) * time.Second)
+		}
+		return ""
+	}},
+	{colFormat, "Format", 64, true, func(tr Track) string { return trackFormat(tr) }},
+	{colBitrate, "Bitrate", 72, true, func(tr Track) string {
+		if kbps := trackBitrate(tr); kbps > 0 {
+			return fmt.Sprintf("%d kbps", kbps)
+		}
+		return ""
+	}},
 	{colFilename, "Filename", 220, true, func(tr Track) string { return filepath.Base(tr.RelPath) }},
+}
+
+// trackFormat is the upper-cased file type from the extension (e.g. "MP3").
+func trackFormat(tr Track) string {
+	ext := strings.TrimPrefix(filepath.Ext(tr.RelPath), ".")
+	return strings.ToUpper(ext)
+}
+
+// trackBitrate is the average bitrate in kbps, derived from file size and
+// duration (0 until the duration enricher has run). Approximate for VBR, and it
+// counts tag/art overhead, but it's a useful at-a-glance quality indicator.
+func trackBitrate(tr Track) int {
+	if tr.Duration <= 0 || tr.FileSize <= 0 {
+		return 0
+	}
+	return int(tr.FileSize * 8 / int64(tr.Duration) / 1000)
 }
 
 // Preference keys for the optional columns (remembered across launches).
@@ -83,6 +116,19 @@ const (
 	prefShowTrackCol    = "showTrackColumn"
 	prefShowFilenameCol = "showFilenameColumn"
 	prefShowSelectCol   = "showSelectColumn"
+	prefShowDurationCol = "showDurationColumn"
+	prefShowFormatCol   = "showFormatColumn"
+	prefShowBitrateCol  = "showBitrateColumn"
+)
+
+// Preference keys for restoring the session on relaunch: the sort sequence and
+// the last-played track (selected + scrolled into view, never auto-played).
+const (
+	prefSortCol     = "sortCol"
+	prefSortDesc    = "sortDesc"
+	prefSortCol2    = "sortCol2"
+	prefSortDesc2   = "sortDesc2"
+	prefLastTrackID = "lastTrackID"
 )
 
 // prefPlayCountPct is the percentage of a track that must play before it counts
@@ -131,7 +177,7 @@ type ui struct {
 	visibleCols []columnDef // currently shown columns, in physical order
 	thumbCache  map[int64]fyne.Resource
 
-	nowPlaying *widget.Label
+	nowPlaying *tappableLabel
 	nowArt     *canvas.Image
 	playPause  *widget.Button
 	status     *widget.Label
@@ -139,7 +185,16 @@ type ui struct {
 	seekSlider *widget.Slider
 	timeLabel  *widget.Label
 	seeking    bool // true while the user drags the seek slider
-	volSlider  *widget.Slider
+	volSlider  *widget.Slider // per-stream playback gain (player.go)
+
+	// System output volume controls (sysvolume.go), distinct from the gain
+	// above: these move the whole OS output level. A background poll keeps them
+	// in sync with external changes (keyboard volume keys, OS mixer).
+	sysVolSlider   *widget.Slider
+	sysMuteBtn     *widget.Button
+	sysMuted       bool
+	sysVolApplying bool      // true while we set the slider from a poll, so its OnChangeEnded doesn't echo back to the OS
+	sysVolTouched  time.Time // when the user last moved the slider; the poll backs off until they settle
 
 	// Play Queue window state (see queue.go).
 	queueList    *widget.List
@@ -149,7 +204,31 @@ type ui struct {
 
 	tickerDone chan struct{} // closed to stop the progress ticker (on quit)
 	tickerOnce sync.Once     // guards closing tickerDone exactly once
+
+	enriching atomic.Bool // true while the background duration enricher is running (enrich.go)
 }
+
+// tappableLabel is a Label that runs onTap when clicked and shows a pointer
+// cursor on hover. Used for the now-playing track name in the transport bar, so
+// clicking it jumps the table to the currently-playing track.
+type tappableLabel struct {
+	widget.Label
+	onTap func()
+}
+
+func newTappableLabel(onTap func()) *tappableLabel {
+	l := &tappableLabel{onTap: onTap}
+	l.ExtendBaseWidget(l)
+	return l
+}
+
+func (l *tappableLabel) Tapped(_ *fyne.PointEvent) {
+	if l.onTap != nil {
+		l.onTap()
+	}
+}
+
+func (l *tappableLabel) Cursor() desktop.Cursor { return desktop.PointerCursor }
 
 // buildMainWindow constructs and populates the main window content.
 func buildMainWindow(a fyne.App, win fyne.Window, db *DB, player *Player) *ui {
@@ -192,8 +271,18 @@ func buildMainWindow(a fyne.App, win fyne.Window, db *DB, player *Player) *ui {
 	player.SetVolume(vol)
 	u.volSlider.SetValue(vol) // reflect the restored volume in the slider
 
+	// Restore the saved sort sequence before the first load so the table opens
+	// ordered as the user left it.
+	u.sortCol = prefs.IntWithFallback(prefSortCol, -1)
+	u.sortDesc = prefs.BoolWithFallback(prefSortDesc, false)
+	u.sortCol2 = prefs.IntWithFallback(prefSortCol2, -1)
+	u.sortDesc2 = prefs.BoolWithFallback(prefSortDesc2, false)
+
 	u.reload()
 	u.startProgressTicker()
+	u.startSystemVolumePoll()
+	u.startDurationEnricher() // fill in any missing track lengths in the background
+	u.restoreLastTrack()      // select + scroll to the track last playing (no audio)
 	return u
 }
 
@@ -315,6 +404,10 @@ func fmtDuration(d time.Duration) string {
 func (u *ui) buildToolbar() fyne.CanvasObject {
 	addBtn := widget.NewButtonWithIcon("Add Folder", theme.FolderOpenIcon(), u.addFolder)
 	rescanBtn := widget.NewButtonWithIcon("Rescan", theme.ViewRefreshIcon(), u.rescanAll)
+	// "Now Playing" jumps the list to the current track. A music-note icon (not a
+	// play triangle) and a label make clear it locates the track, doesn't play it.
+	jumpBtn := widget.NewButtonWithIcon("Now Playing", theme.MediaMusicIcon(), u.jumpToCurrent)
+	jumpBtn.Importance = widget.LowImportance
 
 	filterSel := widget.NewSelect(filterLabels(), nil)
 	// Set the default selection before wiring the callback so we don't trigger
@@ -326,7 +419,7 @@ func (u *ui) buildToolbar() fyne.CanvasObject {
 		u.reload()
 	}
 
-	left := container.NewHBox(addBtn, rescanBtn, widget.NewSeparator(),
+	left := container.NewHBox(addBtn, rescanBtn, jumpBtn, widget.NewSeparator(),
 		widget.NewLabel("Show:"), filterSel)
 
 	// Search across title/artist/album/genre/filename (handled in SQL).
@@ -352,8 +445,9 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 	u.nowArt.FillMode = canvas.ImageFillContain
 	u.nowArt.SetMinSize(fyne.NewSize(40, 40))
 
-	u.nowPlaying = widget.NewLabel("Nothing playing")
+	u.nowPlaying = newTappableLabel(u.jumpToCurrent) // click the track name to jump to it
 	u.nowPlaying.Wrapping = fyne.TextTruncate
+	u.nowPlaying.SetText("Nothing playing")
 
 	prev := widget.NewButtonWithIcon("", theme.MediaSkipPreviousIcon(), u.player.Prev)
 	u.playPause = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), u.onPlayPause)
@@ -375,7 +469,8 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 	}
 	seekRow := container.NewBorder(nil, nil, nil, u.timeLabel, u.seekSlider)
 
-	// Volume slider (0..1 linear gain), fixed width.
+	// Per-stream gain slider (0..1 linear), fixed width. Attenuates only this
+	// app's output; see player.SetVolume.
 	u.volSlider = widget.NewSlider(0, 1)
 	u.volSlider.Step = 0.01
 	u.volSlider.Value = u.player.Volume()
@@ -383,14 +478,131 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 		u.player.SetVolume(v)
 		u.app.Preferences().SetFloat(prefVolume, v) // remember across launches
 	}
-	volBox := container.NewBorder(nil, nil, widget.NewIcon(theme.VolumeUpIcon()), nil,
-		container.NewGridWrap(fyne.NewSize(110, 28), u.volSlider))
+	volBox := container.NewBorder(nil, nil,
+		container.NewHBox(widget.NewLabel("App"), widget.NewIcon(theme.VolumeUpIcon())), nil,
+		container.NewGridWrap(fyne.NewSize(100, 28), u.volSlider))
 
-	right := container.NewHBox(volBox, widget.NewSeparator(), u.buildRatingBar())
+	sysVolBox := u.buildSystemVolume()
+
+	right := container.NewHBox(volBox, sysVolBox, widget.NewSeparator(), u.buildRatingBar())
 	nowBox := container.NewBorder(nil, nil, u.nowArt, nil, u.nowPlaying)
 	controls := container.NewBorder(nil, nil, transport, right, nowBox)
 
 	return container.NewVBox(widget.NewSeparator(), seekRow, controls, u.status)
+}
+
+// buildSystemVolume builds the OS output-volume control (sysvolume_*.go): a mute
+// toggle plus a 0..100 slider that drives the whole system output level,
+// distinct from the per-stream "App" gain. Every change is applied off the UI
+// goroutine, and the slider sets the level on OnChangeEnded rather than
+// OnChanged so a drag doesn't fire one OS volume call per tick. The initial
+// value and ongoing sync with external changes are handled by
+// startSystemVolumePoll.
+func (u *ui) buildSystemVolume() fyne.CanvasObject {
+	u.sysVolSlider = widget.NewSlider(0, 100)
+	u.sysVolSlider.Step = 1
+	// Record when the user is driving the slider so the poll won't fight them.
+	// (SetValue also fires OnChanged, hence the sysVolApplying guard.)
+	u.sysVolSlider.OnChanged = func(float64) {
+		if !u.sysVolApplying {
+			u.sysVolTouched = time.Now()
+		}
+	}
+	u.sysVolSlider.OnChangeEnded = func(v float64) {
+		if u.sysVolApplying {
+			return // value came from a poll, not the user - don't echo it back to the OS
+		}
+		u.sysVolTouched = time.Now()
+		pct := int(v + 0.5)
+		go func() {
+			if err := sysVolumeSet(pct); err != nil {
+				log.Printf("system volume: set %d%% failed: %v", pct, err)
+			}
+		}()
+	}
+
+	u.sysMuteBtn = widget.NewButtonWithIcon("", theme.VolumeUpIcon(), func() {
+		u.setSystemMuted(!u.sysMuted)
+	})
+	u.sysMuteBtn.Importance = widget.LowImportance
+
+	return container.NewBorder(nil, nil, widget.NewLabel("Sys"), u.sysMuteBtn,
+		container.NewGridWrap(fyne.NewSize(100, 28), u.sysVolSlider))
+}
+
+// sysVolPollInterval is how often the Sys slider is reconciled with the OS
+// output level. Each tick does two lightweight OS reads (a subprocess on macOS,
+// a COM call on Windows); 2s keeps the slider current without measurable cost.
+const sysVolPollInterval = 2 * time.Second
+
+// startSystemVolumePoll reflects the OS volume/mute in the Sys control at
+// startup and then polls so external changes (volume keys, the OS mixer) keep
+// the slider in sync. It shares the progress ticker's shutdown channel, so it
+// stops cleanly on quit (no fyne.Do after teardown).
+func (u *ui) startSystemVolumePoll() {
+	go func() {
+		u.syncSystemVolume() // reflect the current state immediately
+		t := time.NewTicker(sysVolPollInterval)
+		defer t.Stop()
+		for {
+			select {
+			case <-u.tickerDone:
+				return
+			case <-t.C:
+				u.syncSystemVolume()
+			}
+		}
+	}()
+}
+
+// syncSystemVolume reads the OS volume/mute (off the UI thread, since the reads
+// are slow) and reflects any external change in the slider/mute button. It
+// never fights an in-progress user interaction and never echoes the read value
+// back to the OS. Errors (e.g. no audio device) are ignored: the control simply
+// stays put until the OS recovers.
+func (u *ui) syncSystemVolume() {
+	vol, verr := sysVolumeGet()
+	muted, merr := sysMutedGet()
+	if verr != nil && merr != nil {
+		return
+	}
+	fyne.Do(func() {
+		// Leave the control alone if the user moved it within the last poll
+		// window - their input wins until it settles and the OS catches up.
+		if time.Since(u.sysVolTouched) < sysVolPollInterval {
+			return
+		}
+		if verr == nil && int(u.sysVolSlider.Value+0.5) != vol {
+			u.sysVolApplying = true
+			u.sysVolSlider.SetValue(float64(vol))
+			u.sysVolApplying = false
+		}
+		if merr == nil && muted != u.sysMuted {
+			u.applyMuteIcon(muted)
+		}
+	})
+}
+
+// setSystemMuted applies a new OS mute state off the UI goroutine, updating the
+// button icon immediately so the control feels responsive.
+func (u *ui) setSystemMuted(muted bool) {
+	u.applyMuteIcon(muted)
+	go func() {
+		if err := sysSetMuted(muted); err != nil {
+			log.Printf("system volume: set muted=%v failed: %v", muted, err)
+		}
+	}()
+}
+
+// applyMuteIcon records the mute state and swaps the toggle icon to match. Must
+// run on the UI goroutine.
+func (u *ui) applyMuteIcon(muted bool) {
+	u.sysMuted = muted
+	if muted {
+		u.sysMuteBtn.SetIcon(theme.VolumeMuteIcon())
+	} else {
+		u.sysMuteBtn.SetIcon(theme.VolumeUpIcon())
+	}
 }
 
 // buildRatingBar builds the manual star-rating setter for the selected track.
@@ -411,9 +623,13 @@ func (u *ui) buildRatingBar() fyne.CanvasObject {
 // rebuildColumns recomputes the visible column set from preferences and applies
 // the column widths. Called at startup and whenever an optional column toggles.
 func (u *ui) rebuildColumns() {
-	showTrack := u.app.Preferences().BoolWithFallback(prefShowTrackCol, false)
-	showFile := u.app.Preferences().BoolWithFallback(prefShowFilenameCol, false)
-	showSelect := u.app.Preferences().BoolWithFallback(prefShowSelectCol, false)
+	prefs := u.app.Preferences()
+	showTrack := prefs.BoolWithFallback(prefShowTrackCol, false)
+	showFile := prefs.BoolWithFallback(prefShowFilenameCol, false)
+	showSelect := prefs.BoolWithFallback(prefShowSelectCol, false)
+	showDuration := prefs.BoolWithFallback(prefShowDurationCol, true) // headline of now-playing enrichment
+	showFormat := prefs.BoolWithFallback(prefShowFormatCol, false)
+	showBitrate := prefs.BoolWithFallback(prefShowBitrateCol, false)
 
 	u.visibleCols = u.visibleCols[:0]
 	for _, c := range allColumns {
@@ -424,6 +640,15 @@ func (u *ui) rebuildColumns() {
 			continue
 		}
 		if c.id == colSelect && !showSelect {
+			continue
+		}
+		if c.id == colDuration && !showDuration {
+			continue
+		}
+		if c.id == colFormat && !showFormat {
+			continue
+		}
+		if c.id == colBitrate && !showBitrate {
 			continue
 		}
 		u.visibleCols = append(u.visibleCols, c)
@@ -739,6 +964,48 @@ func (u *ui) sortByColumn(col int, secondary bool) {
 	}
 	u.reload()
 	u.table.Refresh() // redraw headers with the updated sort arrows
+	u.saveSortPrefs() // remember the sort sequence for next launch
+}
+
+// saveSortPrefs persists the current sort sequence so the table reopens ordered
+// the same way next launch (see buildMainWindow's restore).
+func (u *ui) saveSortPrefs() {
+	prefs := u.app.Preferences()
+	prefs.SetInt(prefSortCol, u.sortCol)
+	prefs.SetBool(prefSortDesc, u.sortDesc)
+	prefs.SetInt(prefSortCol2, u.sortCol2)
+	prefs.SetBool(prefSortDesc2, u.sortDesc2)
+}
+
+// restoreLastTrack selects and scrolls to the track that was last playing, after
+// a short delay so the table has been laid out (the scroll needs a sized
+// viewport). It never starts playback. No-op when there's no saved track or it
+// isn't in the current view.
+func (u *ui) restoreLastTrack() {
+	id := int64(u.app.Preferences().Int(prefLastTrackID))
+	if id == 0 {
+		return
+	}
+	go func() {
+		select {
+		case <-time.After(300 * time.Millisecond): // let the window lay out first
+		case <-u.tickerDone: // quitting early - don't touch widgets after teardown
+			return
+		}
+		fyne.Do(func() { u.selectAndReveal(id) })
+	}()
+}
+
+// selectAndReveal selects the row for track id (if shown) and scrolls it cleanly
+// into view.
+func (u *ui) selectAndReveal(id int64) {
+	for i := range u.tracks {
+		if u.tracks[i].ID == id {
+			u.table.Select(widget.TableCellID{Row: i, Col: 0})
+			u.scrollRowIntoView(i)
+			return
+		}
+	}
 }
 
 // --- Marking tracks for copy -------------------------------------------------
@@ -1013,7 +1280,10 @@ func uniqueDestPath(dir, name string) string {
 	}
 }
 
-// setRowRating sets (1..5) or clears (0) the manual rating of a row, then reloads.
+// setRowRating sets (1..5) or clears (0) the manual rating of a row. It updates
+// the row in place (no reload) so rating a track doesn't reset the scroll/sort or
+// jump the list - mirroring onPlayCounted. A row whose new rating no longer
+// matches an active rating filter stays until the next reload, which is fine.
 func (u *ui) setRowRating(row, rating int) {
 	if row < 0 || row >= len(u.tracks) {
 		return
@@ -1022,7 +1292,12 @@ func (u *ui) setRowRating(row, rating int) {
 		dialog.ShowError(err, u.win)
 		return
 	}
-	u.reload()
+	if rating <= 0 {
+		u.tracks[row].Rating = sql.NullInt64{} // cleared -> falls back to auto rating
+	} else {
+		u.tracks[row].Rating = sql.NullInt64{Int64: int64(rating), Valid: true}
+	}
+	u.table.Refresh()
 }
 
 // showRowMenu pops up the right-click row menu. Play and rating are live; the
@@ -1071,7 +1346,7 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 		fyne.NewMenuItem("Show full path…", func() { u.showFullPath(r) }),
 		fyne.NewMenuItemSeparator(),
 		soon("Rename file…  (coming soon)"),
-		soon("Edit tags…  (coming soon)"),
+		fyne.NewMenuItem("Edit tags…", func() { u.editTags(r) }),
 	)
 	widget.ShowPopUpMenuAtPosition(menu, u.win.Canvas(), pos)
 }
@@ -1267,6 +1542,13 @@ func (u *ui) reload() {
 	for r := range u.tracks {
 		u.table.SetRowHeight(r, tableRowHeight)
 	}
+	// Reset the vertical scroll to the top. reload() means the result set changed
+	// (filter/search/sort/playlist/scan), so the top is the right place to land -
+	// and, crucially, it forces a relayout from a valid offset. Without this, when
+	// the list shrinks (e.g. 177 -> 10) a previously-scrolled offset can sit past
+	// the new content: Fyne's row-height path doesn't clamp it, so the table shows
+	// blank/stale rows until the user scrolls. Horizontal position is preserved.
+	u.table.ScrollToTop()
 	u.refreshStatus()
 }
 
@@ -1313,6 +1595,7 @@ func (u *ui) refreshNowPlaying() {
 	if tr.ID != u.nowPlayingID {
 		u.nowPlayingID = tr.ID
 		u.selectTrack(tr.ID)
+		u.app.Preferences().SetInt(prefLastTrackID, int(tr.ID)) // restore this track on next launch
 	}
 	// Play counts may have changed; reflect them in the table.
 	u.table.Refresh()
@@ -1329,6 +1612,41 @@ func (u *ui) selectTrack(id int64) {
 			return
 		}
 	}
+}
+
+// jumpToCurrent scrolls to and selects the now-playing track. It reports via the
+// status bar when nothing is playing or the track is hidden by the current
+// filter/search.
+func (u *ui) jumpToCurrent() {
+	cur, ok := u.player.Current()
+	if !ok {
+		u.status.SetText("Nothing is playing")
+		return
+	}
+	for i := range u.tracks {
+		if u.tracks[i].ID == cur.ID {
+			u.table.Select(widget.TableCellID{Row: i, Col: 0})
+			u.scrollRowIntoView(i)
+			return
+		}
+	}
+	u.status.SetText("The playing track isn't in the current view")
+}
+
+// scrollRowIntoView positions the table so row i sits about one row below the
+// sticky header, rather than flush against an edge where the header (top) or the
+// horizontal scrollbar (bottom) would clip it - which is what Table.ScrollTo
+// does. Rows are laid out as tableRowHeight plus one padding each (see Fyne's
+// Table.findY); the table fixes every row to tableRowHeight, so the offset is
+// exact. Horizontal offset resets to the leading edge, showing the main columns.
+func (u *ui) scrollRowIntoView(i int) {
+	pad := theme.Padding()
+	margin := tableRowHeight + pad // keep ~one row of context above the target
+	off := float32(i)*(tableRowHeight+pad) - margin
+	if off < 0 {
+		off = 0
+	}
+	u.table.ScrollToOffset(fyne.NewPos(0, off))
 }
 
 // onPlayPause starts the selected track if nothing is loaded, else pauses.
@@ -1452,6 +1770,7 @@ func (u *ui) scanFolders(folders []Folder) {
 			u.reload()
 			u.status.SetText(fmt.Sprintf("Scan complete: %d files, %d catalogued, %d errors",
 				total.Found, total.Updated, total.Errors))
+			u.startDurationEnricher() // compute lengths for any newly catalogued files
 		})
 	}()
 }

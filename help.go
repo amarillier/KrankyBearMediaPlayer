@@ -57,7 +57,12 @@ PLAYING MUSIC:
   In the queue window: Play the selected track, Remove it, move it Up/Down, or
   Clear All.
 • Seek bar shows elapsed / total time — drag it to jump within a track.
-• Volume slider adjusts the playback level.
+• Two volume controls sit at the bottom right:
+  - "App" adjusts this player's own level only (remembered across launches).
+  - "Sys" drives your computer's master output volume, with a mute toggle beside
+    it. It stays in sync with the system level — including changes you make with
+    the volume keys or the OS mixer — and moves the whole machine's volume, not
+    just this app.
 • The selected-row indicator follows the track that is now playing.
 
 RATINGS & PLAY TRACKING:
@@ -75,8 +80,15 @@ FINDING & ORGANISING:
 • Search box (top): filters by title, artist, album, genre or filename as you type.
 • "Show" filter (top): All, Unplayed, exact stars, or N-stars-and-up.
 • Click a column header to sort; click again to reverse (the Art column doesn't sort).
-• View menu: optionally show the Track # and Filename columns (off by default to
-  reduce clutter; your choice is remembered).
+• View menu: optionally show the Length, Format, Bitrate, Track # and Filename
+  columns (Length is on by default, the rest off; your choices are remembered).
+  Length and Bitrate fill in shortly after launch/scan as the app reads each
+  track's playback time in the background, so they may be blank for a moment.
+• Jump to the playing track: click its name in the bottom bar, or use the toolbar
+  "Now Playing" button (next to Rescan). Handy after scrolling, searching, or
+  sorting away. (It only locates the track — it doesn't start or stop playback.)
+• Picks up where you left off: the app remembers your sort order and, on relaunch,
+  selects and scrolls to the track you were last playing (it does not auto-play).
 • Copy tracks to another place: View → Selection checkboxes adds a ✓ column; tick
   rows (click the ✓ header to toggle all shown), or Library → Select All Shown.
   Then Library → Copy Selected to… lets you choose Flat or Organize into
@@ -85,7 +97,12 @@ FINDING & ORGANISING:
   (Name clashes get a " (2)" suffix; nothing is overwritten.)
 • Right-click a track for Play, rating, Add album art (local image file or URL,
   stored in the library), Show in your file manager, and Show full path (with a
-  Copy button). Rename and tag editing are coming soon.
+  Copy button). Renaming files from tags is coming soon.
+• Edit tags… (right-click) opens an editor for title, artist, album, album
+  artist, year, track #, genre, comment, and the embedded cover image. Changes
+  are written back into the file for MP3 and FLAC; OGG and WAV open read-only for
+  now. If you edit the track that's currently playing, playback stops first so
+  the file can be saved. The catalog (and any thumbnail) updates straight away.
 
 PLAYLISTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -120,7 +137,7 @@ PORTABLE LIBRARY (moving between machines or drives):
 
 PREFERENCES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• View → Preferences… (Cmd/Ctrl+,) gathers the common settings in one place:
+• View → Preferences… (Alt+R) gathers the common settings in one place:
   theme, "count a play after" threshold, playback volume (remembered across
   launches), the optional columns, and the database location. The same toggles
   remain on the View menu for quick one-off changes.
@@ -134,9 +151,10 @@ SMART FEATURES:
 KEYBOARD SHORTCUTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Alt+P — Play / Pause
+• Alt+→ — Next track   • Alt+← — Previous track
 • Alt+H — Hide all windows (and pause). No shortcut to show again, by design —
   use the system tray or View → Show All Windows.
-• Cmd/Ctrl+, — Preferences
+• Alt+R — Preferences
 • Cmd/Ctrl+Q — Quit   • Cmd/Ctrl+W — Close window   • Cmd/Ctrl+M — Minimize
 
 KNOWN LIMITATIONS:

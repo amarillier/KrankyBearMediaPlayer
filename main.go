@@ -15,7 +15,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "0.3.0" // see FyneApp.toml
+	appVersion = "0.4.0" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -74,20 +74,27 @@ func main() {
 //   - Alt+P: fast play/pause toggle
 //   - Alt+H: "boss key" - hide all windows AND pause (no hotkey to show again;
 //     reveal via the tray/menu, then press play to resume)
+//   - Alt+Right / Alt+Left: next / previous track
+//   - Alt+R: Preferences
 //
-// Cmd+H is deliberately avoided on macOS (reserved for "Hide application").
-// Canvas shortcuts fire on the focused window, so Alt+H can't un-hide - exactly
-// the asymmetry the user asked for.
+// Modifier/key choices are constrained by what actually fires on macOS here:
+// Cmd/Ctrl-modified canvas shortcuts don't trigger at all, and Alt+<punctuation>
+// (e.g. Alt+,) doesn't either - Option+comma yields a special character, not a
+// clean KeyComma event. Alt+<letter> works, so every app shortcut uses that.
+// These MUST be on the canvas, not only as menu-item .Shortcut accelerators,
+// which don't fire reliably. Cmd+H is avoided on macOS (= Hide application).
+// Canvas shortcuts fire on the focused window, so Alt+H can't un-hide.
 func registerHotkeys(win fyne.Window, u *ui) {
 	cnv := win.Canvas()
-	cnv.AddShortcut(
-		&desktop.CustomShortcut{KeyName: fyne.KeyP, Modifier: fyne.KeyModifierAlt},
-		func(fyne.Shortcut) { fyne.Do(u.onPlayPause) },
-	)
-	cnv.AddShortcut(
-		&desktop.CustomShortcut{KeyName: fyne.KeyH, Modifier: fyne.KeyModifierAlt},
-		func(fyne.Shortcut) { fyne.Do(u.hideAllWindows) },
-	)
+	add := func(key fyne.KeyName, mod fyne.KeyModifier, fn func()) {
+		cnv.AddShortcut(&desktop.CustomShortcut{KeyName: key, Modifier: mod},
+			func(fyne.Shortcut) { fyne.Do(fn) })
+	}
+	add(fyne.KeyP, fyne.KeyModifierAlt, u.onPlayPause)
+	add(fyne.KeyH, fyne.KeyModifierAlt, u.hideAllWindows)
+	add(fyne.KeyRight, fyne.KeyModifierAlt, u.player.Next)
+	add(fyne.KeyLeft, fyne.KeyModifierAlt, u.player.Prev)
+	add(fyne.KeyR, fyne.KeyModifierAlt, u.showPreferences)
 }
 
 // setupSystemTray adds a tray icon + menu mirroring the main controls, on the
@@ -175,6 +182,10 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 	hideItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyH, Modifier: fyne.KeyModifierAlt}
 	playPauseItem := fyne.NewMenuItem("Play / Pause", u.onPlayPause)
 	playPauseItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyP, Modifier: fyne.KeyModifierAlt}
+	prevItem := fyne.NewMenuItem("Previous", u.player.Prev)
+	prevItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyLeft, Modifier: fyne.KeyModifierAlt}
+	nextItem := fyne.NewMenuItem("Next", u.player.Next)
+	nextItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyRight, Modifier: fyne.KeyModifierAlt}
 
 	// Playback menu: transport plus shuffle/repeat (state persists via prefs).
 	shuffleItem := fyne.NewMenuItem("Shuffle", u.toggleShuffle)
@@ -193,8 +204,8 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 	)
 	playbackMenu := fyne.NewMenu("Playback",
 		playPauseItem,
-		fyne.NewMenuItem("Previous", u.player.Prev),
-		fyne.NewMenuItem("Next", u.player.Next),
+		prevItem,
+		nextItem,
 		fyne.NewMenuItem("Stop", u.player.Stop),
 		fyne.NewMenuItemSeparator(),
 		shuffleItem,
@@ -232,6 +243,12 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 	fileColItem.Checked = prefs.BoolWithFallback(prefShowFilenameCol, false)
 	selColItem := fyne.NewMenuItem("Selection Checkboxes", func() { u.toggleColumn(prefShowSelectCol) })
 	selColItem.Checked = prefs.BoolWithFallback(prefShowSelectCol, false)
+	durColItem := fyne.NewMenuItem("Show Length Column", func() { u.toggleColumn(prefShowDurationCol) })
+	durColItem.Checked = prefs.BoolWithFallback(prefShowDurationCol, true)
+	fmtColItem := fyne.NewMenuItem("Show Format Column", func() { u.toggleColumn(prefShowFormatCol) })
+	fmtColItem.Checked = prefs.BoolWithFallback(prefShowFormatCol, false)
+	brColItem := fyne.NewMenuItem("Show Bitrate Column", func() { u.toggleColumn(prefShowBitrateCol) })
+	brColItem.Checked = prefs.BoolWithFallback(prefShowBitrateCol, false)
 
 	// "Count play after" submenu: how much of a track must play to count as a play.
 	curPct := prefs.IntWithFallback(prefPlayCountPct, defaultPlayCountPct)
@@ -250,7 +267,7 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 	)
 
 	prefItem := fyne.NewMenuItem("Preferences…", u.showPreferences)
-	prefItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyComma, Modifier: fyne.KeyModifierShortcutDefault}
+	prefItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyR, Modifier: fyne.KeyModifierAlt}
 
 	viewMenu := fyne.NewMenu("View",
 		prefItem,
@@ -260,6 +277,9 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		fyne.NewMenuItemSeparator(),
 		trackColItem,
 		fileColItem,
+		durColItem,
+		fmtColItem,
+		brColItem,
 		selColItem,
 		countAfterItem,
 		fyne.NewMenuItemSeparator(),

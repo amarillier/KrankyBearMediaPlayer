@@ -2,20 +2,39 @@ Release notes
 KrankyBear MediaPlayer: - Windows, Linux and MacOS media player
 
 
-Future ideas:
-- HIGH: Remember media player volume setting in preferences for next launch. Maybe also include a computer volume control option next to the media player volume control?
-- LATER: extend "Add album art" to multiple selected tracks at once, and optionally embed into the file (vs catalog-only)
-- MEDIUM: tag editor text components beyond just attaching album art
-- MEDIUM: Preferences or other option to show configured / previously added disks, folders etc
-- MEDIUM: Possible internationalization with assets/i18n language support - this is a bigger thing and will mean extracting menu items, main window messages, about, help, update checker etc to allow for alternate languages
-- MEDIUM: Playlist create static and dynamic (e.g. 5 stars and genre= and aerist=) using filter and select logic, ability to save a playlist file to specified location
-- LOWER: Graphic equalizer possible, with presets?
-- LOWER: Possible allow simple music video play, lower priority, even if only play music but not the video for example
-- LOWER: Import star ratings, maybe play count from aimp database 
-- LOW: Skins - maybe never, that becomes much more complex
-- LOW: Animations, cute, not necessary and becomes much more complex
-- LOW: Possibly never consider seriously - ability to convert audio formats, resample at ower bitrates? Probably not
-
+Version 0.4.0 - June 10, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Now-playing enrichment: new optional Length, Format, and Bitrate columns (View
+  menu / Preferences; Length shown by default). Track length isn't in the tags, so
+  the app computes it in the background after launch and after a scan and caches it
+  in the catalog — Length/Bitrate populate within moments and persist. Bitrate is
+  an average derived from file size and length. Jump to the currently-playing
+  track by clicking its name in the bottom bar or the toolbar "Now Playing"
+  button (handy after scrolling, searching, or sorting away; it locates the
+  track without starting playback).
+- Keyboard shortcuts: Alt+→ / Alt+← skip to the next / previous track, and
+  Preferences is on Alt+R (Cmd/Ctrl-based shortcuts weren't firing on macOS).
+  All shortcuts are wired on the window canvas now, so they trigger reliably.
+- Pick up where you left off: the sort order (primary + secondary column and
+  direction) is remembered across launches, and on relaunch the app selects and
+  scrolls to the track you were last playing — without starting playback.
+- Tag editor (right-click a track → Edit tags…): edit title, artist, album,
+  album artist, year, track #, genre, comment, and the embedded cover image, and
+  write them back into the file. Supported for MP3 (ID3v2) and FLAC (Vorbis
+  comments + picture); OGG and WAV open read-only for now. Editing the track
+  that's playing stops playback first so the file can be saved (needed on
+  Windows). The catalog and thumbnail update immediately, without a re-scan, so
+  play counts and ratings are untouched. (Renaming files from tags is still to
+  come.)
+- System volume control: a second slider ("Sys") at the bottom right drives your
+  computer's master output level, with a mute toggle beside it. It stays in sync
+  with the system volume, including changes you make with the volume keys or the
+  OS mixer. The existing slider (now labelled "App") still adjusts only this
+  player's own level. Both platforms drive the default output device in-process
+  via the OS audio API directly (CoreAudio on macOS, CoreAudio/WASAPI COM on
+  Windows) — no helper processes are spawned.
 
 Version 0.3.0 - June 8, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

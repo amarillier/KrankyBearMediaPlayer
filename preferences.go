@@ -79,6 +79,12 @@ func (u *ui) showPreferences() {
 	fileChk.Checked = prefs.BoolWithFallback(prefShowFilenameCol, false)
 	selChk := widget.NewCheck("Selection checkboxes", nil)
 	selChk.Checked = prefs.BoolWithFallback(prefShowSelectCol, false)
+	durChk := widget.NewCheck("Length column", nil)
+	durChk.Checked = prefs.BoolWithFallback(prefShowDurationCol, true)
+	fmtChk := widget.NewCheck("Format column", nil)
+	fmtChk.Checked = prefs.BoolWithFallback(prefShowFormatCol, false)
+	brChk := widget.NewCheck("Bitrate column", nil)
+	brChk.Checked = prefs.BoolWithFallback(prefShowBitrateCol, false)
 
 	// --- Library: database location ---
 	dbPathLabel := widget.NewLabel(resolveDBPath(u.app))
@@ -123,7 +129,7 @@ func (u *ui) showPreferences() {
 			widget.NewFormItem("Volume", volRow),
 		),
 		section("Library columns"),
-		trackChk, fileChk, selChk,
+		durChk, fmtChk, brChk, trackChk, fileChk, selChk,
 		section("Database location"),
 		dbPathLabel,
 		container.NewHBox(dbChangeBtn, dbResetBtn),
@@ -158,6 +164,9 @@ func (u *ui) showPreferences() {
 		prefs.SetBool(prefShowTrackCol, trackChk.Checked)
 		prefs.SetBool(prefShowFilenameCol, fileChk.Checked)
 		prefs.SetBool(prefShowSelectCol, selChk.Checked)
+		prefs.SetBool(prefShowDurationCol, durChk.Checked)
+		prefs.SetBool(prefShowFormatCol, fmtChk.Checked)
+		prefs.SetBool(prefShowBitrateCol, brChk.Checked)
 		u.rebuildColumns()
 		u.rebuildMenu() // refresh the View menu checkmarks to match
 	}, u.win)
