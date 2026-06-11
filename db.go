@@ -364,6 +364,15 @@ type TrackQuery struct {
 	Genre     string
 	Artist    string
 	Album     string
+	// Per-column live filters (the filter row). The text fields match a
+	// case-insensitive substring; FYear is a GLOB pattern against the year text,
+	// so "202[456]" matches 2024-2026 and "20*" matches the 2000s. Empty = no
+	// constraint. ANDed with everything else.
+	FTitle  string
+	FArtist string
+	FAlbum  string
+	FGenre  string
+	FYear   string
 	SortCol   int  // primary sort: a col* constant; -1 = default order
 	Desc      bool // primary descending
 	Sort2Col  int  // secondary sort (shift-click); -1 = none
@@ -448,11 +457,21 @@ func (d *DB) Tracks(q TrackQuery) ([]Track, error) {
 		{"t.genre", q.Genre},
 		{"t.artist", q.Artist},
 		{"t.album", q.Album},
+		// Per-column filter row (substring match on text columns).
+		{"t.title", q.FTitle},
+		{"t.artist", q.FArtist},
+		{"t.album", q.FAlbum},
+		{"t.genre", q.FGenre},
 	} {
 		if v := strings.TrimSpace(c.val); v != "" {
 			conds = append(conds, c.col+` LIKE ? ESCAPE '\'`)
 			args = append(args, likeContains(v))
 		}
+	}
+	// Year column filter: a GLOB pattern against the year text (e.g. "202[456]").
+	if v := strings.TrimSpace(q.FYear); v != "" {
+		conds = append(conds, `CAST(t.year AS TEXT) GLOB ?`)
+		args = append(args, v)
 	}
 	if len(conds) > 0 {
 		sql += " WHERE " + strings.Join(conds, " AND ")
@@ -513,6 +532,17 @@ func (d *DB) SaveSmartPlaylist(s SmartPlaylist) error {
 			filter=excluded.filter, search=excluded.search, genre=excluded.genre,
 			artist=excluded.artist, album=excluded.album`,
 		s.Name, int(s.Filter), s.Search, s.Genre, s.Artist, s.Album, time.Now().Unix())
+	return err
+}
+
+// UpdateSmartPlaylist replaces an existing smart playlist's name and criteria by
+// id (so editing can rename, unlike the name-keyed upsert in SaveSmartPlaylist).
+// Renaming to a name already in use fails on the unique-name constraint.
+func (d *DB) UpdateSmartPlaylist(s SmartPlaylist) error {
+	_, err := d.sql.Exec(`
+		UPDATE smart_playlists SET name=?, filter=?, search=?, genre=?, artist=?, album=?
+		WHERE id=?`,
+		s.Name, int(s.Filter), s.Search, s.Genre, s.Artist, s.Album, s.ID)
 	return err
 }
 

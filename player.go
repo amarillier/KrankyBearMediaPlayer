@@ -643,6 +643,32 @@ func (p *Player) IsPlaying() bool {
 	return p.playing
 }
 
+// HasStream reports whether a stream is loaded (playing or paused) - i.e. there
+// is something for TogglePause to act on. It is false after Stop, which tears
+// down the stream but keeps the queue/index, so the Play button can tell
+// "resume the paused track" from "start the stopped track fresh".
+func (p *Player) HasStream() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.ctrl != nil
+}
+
+// ResumeCurrent (re)starts playback of the current queue position from the top.
+// It backs the Play button after Stop, which clears the stream but leaves the
+// queue/index in place. Returns false if no queue is loaded (the caller then
+// starts a fresh queue from the selection).
+func (p *Player) ResumeCurrent() bool {
+	p.mu.Lock()
+	if p.index < 0 || p.index >= len(p.queue) {
+		p.mu.Unlock()
+		return false
+	}
+	p.playLocked()
+	p.mu.Unlock()
+	p.fireChange() // AFTER unlocking - see fireChange's contract
+	return true
+}
+
 // fireChange / fireCounted invoke the UI callbacks. CONTRACT: never call these
 // while holding p.mu. The callbacks marshal onto the UI thread with fyne.Do,
 // which - on the main goroutine during a window/menu callback - runs INLINE, and

@@ -56,6 +56,7 @@ PLAYING MUSIC:
   Selected / Add All Shown to Queue) appends without interrupting what's playing.
   In the queue window: Play the selected track, Remove it, move it Up/Down, or
   Clear All.
+• Hover a toolbar or transport button to see a tooltip explaining what it does.
 • Seek bar shows elapsed / total time — drag it to jump within a track.
 • Two volume controls sit at the bottom right:
   - "App" adjusts this player's own level only (remembered across launches).
@@ -78,10 +79,15 @@ RATINGS & PLAY TRACKING:
 FINDING & ORGANISING:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Search box (top): filters by title, artist, album, genre or filename as you type.
+• Column filters (View → Show Column Filters): a row of per-column boxes — type in
+  Title, Artist, Album, Genre to match a substring, and Year accepts a pattern
+  (e.g. 202[456] matches 2024-2026, 20* matches the 2000s). They combine with each
+  other and the search/Show filter. Clear them with the ✕ button; hiding the row
+  also clears them.
 • "Show" filter (top): All, Unplayed, exact stars, or N-stars-and-up.
 • Click a column header to sort; click again to reverse (the Art column doesn't sort).
-• View menu: optionally show the Length, Format, Bitrate, Track # and Filename
-  columns (Length is on by default, the rest off; your choices are remembered).
+• View menu: optionally show the Length, Format, Bitrate, Genre, Track # and
+  Filename columns (Length is on by default, the rest off; choices are remembered).
   Length and Bitrate fill in shortly after launch/scan as the app reads each
   track's playback time in the background, so they may be blank for a moment.
 • Jump to the playing track: click its name in the bottom bar, or use the toolbar
@@ -103,6 +109,11 @@ FINDING & ORGANISING:
   are written back into the file for MP3 and FLAC; OGG and WAV open read-only for
   now. If you edit the track that's currently playing, playback stops first so
   the file can be saved. The catalog (and any thumbnail) updates straight away.
+• Edit tags of several at once: mark tracks (Selection checkboxes / Select All
+  Shown), then Library → Edit Tags of Selected… Tick the fields you want to set
+  (Artist, Album, Album Artist, Genre, Year, Comment) and they're applied to every
+  marked track; each track's other tags (title, track #, cover) are left as-is. A
+  progress dialog shows each file with a Cancel button; OGG/WAV are skipped.
 
 PLAYLISTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -115,7 +126,8 @@ PLAYLISTS:
   "Wickham" matches "Phil Wickham"), plus free-text Search — under a name. Picking
   it from the Playlists menu re-applies the criteria live (the status bar shows
   ♫ <name>). They update automatically as your library changes. Manage Smart
-  Playlists… deletes ones you no longer want.
+  Playlists… lets you edit a saved playlist's criteria (the pencil button, which
+  can also rename it) or delete ones you no longer want.
 
 WINDOWS & SYSTEM TRAY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -98,3 +98,29 @@ func TestSmartPlaylistCRUD(t *testing.T) {
 		t.Fatalf("after delete expected only Jazz, got %v", remaining)
 	}
 }
+
+// TestUpdateSmartPlaylist covers editing by id, including a rename (which the
+// name-keyed SaveSmartPlaylist upsert can't do without orphaning the old row).
+func TestUpdateSmartPlaylist(t *testing.T) {
+	db := newTestDBWithTracks(t, nil)
+	defer db.Close()
+
+	if err := db.SaveSmartPlaylist(SmartPlaylist{Name: "Old Name", Filter: FilterAtLeast4, Genre: "Rock"}); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	lists, _ := db.SmartPlaylists()
+	id := lists[0].ID
+
+	// Rename + change criteria by id.
+	if err := db.UpdateSmartPlaylist(SmartPlaylist{ID: id, Name: "New Name", Filter: FilterExactly5, Artist: "Queen"}); err != nil {
+		t.Fatalf("update: %v", err)
+	}
+	lists, _ = db.SmartPlaylists()
+	if len(lists) != 1 {
+		t.Fatalf("expected 1 playlist (renamed, not duplicated), got %d", len(lists))
+	}
+	got := lists[0]
+	if got.ID != id || got.Name != "New Name" || got.Filter != FilterExactly5 || got.Artist != "Queen" || got.Genre != "" {
+		t.Fatalf("update not applied correctly: %+v", got)
+	}
+}

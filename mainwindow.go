@@ -26,6 +26,9 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	fynetooltip "github.com/dweymouth/fyne-tooltip"
+	ttwidget "github.com/dweymouth/fyne-tooltip/widget"
 )
 
 // Logical column ids. These are stable identities used for rendering, sorting
@@ -45,6 +48,7 @@ const (
 	colBitrate  // average kbps (derived from size + duration)
 	colFilename
 	colSelect // checkbox column for marking tracks (copy to media)
+	colGenre  // optional Genre column (appended last to keep the ids above stable)
 )
 
 // columnDef describes one library column. text==nil marks the Art column (an
@@ -71,6 +75,7 @@ var allColumns = []columnDef{
 	{colTitle, "Title", 240, false, func(tr Track) string { return tr.Title }},
 	{colArtist, "Artist", 170, false, func(tr Track) string { return tr.Artist }},
 	{colAlbum, "Album", 190, false, func(tr Track) string { return tr.Album }},
+	{colGenre, "Genre", 120, true, func(tr Track) string { return tr.Genre }},
 	{colYear, "Year", 56, false, func(tr Track) string {
 		if tr.Year > 0 {
 			return fmt.Sprintf("%d", tr.Year)
@@ -119,6 +124,8 @@ const (
 	prefShowDurationCol = "showDurationColumn"
 	prefShowFormatCol   = "showFormatColumn"
 	prefShowBitrateCol  = "showBitrateColumn"
+	prefShowGenreCol    = "showGenreColumn"
+	prefShowColFilters  = "showColumnFilters"
 )
 
 // Preference keys for restoring the session on relaunch: the sort sequence and
@@ -163,6 +170,13 @@ type ui struct {
 	qGenre       string // active smart-playlist constraints (empty = none)
 	qArtist      string
 	qAlbum       string
+	// Per-column filter row (toggle in View). Empty = no constraint; fYear is a
+	// GLOB pattern (see db.TrackQuery). Transient - not persisted across launches.
+	fTitle  string
+	fArtist string
+	fAlbum  string
+	fGenre  string
+	fYear   string
 	smartName    string // name of the applied smart playlist, "" if none
 	sortCol      int    // primary sort column, -1 = default order
 	sortDesc     bool   // primary descending
@@ -173,13 +187,16 @@ type ui struct {
 
 	marked map[int64]markEntry // tracks ticked for copy: id -> path+artist+album
 
-	table       *widget.Table
-	visibleCols []columnDef // currently shown columns, in physical order
-	thumbCache  map[int64]fyne.Resource
+	table         *widget.Table
+	visibleCols   []columnDef // currently shown columns, in physical order
+	thumbCache    map[int64]fyne.Resource
+	colFilterRow      fyne.CanvasObject // the toggleable per-column filter row
+	colFilterBox      []*widget.Entry   // its entries, for Clear / hide-clearing
+	colFilterClearing bool              // true while clearing filters, to coalesce into one reload
 
 	nowPlaying *tappableLabel
 	nowArt     *canvas.Image
-	playPause  *widget.Button
+	playPause  *ttwidget.Button
 	status     *widget.Label
 
 	seekSlider *widget.Slider
@@ -191,7 +208,7 @@ type ui struct {
 	// above: these move the whole OS output level. A background poll keeps them
 	// in sync with external changes (keyboard volume keys, OS mixer).
 	sysVolSlider   *widget.Slider
-	sysMuteBtn     *widget.Button
+	sysMuteBtn     *ttwidget.Button
 	sysMuted       bool
 	sysVolApplying bool      // true while we set the slider from a poll, so its OnChangeEnded doesn't echo back to the OS
 	sysVolTouched  time.Time // when the user last moved the slider; the poll backs off until they settle
@@ -251,10 +268,16 @@ func buildMainWindow(a fyne.App, win fyne.Window, db *DB, player *Player) *ui {
 	u.table = u.buildTable()
 	u.rebuildColumns() // populate visibleCols + column widths from prefs
 	top := u.buildToolbar()
+	u.colFilterRow = u.buildColumnFilters()
+	if !a.Preferences().BoolWithFallback(prefShowColFilters, false) {
+		u.colFilterRow.Hide() // off by default; toggle via View → Show Column Filters
+	}
 	bottom := u.buildTransport()
 
-	content := container.NewBorder(top, bottom, nil, nil, u.table)
-	win.SetContent(content)
+	content := container.NewBorder(container.NewVBox(top, u.colFilterRow), bottom, nil, nil, u.table)
+	// Wrap in a tooltip layer so the ttwidget buttons' tips render (see button
+	// SetToolTip calls). Torn down in quit().
+	win.SetContent(fynetooltip.AddWindowToolTipLayer(content, win.Canvas()))
 
 	// Refresh the transport when playback state changes (off the UI thread).
 	player.OnChange = func() { fyne.Do(u.refreshNowPlaying) }
@@ -361,6 +384,7 @@ func (u *ui) stopTicker() {
 // menu); from the system tray (off the main goroutine) wrap it in fyne.Do.
 func (u *ui) quit() {
 	u.stopTicker()
+	fynetooltip.DestroyWindowToolTipLayer(u.win.Canvas())
 	saveMainWindowGeometry(u.app, u.win)
 	u.player.Stop()
 	u.app.Quit()
@@ -402,12 +426,15 @@ func fmtDuration(d time.Duration) string {
 
 // buildToolbar builds the top bar: add/rescan folders + rating filter.
 func (u *ui) buildToolbar() fyne.CanvasObject {
-	addBtn := widget.NewButtonWithIcon("Add Folder", theme.FolderOpenIcon(), u.addFolder)
-	rescanBtn := widget.NewButtonWithIcon("Rescan", theme.ViewRefreshIcon(), u.rescanAll)
+	addBtn := ttwidget.NewButtonWithIcon("Add Folder", theme.FolderOpenIcon(), u.addFolder)
+	addBtn.SetToolTip("Add a folder to the library and scan it")
+	rescanBtn := ttwidget.NewButtonWithIcon("Rescan", theme.ViewRefreshIcon(), u.rescanAll)
+	rescanBtn.SetToolTip("Rescan watched folders for new, changed or removed files")
 	// "Now Playing" jumps the list to the current track. A music-note icon (not a
 	// play triangle) and a label make clear it locates the track, doesn't play it.
-	jumpBtn := widget.NewButtonWithIcon("Now Playing", theme.MediaMusicIcon(), u.jumpToCurrent)
+	jumpBtn := ttwidget.NewButtonWithIcon("Now Playing", theme.MediaMusicIcon(), u.jumpToCurrent)
 	jumpBtn.Importance = widget.LowImportance
+	jumpBtn.SetToolTip("Scroll to and select the track that's playing (doesn't start playback)")
 
 	filterSel := widget.NewSelect(filterLabels(), nil)
 	// Set the default selection before wiring the callback so we don't trigger
@@ -430,13 +457,85 @@ func (u *ui) buildToolbar() fyne.CanvasObject {
 		u.clearSmartCriteria() // typing a search leaves any smart playlist
 		u.reload()
 	}
-	clearSearch := widget.NewButtonWithIcon("", theme.ContentClearIcon(), func() {
+	clearSearch := ttwidget.NewButtonWithIcon("", theme.ContentClearIcon(), func() {
 		search.SetText("") // fires OnChanged -> reload
 	})
+	clearSearch.SetToolTip("Clear the search box")
 
 	// Search box expands to fill the width between the controls and the button.
 	searchRow := container.NewBorder(nil, nil, left, clearSearch, search)
 	return container.NewVBox(searchRow, widget.NewSeparator())
+}
+
+// buildColumnFilters builds the toggleable per-column filter row: a labelled set
+// of small entries that narrow the table live - substring match on text columns,
+// a GLOB pattern on Year (e.g. "202[456]" -> 2024-2026, "20*" -> the 2000s). All
+// are ANDed with the search box and any rating filter / smart playlist. Hidden by
+// default (View → Show Column Filters); hiding it clears the filters so nothing
+// filters invisibly.
+func (u *ui) buildColumnFilters() fyne.CanvasObject {
+	mk := func(placeholder string, set func(string)) *widget.Entry {
+		e := widget.NewEntry()
+		e.SetPlaceHolder(placeholder)
+		e.OnChanged = func(s string) {
+			set(s)
+			if !u.colFilterClearing {
+				u.reload()
+			}
+		}
+		return e
+	}
+	tE := mk("Title", func(s string) { u.fTitle = s })
+	aE := mk("Artist", func(s string) { u.fArtist = s })
+	alE := mk("Album", func(s string) { u.fAlbum = s })
+	gE := mk("Genre", func(s string) { u.fGenre = s })
+	yE := mk("Year e.g. 202[456]", func(s string) { u.fYear = s })
+	u.colFilterBox = []*widget.Entry{tE, aE, alE, gE, yE}
+
+	clear := ttwidget.NewButtonWithIcon("", theme.ContentClearIcon(), u.clearColumnFilters)
+	clear.SetToolTip("Clear all column filters")
+	wrap := func(w float32, e *widget.Entry) fyne.CanvasObject {
+		return container.NewGridWrap(fyne.NewSize(w, e.MinSize().Height), e)
+	}
+	row := container.NewHBox(
+		widget.NewLabel("Filter:"),
+		wrap(150, tE), wrap(150, aE), wrap(150, alE), wrap(120, gE), wrap(140, yE),
+		clear,
+	)
+	return container.NewVBox(row, widget.NewSeparator())
+}
+
+// clearColumnFilters empties the filter row (and reloads once). Coalesces the
+// per-entry reloads via colFilterClearing.
+func (u *ui) clearColumnFilters() {
+	u.colFilterClearing = true
+	for _, e := range u.colFilterBox {
+		e.SetText("")
+	}
+	u.colFilterClearing = false
+	u.reload()
+}
+
+// applyColFilterVisibility shows or hides the filter row per the saved preference,
+// clearing the filters when hiding so they don't keep narrowing the table unseen.
+func (u *ui) applyColFilterVisibility() {
+	if u.app.Preferences().BoolWithFallback(prefShowColFilters, false) {
+		u.colFilterRow.Show()
+	} else {
+		u.colFilterRow.Hide()
+		u.clearColumnFilters()
+	}
+}
+
+// toggleColumnFilters flips the filter-row preference and applies it. The menu is
+// rebuilt via fyne.Do for its checkmark (see toggleColumn for the macOS reason).
+func (u *ui) toggleColumnFilters() {
+	prefs := u.app.Preferences()
+	prefs.SetBool(prefShowColFilters, !prefs.BoolWithFallback(prefShowColFilters, false))
+	fyne.Do(func() {
+		u.applyColFilterVisibility()
+		u.win.SetMainMenu(buildMenu(u.app, u))
+	})
 }
 
 // buildTransport builds the bottom bar: now-playing, transport, rating setter.
@@ -449,10 +548,14 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 	u.nowPlaying.Wrapping = fyne.TextTruncate
 	u.nowPlaying.SetText("Nothing playing")
 
-	prev := widget.NewButtonWithIcon("", theme.MediaSkipPreviousIcon(), u.player.Prev)
-	u.playPause = widget.NewButtonWithIcon("", theme.MediaPlayIcon(), u.onPlayPause)
-	stop := widget.NewButtonWithIcon("", theme.MediaStopIcon(), u.player.Stop)
-	next := widget.NewButtonWithIcon("", theme.MediaSkipNextIcon(), u.player.Next)
+	prev := ttwidget.NewButtonWithIcon("", theme.MediaSkipPreviousIcon(), u.player.Prev)
+	prev.SetToolTip("Previous track (Alt+←)")
+	u.playPause = ttwidget.NewButtonWithIcon("", theme.MediaPlayIcon(), u.onPlayPause)
+	u.playPause.SetToolTip("Play / Pause (Alt+P)")
+	stop := ttwidget.NewButtonWithIcon("", theme.MediaStopIcon(), u.player.Stop)
+	stop.SetToolTip("Stop")
+	next := ttwidget.NewButtonWithIcon("", theme.MediaSkipNextIcon(), u.player.Next)
+	next.SetToolTip("Next track (Alt+→)")
 	transport := container.NewHBox(prev, u.playPause, stop, next)
 
 	u.status = widget.NewLabel("")
@@ -488,7 +591,16 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 	nowBox := container.NewBorder(nil, nil, u.nowArt, nil, u.nowPlaying)
 	controls := container.NewBorder(nil, nil, transport, right, nowBox)
 
-	return container.NewVBox(widget.NewSeparator(), seekRow, controls, u.status)
+	// The KrankyBear logo, always visible at the bottom-left. It sits left of the
+	// transport block (seek bar / controls / status), nudging those toward the
+	// volume controls. Contained at ~128px so it's clearly visible without eating
+	// much width.
+	logo := canvas.NewImageFromResource(resourceKrankyBearMediaPlayerPng)
+	logo.FillMode = canvas.ImageFillContain
+	logo.SetMinSize(fyne.NewSize(128, 128))
+
+	bottom := container.NewVBox(widget.NewSeparator(), seekRow, controls, u.status)
+	return container.NewBorder(nil, nil, container.NewPadded(logo), nil, bottom)
 }
 
 // buildSystemVolume builds the OS output-volume control (sysvolume_*.go): a mute
@@ -521,10 +633,11 @@ func (u *ui) buildSystemVolume() fyne.CanvasObject {
 		}()
 	}
 
-	u.sysMuteBtn = widget.NewButtonWithIcon("", theme.VolumeUpIcon(), func() {
+	u.sysMuteBtn = ttwidget.NewButtonWithIcon("", theme.VolumeUpIcon(), func() {
 		u.setSystemMuted(!u.sysMuted)
 	})
 	u.sysMuteBtn.Importance = widget.LowImportance
+	u.sysMuteBtn.SetToolTip("Mute / unmute the computer's output (system volume)")
 
 	return container.NewBorder(nil, nil, widget.NewLabel("Sys"), u.sysMuteBtn,
 		container.NewGridWrap(fyne.NewSize(100, 28), u.sysVolSlider))
@@ -630,6 +743,7 @@ func (u *ui) rebuildColumns() {
 	showDuration := prefs.BoolWithFallback(prefShowDurationCol, true) // headline of now-playing enrichment
 	showFormat := prefs.BoolWithFallback(prefShowFormatCol, false)
 	showBitrate := prefs.BoolWithFallback(prefShowBitrateCol, false)
+	showGenre := prefs.BoolWithFallback(prefShowGenreCol, false)
 
 	u.visibleCols = u.visibleCols[:0]
 	for _, c := range allColumns {
@@ -649,6 +763,9 @@ func (u *ui) rebuildColumns() {
 			continue
 		}
 		if c.id == colBitrate && !showBitrate {
+			continue
+		}
+		if c.id == colGenre && !showGenre {
 			continue
 		}
 		u.visibleCols = append(u.visibleCols, c)
@@ -1525,6 +1642,11 @@ func (u *ui) reload() {
 		Genre:     u.qGenre,
 		Artist:    u.qArtist,
 		Album:     u.qAlbum,
+		FTitle:    u.fTitle,
+		FArtist:   u.fArtist,
+		FAlbum:    u.fAlbum,
+		FGenre:    u.fGenre,
+		FYear:     u.fYear,
 		SortCol:   u.sortCol,
 		Desc:      u.sortDesc,
 		Sort2Col:  u.sortCol2,
@@ -1651,8 +1773,13 @@ func (u *ui) scrollRowIntoView(i int) {
 
 // onPlayPause starts the selected track if nothing is loaded, else pauses.
 func (u *ui) onPlayPause() {
-	if _, ok := u.player.Current(); ok {
+	// A live stream (playing or paused) → toggle. After Stop there's no stream
+	// even though a track stays "current", so fall through to (re)start it.
+	if u.player.HasStream() {
 		u.player.TogglePause()
+		return
+	}
+	if u.player.ResumeCurrent() { // replay the stopped track if the queue is intact
 		return
 	}
 	start := u.selected

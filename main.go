@@ -15,7 +15,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "0.4.0" // see FyneApp.toml
+	appVersion = "0.5.0" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -170,6 +170,7 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		fyne.NewMenuItem("Select All Shown", u.selectAllShown),
 		fyne.NewMenuItem("Clear Selection", u.clearSelection),
 		fyne.NewMenuItem("Copy Selected to…", u.copySelectedTo),
+		fyne.NewMenuItem("Edit Tags of Selected…", u.editTagsOfSelected),
 		fyne.NewMenuItem("Add Selected to Queue", u.enqueueSelected),
 		fyne.NewMenuItem("Add All Shown to Queue", u.enqueueShown),
 		fyne.NewMenuItemSeparator(),
@@ -249,6 +250,10 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 	fmtColItem.Checked = prefs.BoolWithFallback(prefShowFormatCol, false)
 	brColItem := fyne.NewMenuItem("Show Bitrate Column", func() { u.toggleColumn(prefShowBitrateCol) })
 	brColItem.Checked = prefs.BoolWithFallback(prefShowBitrateCol, false)
+	genreColItem := fyne.NewMenuItem("Show Genre Column", func() { u.toggleColumn(prefShowGenreCol) })
+	genreColItem.Checked = prefs.BoolWithFallback(prefShowGenreCol, false)
+	colFilterItem := fyne.NewMenuItem("Show Column Filters", u.toggleColumnFilters)
+	colFilterItem.Checked = prefs.BoolWithFallback(prefShowColFilters, false)
 
 	// "Count play after" submenu: how much of a track must play to count as a play.
 	curPct := prefs.IntWithFallback(prefPlayCountPct, defaultPlayCountPct)
@@ -280,7 +285,9 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		durColItem,
 		fmtColItem,
 		brColItem,
+		genreColItem,
 		selColItem,
+		colFilterItem,
 		countAfterItem,
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem("Light Theme", func() { setLightTheme(a) }),

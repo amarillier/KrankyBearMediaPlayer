@@ -2,6 +2,36 @@ Release notes
 KrankyBear MediaPlayer: - Windows, Linux and MacOS media player
 
 
+Version 0.5.0 - June 10, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Per-column filters (View → Show Column Filters): a row of filter boxes that
+  narrow the list live — type a substring in Title / Artist / Album / Genre, and
+  Year takes a pattern (202[456] matches 2024-2026, 20* the 2000s). They combine
+  with each other, the search box, and the Show/rating filter. A ✕ clears them;
+  hiding the row clears them too.
+- New optional Genre column (View menu / Preferences).
+- Smart playlists can now be edited: Playlists → Manage Smart Playlists… gives each
+  one a pencil button that reopens its criteria (and lets you rename it), instead of
+  having to delete and recreate.
+- Tooltips: hover the toolbar and transport buttons for a short description of each.
+- Batch tag editing (Library → Edit Tags of Selected…): mark a set of tracks,
+  tick the fields to change (Artist, Album, Album Artist, Genre, Year, Comment),
+  and they're written to every marked file at once — great for tagging a whole
+  album. Only the ticked fields change; each track's title, track number and
+  cover art are left untouched. A progress dialog shows each file and can be
+  cancelled. MP3 and FLAC are written; OGG/WAV are skipped.
+- The KrankyBear logo is now shown at the bottom-left of the window, always
+  visible while you play.
+
+🐛 FIXES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Play/Pause now restarts the current track after Stop. Previously, once you
+  pressed Stop the Play button appeared to do nothing (you had to double-click a
+  track, or use Previous/Next) because the player still treated a track as
+  "current" even though its audio stream had been released.
+
 Version 0.4.0 - June 10, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ NEW FEATURES

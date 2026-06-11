@@ -85,6 +85,10 @@ func (u *ui) showPreferences() {
 	fmtChk.Checked = prefs.BoolWithFallback(prefShowFormatCol, false)
 	brChk := widget.NewCheck("Bitrate column", nil)
 	brChk.Checked = prefs.BoolWithFallback(prefShowBitrateCol, false)
+	genreChk := widget.NewCheck("Genre column", nil)
+	genreChk.Checked = prefs.BoolWithFallback(prefShowGenreCol, false)
+	colFilterChk := widget.NewCheck("Per-column filter row", nil)
+	colFilterChk.Checked = prefs.BoolWithFallback(prefShowColFilters, false)
 
 	// --- Library: database location ---
 	dbPathLabel := widget.NewLabel(resolveDBPath(u.app))
@@ -129,7 +133,7 @@ func (u *ui) showPreferences() {
 			widget.NewFormItem("Volume", volRow),
 		),
 		section("Library columns"),
-		durChk, fmtChk, brChk, trackChk, fileChk, selChk,
+		durChk, fmtChk, brChk, genreChk, trackChk, fileChk, selChk, colFilterChk,
 		section("Database location"),
 		dbPathLabel,
 		container.NewHBox(dbChangeBtn, dbResetBtn),
@@ -167,6 +171,9 @@ func (u *ui) showPreferences() {
 		prefs.SetBool(prefShowDurationCol, durChk.Checked)
 		prefs.SetBool(prefShowFormatCol, fmtChk.Checked)
 		prefs.SetBool(prefShowBitrateCol, brChk.Checked)
+		prefs.SetBool(prefShowGenreCol, genreChk.Checked)
+		prefs.SetBool(prefShowColFilters, colFilterChk.Checked)
+		u.applyColFilterVisibility() // show/hide the filter row to match
 		u.rebuildColumns()
 		u.rebuildMenu() // refresh the View menu checkmarks to match
 	}, u.win)

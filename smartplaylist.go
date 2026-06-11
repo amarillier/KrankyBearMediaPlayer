@@ -36,16 +36,19 @@ func (u *ui) applySmartPlaylist(s SmartPlaylist) {
 	u.reload()
 }
 
-// showNewSmartPlaylist opens a dialog to define and save a smart playlist. The
-// rating filter reuses the toolbar's options; genre/artist/album/search are
-// optional exact-match (case-insensitive) / substring constraints.
-func (u *ui) showNewSmartPlaylist() {
+// showNewSmartPlaylist opens the create dialog (a blank smart-playlist form).
+func (u *ui) showNewSmartPlaylist() { u.smartPlaylistForm(nil, nil) }
+
+// smartPlaylistForm is the shared create/edit dialog. When edit is nil it creates
+// a new playlist; otherwise it pre-fills from edit and updates that one by id (so
+// it can be renamed). onSaved, if set, runs after a successful save (the manage
+// dialog uses it to refresh its list). The rating filter reuses the toolbar's
+// options; genre/artist/album/search are optional partial (case-insensitive)
+// constraints.
+func (u *ui) smartPlaylistForm(edit *SmartPlaylist, onSaved func()) {
 	name := widget.NewEntry()
 	name.SetPlaceHolder("Playlist name")
-
 	ratingSel := widget.NewSelect(filterLabels(), nil)
-	ratingSel.SetSelectedIndex(0) // "All tracks"
-
 	genre := widget.NewEntry()
 	genre.SetPlaceHolder("any (partial ok)")
 	artist := widget.NewEntry()
@@ -54,6 +57,19 @@ func (u *ui) showNewSmartPlaylist() {
 	album.SetPlaceHolder("any (partial ok)")
 	search := widget.NewEntry()
 	search.SetPlaceHolder("any text in title/artist/album/genre/filename")
+
+	title := "New smart playlist"
+	if edit != nil {
+		title = "Edit smart playlist"
+		name.SetText(edit.Name)
+		ratingSel.SetSelected(filterLabelFor(edit.Filter))
+		genre.SetText(edit.Genre)
+		artist.SetText(edit.Artist)
+		album.SetText(edit.Album)
+		search.SetText(edit.Search)
+	} else {
+		ratingSel.SetSelectedIndex(0) // "All tracks"
+	}
 
 	form := widget.NewForm(
 		widget.NewFormItem("Name", name),
@@ -69,13 +85,13 @@ func (u *ui) showNewSmartPlaylist() {
 	hint.Wrapping = fyne.TextWrapWord
 	content := container.NewVBox(form, hint)
 
-	d := dialog.NewCustomConfirm("New smart playlist", "Save", "Cancel", content, func(ok bool) {
+	d := dialog.NewCustomConfirm(title, "Save", "Cancel", content, func(ok bool) {
 		if !ok {
 			return
 		}
 		nm := strings.TrimSpace(name.Text)
 		if nm == "" {
-			dialog.ShowInformation("New smart playlist", "Please enter a name.", u.win)
+			dialog.ShowInformation(title, "Please enter a name.", u.win)
 			return
 		}
 		sp := SmartPlaylist{
@@ -86,12 +102,26 @@ func (u *ui) showNewSmartPlaylist() {
 			Artist: strings.TrimSpace(artist.Text),
 			Album:  strings.TrimSpace(album.Text),
 		}
-		if err := u.db.SaveSmartPlaylist(sp); err != nil {
+		if edit != nil {
+			sp.ID = edit.ID
+			if err := u.db.UpdateSmartPlaylist(sp); err != nil {
+				dialog.ShowError(fmt.Errorf("could not save (is the name already used?): %w", err), u.win)
+				return
+			}
+		} else if err := u.db.SaveSmartPlaylist(sp); err != nil {
 			dialog.ShowError(err, u.win)
 			return
 		}
-		u.rebuildMenu()          // surface the new playlist in the Playlists menu
-		u.applySmartPlaylist(sp) // show it immediately
+		u.rebuildMenu() // refresh the Playlists menu
+
+		// Show a new playlist immediately; for an edit, only re-apply if it's the
+		// one currently in view (its criteria/name may have changed).
+		if edit == nil || u.smartName == edit.Name {
+			u.applySmartPlaylist(sp)
+		}
+		if onSaved != nil {
+			onSaved()
+		}
 	}, u.win)
 	d.Resize(fyne.NewSize(460, 380))
 	d.Show()
@@ -124,6 +154,9 @@ func (u *ui) manageSmartPlaylists() {
 		}
 		for _, s := range ls {
 			s := s // capture
+			edit := widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), func() {
+				u.smartPlaylistForm(&s, rebuild) // pre-filled; refresh this list on save
+			})
 			del := widget.NewButtonWithIcon("", theme.DeleteIcon(), func() {
 				if derr := u.db.DeleteSmartPlaylist(s.ID); derr != nil {
 					dialog.ShowError(derr, u.win)
@@ -137,7 +170,7 @@ func (u *ui) manageSmartPlaylists() {
 				rebuild()
 			})
 			del.Importance = widget.DangerImportance
-			box.Add(container.NewBorder(nil, nil, nil, del,
+			box.Add(container.NewBorder(nil, nil, nil, container.NewHBox(edit, del),
 				widget.NewLabel(fmt.Sprintf("%s   (%s)", s.Name, smartPlaylistSummary(s)))))
 		}
 		box.Refresh()
