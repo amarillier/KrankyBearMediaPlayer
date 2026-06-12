@@ -56,13 +56,13 @@ func (t Track) AbsPath() string {
 	return filepath.Join(t.FolderRoot, filepath.FromSlash(t.RelPath))
 }
 
-// EffectiveRating returns the manual rating if set, else the play-count-derived
-// rating (capped at 5). Mirrors the SQL expression used for filtering.
+// EffectiveRating returns the manual star rating (0 if unrated). Ratings are
+// manual-only - play count is shown in its own column, not turned into stars.
 func (t Track) EffectiveRating() int {
 	if t.Rating.Valid {
 		return int(t.Rating.Int64)
 	}
-	return autoRating(t.PlayCount)
+	return 0
 }
 
 // DB wraps the catalog database connection.
@@ -70,8 +70,9 @@ type DB struct {
 	sql *sql.DB
 }
 
-// effRatingExpr is the SQL form of Track.EffectiveRating, used in WHERE/ORDER.
-const effRatingExpr = "COALESCE(rating, MIN(play_count, 5))"
+// effRatingExpr is the SQL form of Track.EffectiveRating (manual rating, 0 if
+// unrated), used in WHERE/ORDER.
+const effRatingExpr = "COALESCE(rating, 0)"
 
 const schema = `
 CREATE TABLE IF NOT EXISTS folders (
@@ -186,6 +187,22 @@ type Folder struct {
 	ID        int64
 	Path      string
 	Recursive bool
+}
+
+// DeleteFolder removes a watched folder and, via ON DELETE CASCADE (foreign keys
+// are enabled), all of its catalogued tracks and their thumbnails. The files on
+// disk are untouched.
+func (d *DB) DeleteFolder(id int64) error {
+	_, err := d.sql.Exec(`DELETE FROM folders WHERE id=?`, id)
+	return err
+}
+
+// CountTracksInFolder returns how many catalogued tracks belong to a folder
+// (used to warn before removing it).
+func (d *DB) CountTracksInFolder(id int64) (int, error) {
+	var n int
+	err := d.sql.QueryRow(`SELECT COUNT(*) FROM tracks WHERE folder_id=?`, id).Scan(&n)
+	return n, err
 }
 
 // Folders returns all watched folders.
@@ -373,6 +390,7 @@ type TrackQuery struct {
 	FAlbum  string
 	FGenre  string
 	FYear   string
+	FPlays  string // GLOB pattern against play count text ("5" = exactly 5, "0" = unplayed)
 	SortCol   int  // primary sort: a col* constant; -1 = default order
 	Desc      bool // primary descending
 	Sort2Col  int  // secondary sort (shift-click); -1 = none
@@ -468,9 +486,14 @@ func (d *DB) Tracks(q TrackQuery) ([]Track, error) {
 			args = append(args, likeContains(v))
 		}
 	}
-	// Year column filter: a GLOB pattern against the year text (e.g. "202[456]").
+	// Year + Plays column filters: GLOB patterns against the numeric text
+	// (e.g. year "202[456]", plays "5" for exactly five, "0" for unplayed).
 	if v := strings.TrimSpace(q.FYear); v != "" {
 		conds = append(conds, `CAST(t.year AS TEXT) GLOB ?`)
+		args = append(args, v)
+	}
+	if v := strings.TrimSpace(q.FPlays); v != "" {
+		conds = append(conds, `CAST(t.play_count AS TEXT) GLOB ?`)
 		args = append(args, v)
 	}
 	if len(conds) > 0 {

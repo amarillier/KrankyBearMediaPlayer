@@ -2,15 +2,29 @@ Release notes
 KrankyBear MediaPlayer: - Windows, Linux and MacOS media player
 
 
-Version 0.5.0 - June 10, 2026
+Version 0.5.1 - June 10, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ NEW FEATURES
 ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Watched-folders manager (Library → Manage Folders…): view every watched folder
+  with its track count; add, relocate (repoint at a moved/re-lettered drive),
+  rescan a single folder, or remove one. Removing takes a folder's tracks out of
+  the library but never deletes files on disk.
+- ReplayGain (Playback → ReplayGain): optional per-track volume normalization for
+  files tagged with ReplayGain, so albums/playlists play at a consistent loudness.
+  Peak-limited to avoid clipping. Off by default; reads MP3/FLAC/OGG tags.
+- Track transitions (Playback → Track transition): Gapless plays tracks back-to-
+  back with no silence; Crossfade fades the outgoing track out as the next fades
+  in. Default stays "Gap". (Both new modes are experimental.)
+- Ratings are now manual-only. Stars are what you set; a track's play count is
+  tracked and shown in its own column but no longer turned into auto-stars (which
+  was confusing — "Clear" now truly goes to no stars). The Show filter's
+  "Unplayed (no stars)" became "Unrated"; "Played (1+ stars)" became "1 star & up".
 - Per-column filters (View → Show Column Filters): a row of filter boxes that
   narrow the list live — type a substring in Title / Artist / Album / Genre, and
-  Year takes a pattern (202[456] matches 2024-2026, 20* the 2000s). They combine
-  with each other, the search box, and the Show/rating filter. A ✕ clears them;
-  hiding the row clears them too.
+  Year / Plays take a pattern (Year 202[456] matches 2024-2026; Plays 5 = exactly
+  five plays, 0 = unplayed). They combine with each other, the search box, and the
+  Show/rating filter. A ✕ clears them; hiding the row clears them too.
 - New optional Genre column (View menu / Preferences).
 - Smart playlists can now be edited: Playlists → Manage Smart Playlists… gives each
   one a pencil button that reopens its criteria (and lets you rename it), instead of
@@ -27,6 +41,11 @@ Version 0.5.0 - June 10, 2026
 
 🐛 FIXES
 ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Clicking the in-row rating stars is now accurate: the click maps to the actual
+  star you click, so all five (including the 5th) are reachable. Previously the hit
+  zones were spread across the whole cell, making the 5th star hard to hit.
+- The bottom "Rate:" star buttons (and the clear button) no longer blank the track
+  list until you scroll — they update the row in place like the in-row stars.
 - Play/Pause now restarts the current track after Stop. Previously, once you
   pressed Stop the Play button appeared to do nothing (you had to double-click a
   track, or use Previous/Next) because the player still treated a track as

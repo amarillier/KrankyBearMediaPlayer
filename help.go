@@ -40,6 +40,9 @@ GETTING STARTED:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Library → Add Folder: pick a folder of music; it is scanned into the catalog.
   Add as many folders / locations as you like.
+• Library → Manage Folders: see every watched folder with its track count; add,
+  relocate (repoint at a moved drive), rescan, or remove one. Removing takes its
+  tracks out of the library but never deletes files on disk.
 • Library → Rescan All: re-scan watched folders to pick up new or changed files.
 • Your library is a small SQLite database. Title, artist, album, genre, year,
   track number and embedded album art are read from each file.
@@ -51,6 +54,11 @@ PLAYING MUSIC:
 • Playback menu: Shuffle plays the queue in a random order; Repeat → Off / All
   (loop the queue) / One (loop the current track). Both are remembered. Skipping
   with Next/Previous always moves on, even with Repeat One.
+• Playback → ReplayGain: when on, tracks tagged with ReplayGain play at a
+  consistent loudness (peak-limited so boosted tracks don't clip). Off by default.
+• Playback → Track transition: Gap (default), Gapless (tracks butt up with no
+  silence), or Crossfade (the outgoing track fades out as the next fades in).
+  Gapless/Crossfade are experimental.
 • Play Queue (Playback → Show Play Queue): see what's lined up in play order, with
   the current track marked ▶. Right-click a track → Add to Queue (or Library → Add
   Selected / Add All Shown to Queue) appends without interrupting what's playing.
@@ -68,23 +76,26 @@ PLAYING MUSIC:
 
 RATINGS & PLAY TRACKING:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Every track has a play count and a 1–5 star rating (empty = unplayed).
+• Ratings are manual: set a 1–5 star rating yourself. Play count is tracked
+  separately (its own column) and is NOT turned into stars.
 • Click the stars in a track's Rating column to set a rating; click the same star
-  again to clear it. The "Rate:" buttons (bottom) and the right-click menu do the same.
-• Auto rating: with no manual rating set, stars are derived from how often you've
-  played a track. A manual rating always wins and is never changed automatically.
-• View → Count play after: choose how much of a track must play before it counts
-  as a play (25 / 50 / 75 / 90% or End of track). Skipping never counts.
+  again to clear it (back to no stars). The "Rate:" buttons (bottom) and the
+  right-click menu do the same. All five stars are clickable.
+• View → Count play after: choose how much of a track must play before its play
+  count goes up (25 / 50 / 75 / 90% or End of track). Skipping never counts.
+• Tip: filter by Plays (column filter) to find, say, everything you've played 5
+  times, then rate those tracks however you like.
 
 FINDING & ORGANISING:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Search box (top): filters by title, artist, album, genre or filename as you type.
 • Column filters (View → Show Column Filters): a row of per-column boxes — type in
-  Title, Artist, Album, Genre to match a substring, and Year accepts a pattern
-  (e.g. 202[456] matches 2024-2026, 20* matches the 2000s). They combine with each
+  Title, Artist, Album, Genre to match a substring; Year and Plays accept a pattern
+  (e.g. Year 202[456] matches 2024-2026; Plays 5 = played exactly five times, 0 =
+  never played). They combine with each
   other and the search/Show filter. Clear them with the ✕ button; hiding the row
   also clears them.
-• "Show" filter (top): All, Unplayed, exact stars, or N-stars-and-up.
+• "Show" filter (top): All, Unrated, exact stars, or N-stars-and-up.
 • Click a column header to sort; click again to reverse (the Art column doesn't sort).
 • View menu: optionally show the Length, Format, Bitrate, Genre, Track # and
   Filename columns (Length is on by default, the rest off; choices are remembered).

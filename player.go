@@ -49,15 +49,25 @@ type Player struct {
 	index int // index into queue of the current track; -1 when nothing loaded
 	// order is a permutation of queue indices giving the play order (identity when
 	// not shuffled); pos is the position within order, so order[pos] == index.
-	order     []int
-	pos       int
-	shuffle   bool
-	repeat    RepeatMode
-	streamer  beep.StreamSeekCloser
-	format    beep.Format     // decoder format of the current track (for seeking)
-	ctrl      *beep.Ctrl      // wraps the stream so we can pause/resume
-	volume    *effects.Volume // wraps the chain so we can adjust gain
-	gain      float64         // 0..1 linear volume, persists across tracks
+	order      []int
+	pos        int
+	shuffle    bool
+	repeat     RepeatMode
+	streamer   beep.StreamSeekCloser
+	draining   []beep.StreamSeekCloser // superseded streams still draining during a gapless/crossfade overlap
+	format     beep.Format             // decoder format of the current track (for seeking)
+	ctrl       *beep.Ctrl              // wraps the stream so we can pause/resume
+	volume     *effects.Volume         // wraps the chain so we can adjust gain
+	gain       float64                 // 0..1 linear volume, persists across tracks
+	replayGain bool                    // apply per-track ReplayGain when available
+	rgOffset   float64                 // current track's ReplayGain offset (log2 factor; 0 = none)
+	// Track transition (player_transition.go): gapless / crossfade. gen rises each
+	// time a new stream becomes current, so a superseded track's end-callback is
+	// ignored. armed = the current track may still pre-trigger its transition.
+	xfade     transitionMode
+	gen       uint64
+	armed     bool
+	poller    sync.Once
 	playing   bool
 	inited    bool
 	currentID int64   // DB id of the loaded track (0 if none)
@@ -106,6 +116,7 @@ func (p *Player) ensureInit() error {
 		return err
 	}
 	p.inited = true
+	p.startTransitionPoll() // watches for gapless/crossfade transitions (no-op in gap mode)
 	return nil
 }
 
@@ -206,12 +217,14 @@ func (p *Player) playLocked() {
 		return
 	}
 
-	// Tear down whatever was playing.
+	// Tear down whatever was playing. Clear discards any overlap streams from the
+	// mixer (so their end-callbacks won't fire) - close them here instead.
 	speaker.Clear()
 	if p.streamer != nil {
 		p.streamer.Close()
 		p.streamer = nil
 	}
+	p.closeDrainingLocked()
 
 	tr := p.queue[p.index]
 	p.currentID = tr.ID
@@ -232,6 +245,12 @@ func (p *Player) playLocked() {
 	p.streamer = s
 	p.format = format
 
+	// ReplayGain (opt-in): fold the track's gain offset into the volume below.
+	p.rgOffset = 0
+	if p.replayGain {
+		p.rgOffset = replayGainOffset(tr.AbsPath())
+	}
+
 	// Chain: decoder -> Ctrl (pause) -> resample (if needed) -> Volume (gain).
 	p.ctrl = &beep.Ctrl{Streamer: s}
 	var stream beep.Streamer = p.ctrl
@@ -241,25 +260,46 @@ func (p *Player) playLocked() {
 	p.volume = &effects.Volume{
 		Streamer: stream,
 		Base:     2,
-		Volume:   gainToVolume(p.gain),
+		Volume:   gainToVolume(p.gain) + p.rgOffset,
 		Silent:   p.gain <= 0,
 	}
 
-	id := tr.ID
-	// When the track drains naturally, the Callback fires on the speaker's
-	// goroutine; we hand off to a fresh goroutine to avoid deadlocking on the
-	// speaker mutex when advancing the queue.
-	speaker.Play(beep.Seq(p.volume, beep.Callback(func() {
-		go p.trackFinished(id)
-	})))
-	p.playing = true
+	p.beginStreamLocked(tr) // adds this stream to the speaker (replacing the old)
 	// NB: no fireChange here - the caller fires it after unlocking.
 }
 
-// trackFinished credits the play (if a percentage threshold hasn't already) and
-// advances to the next queued track.
-func (p *Player) trackFinished(id int64) {
+// beginStreamLocked adds the already-set-up current stream (p.streamer/p.volume)
+// to the speaker and wires its end callback under a fresh generation. Used by
+// playLocked (gap mode) and the gapless/crossfade transition. Caller holds p.mu.
+func (p *Player) beginStreamLocked(tr Track) {
+	p.gen++
+	gen := p.gen
+	p.armed = true
+	s := p.streamer
+	id := tr.ID
+	// When the track drains naturally the Callback fires on the speaker's
+	// goroutine; hand off to a fresh goroutine to avoid deadlocking on the speaker
+	// mutex when advancing the queue.
+	speaker.Play(beep.Seq(p.volume, beep.Callback(func() {
+		go p.trackEnded(id, gen, s)
+	})))
+	p.playing = true
+}
+
+// trackEnded runs when a stream drains. If its generation is stale (a gapless/
+// crossfade transition already moved on), it just releases the streamer. Otherwise
+// it credits the play and advances to the next queued track.
+func (p *Player) trackEnded(id int64, gen uint64, s beep.StreamSeekCloser) {
 	p.mu.Lock()
+	if gen != p.gen {
+		// Superseded by a transition; this old stream has finished draining.
+		p.dropDrainingLocked(s)
+		p.mu.Unlock()
+		if s != nil {
+			s.Close()
+		}
+		return
+	}
 	// Credit at natural end if not already counted - covers the "end of track"
 	// threshold and tracks too short for a 500ms tick to catch the crossing.
 	credited, creditedID := p.creditPlayLocked()
@@ -540,12 +580,14 @@ func (p *Player) stopStreamLocked() {
 		p.streamer.Close()
 		p.streamer = nil
 	}
+	p.closeDrainingLocked()
 	p.ctrl = nil
 	p.volume = nil
 	p.format = beep.Format{}
 	p.currentID = 0
 	p.counted = false
 	p.playing = false
+	p.gen++ // invalidate any in-flight end-callbacks
 }
 
 // Stop halts playback and releases the current stream.
@@ -570,9 +612,38 @@ func (p *Player) SetVolume(level float64) {
 	if p.volume != nil {
 		speaker.Lock()
 		p.volume.Silent = level <= 0
-		p.volume.Volume = gainToVolume(level)
+		p.volume.Volume = gainToVolume(level) + p.rgOffset
 		speaker.Unlock()
 	}
+}
+
+// SetReplayGain turns per-track ReplayGain on/off and re-applies it to the
+// currently-loaded track immediately (the tag read happens off the lock).
+func (p *Player) SetReplayGain(on bool) {
+	p.mu.Lock()
+	p.replayGain = on
+	var path string
+	if p.index >= 0 && p.index < len(p.queue) {
+		path = p.queue[p.index].AbsPath()
+	}
+	hasVol := p.volume != nil
+	p.mu.Unlock()
+
+	if !hasVol {
+		return
+	}
+	off := 0.0
+	if on && path != "" {
+		off = replayGainOffset(path)
+	}
+	p.mu.Lock()
+	p.rgOffset = off
+	if p.volume != nil {
+		speaker.Lock()
+		p.volume.Volume = gainToVolume(p.gain) + p.rgOffset
+		speaker.Unlock()
+	}
+	p.mu.Unlock()
 }
 
 // Volume returns the current gain (0..1).

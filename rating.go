@@ -1,35 +1,21 @@
 // Package main - rating.go centralizes star-rating logic.
 //
-// Two ways to rate, as the user requested:
-//   - Manual: an explicit 1..5 star rating stored on the track.
-//   - Auto:   derived from play count when no manual rating is set, so that
-//     playing something 5 times makes it a 5-star track on its own.
+// Ratings are manual-only: an explicit 1..5 star rating the user sets. Play count
+// is tracked and shown in its own column (and is filterable), but it is NOT turned
+// into stars - that auto-rating behaviour was dropped as confusing (clearing a
+// rating now truly goes to no stars).
 //
-// EffectiveRating (Track.EffectiveRating / effRatingExpr in SQL) is what the
-// UI shows and what filters operate on: manual if present, else auto.
+// EffectiveRating (Track.EffectiveRating / effRatingExpr in SQL) is what the UI
+// shows and what the rating filters operate on: the manual rating, or 0.
 package main
 
-// autoRating maps a play count to a star rating, capped at 5. Kept trivial and
-// linear for now (1 play = 1 star ... 5+ plays = 5 stars); this is the Go twin
-// of effRatingExpr's MIN(play_count, 5) in db.go. If thresholds ever become
-// configurable, change both together.
-func autoRating(playCount int) int {
-	if playCount > 5 {
-		return 5
-	}
-	if playCount < 0 {
-		return 0
-	}
-	return playCount
-}
-
-// Filter selects which tracks the library view shows, by effective rating.
+// Filter selects which tracks the library view shows, by manual star rating.
 type Filter int
 
 const (
 	FilterAll      Filter = iota // everything
-	FilterUnplayed               // never played and never manually rated
-	FilterAtLeast1               // effective rating >= 1 (i.e. played or rated)
+	FilterUnrated                // no manual rating set
+	FilterAtLeast1               // rating >= 1
 	FilterAtLeast2
 	FilterAtLeast3
 	FilterAtLeast4
@@ -44,8 +30,8 @@ const (
 // filter, or "" for no restriction. effRatingExpr lives in db.go.
 func (f Filter) where() string {
 	switch f {
-	case FilterUnplayed:
-		return "t.play_count = 0 AND t.rating IS NULL"
+	case FilterUnrated:
+		return "t.rating IS NULL"
 	case FilterAtLeast1:
 		return effRatingExpr + " >= 1"
 	case FilterAtLeast2:
@@ -70,14 +56,13 @@ func (f Filter) where() string {
 }
 
 // filterOptions is the ordered list of (label, Filter) pairs for the UI's
-// filter dropdown. effRatingExpr uses MIN(play_count,5), so these read against
-// the effective rating.
+// filter dropdown. These read against the manual star rating.
 var filterOptions = []struct {
 	Label  string
 	Filter Filter
 }{
 	{"All tracks", FilterAll},
-	{"Unplayed (no stars)", FilterUnplayed},
+	{"Unrated", FilterUnrated},
 	{"5 stars", FilterExactly5},
 	{"4 stars", FilterExactly4},
 	{"3 stars", FilterExactly3},
@@ -86,7 +71,7 @@ var filterOptions = []struct {
 	{"4 stars & up", FilterAtLeast4},
 	{"3 stars & up", FilterAtLeast3},
 	{"2 stars & up", FilterAtLeast2},
-	{"Played (1+ stars)", FilterAtLeast1},
+	{"1 star & up", FilterAtLeast1},
 }
 
 // filterByLabel returns the Filter for a dropdown label.

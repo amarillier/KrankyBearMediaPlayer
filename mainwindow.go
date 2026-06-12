@@ -144,9 +144,11 @@ const prefPlayCountPct = "playCountPercent"
 const defaultPlayCountPct = 50
 
 // Playback mode preferences (remembered across launches).
-const prefShuffle = "shuffle"   // bool
-const prefRepeat = "repeatMode" // int: 0 off, 1 all, 2 one
-const prefVolume = "volume"     // float 0..1 linear gain
+const prefShuffle = "shuffle"       // bool
+const prefRepeat = "repeatMode"     // int: 0 off, 1 all, 2 one
+const prefReplayGain = "replayGain" // bool: apply per-track ReplayGain
+const prefTransition = "transition" // int: 0 gap, 1 gapless, 2 crossfade
+const prefVolume = "volume"         // float 0..1 linear gain
 
 // prefDBPath is the saved custom catalog-database path (empty = default location).
 const prefDBPath = "dbPath"
@@ -164,19 +166,20 @@ type ui struct {
 	db     *DB
 	player *Player
 
-	tracks       []Track
-	filter       Filter
-	search       string
-	qGenre       string // active smart-playlist constraints (empty = none)
-	qArtist      string
-	qAlbum       string
+	tracks  []Track
+	filter  Filter
+	search  string
+	qGenre  string // active smart-playlist constraints (empty = none)
+	qArtist string
+	qAlbum  string
 	// Per-column filter row (toggle in View). Empty = no constraint; fYear is a
 	// GLOB pattern (see db.TrackQuery). Transient - not persisted across launches.
-	fTitle  string
-	fArtist string
-	fAlbum  string
-	fGenre  string
-	fYear   string
+	fTitle       string
+	fArtist      string
+	fAlbum       string
+	fGenre       string
+	fYear        string
+	fPlays       string
 	smartName    string // name of the applied smart playlist, "" if none
 	sortCol      int    // primary sort column, -1 = default order
 	sortDesc     bool   // primary descending
@@ -187,9 +190,9 @@ type ui struct {
 
 	marked map[int64]markEntry // tracks ticked for copy: id -> path+artist+album
 
-	table         *widget.Table
-	visibleCols   []columnDef // currently shown columns, in physical order
-	thumbCache    map[int64]fyne.Resource
+	table             *widget.Table
+	visibleCols       []columnDef // currently shown columns, in physical order
+	thumbCache        map[int64]fyne.Resource
 	colFilterRow      fyne.CanvasObject // the toggleable per-column filter row
 	colFilterBox      []*widget.Entry   // its entries, for Clear / hide-clearing
 	colFilterClearing bool              // true while clearing filters, to coalesce into one reload
@@ -201,7 +204,7 @@ type ui struct {
 
 	seekSlider *widget.Slider
 	timeLabel  *widget.Label
-	seeking    bool // true while the user drags the seek slider
+	seeking    bool           // true while the user drags the seek slider
 	volSlider  *widget.Slider // per-stream playback gain (player.go)
 
 	// System output volume controls (sysvolume.go), distinct from the gain
@@ -290,6 +293,8 @@ func buildMainWindow(a fyne.App, win fyne.Window, db *DB, player *Player) *ui {
 	player.SetCountThreshold(float64(pct) / 100)
 	player.SetShuffle(prefs.BoolWithFallback(prefShuffle, false))
 	player.SetRepeat(RepeatMode(prefs.IntWithFallback(prefRepeat, int(RepeatOff))))
+	player.SetReplayGain(prefs.BoolWithFallback(prefReplayGain, false))
+	player.SetTransitionMode(transitionMode(prefs.IntWithFallback(prefTransition, int(transGap))))
 	vol := prefs.FloatWithFallback(prefVolume, 1.0)
 	player.SetVolume(vol)
 	u.volSlider.SetValue(vol) // reflect the restored volume in the slider
@@ -350,6 +355,23 @@ func (u *ui) toggleShuffle() {
 func (u *ui) setRepeat(m RepeatMode) {
 	u.player.SetRepeat(m)
 	u.app.Preferences().SetInt(prefRepeat, int(m))
+	fyne.Do(func() { u.win.SetMainMenu(buildMenu(u.app, u)) })
+}
+
+// setTransition sets the track-transition mode (gap/gapless/crossfade), persists
+// it, and rebuilds the menu radio-checkmarks.
+func (u *ui) setTransition(m transitionMode) {
+	u.player.SetTransitionMode(m)
+	u.app.Preferences().SetInt(prefTransition, int(m))
+	fyne.Do(func() { u.win.SetMainMenu(buildMenu(u.app, u)) })
+}
+
+// toggleReplayGain flips ReplayGain volume normalization, persists it, applies it
+// to the current track, and rebuilds the menu checkmark.
+func (u *ui) toggleReplayGain() {
+	on := !u.app.Preferences().BoolWithFallback(prefReplayGain, false)
+	u.player.SetReplayGain(on)
+	u.app.Preferences().SetBool(prefReplayGain, on)
 	fyne.Do(func() { u.win.SetMainMenu(buildMenu(u.app, u)) })
 }
 
@@ -490,7 +512,8 @@ func (u *ui) buildColumnFilters() fyne.CanvasObject {
 	alE := mk("Album", func(s string) { u.fAlbum = s })
 	gE := mk("Genre", func(s string) { u.fGenre = s })
 	yE := mk("Year e.g. 202[456]", func(s string) { u.fYear = s })
-	u.colFilterBox = []*widget.Entry{tE, aE, alE, gE, yE}
+	pE := mk("Plays e.g. 5", func(s string) { u.fPlays = s })
+	u.colFilterBox = []*widget.Entry{tE, aE, alE, gE, yE, pE}
 
 	clear := ttwidget.NewButtonWithIcon("", theme.ContentClearIcon(), u.clearColumnFilters)
 	clear.SetToolTip("Clear all column filters")
@@ -499,7 +522,7 @@ func (u *ui) buildColumnFilters() fyne.CanvasObject {
 	}
 	row := container.NewHBox(
 		widget.NewLabel("Filter:"),
-		wrap(150, tE), wrap(150, aE), wrap(150, alE), wrap(120, gE), wrap(140, yE),
+		wrap(150, tE), wrap(150, aE), wrap(150, alE), wrap(120, gE), wrap(140, yE), wrap(110, pE),
 		clear,
 	)
 	return container.NewVBox(row, widget.NewSeparator())
@@ -954,11 +977,17 @@ func (c *cellWidget) Tapped(e *fyne.PointEvent) {
 		// made each checkbox click feel ~half a second slow.
 		return
 	case colRating:
-		w := c.Size().Width
-		if w <= 0 {
+		// Map the click to a star by the actual rendered star glyphs, not the full
+		// cell width. The stars are a left-aligned text label inset by InnerPadding;
+		// dividing the whole cell by 5 (the old way) made the visible 5th star map to
+		// 4 and only the empty space past the stars reach 5. Clicks left of / past the
+		// stars clamp to 1 / 5, giving generous, accurate hit zones.
+		size := theme.TextSize()
+		slot := fyne.MeasureText(starString(5), size, fyne.TextStyle{}).Width / 5
+		if slot <= 0 {
 			return
 		}
-		star := int(e.Position.X/(w/5)) + 1
+		star := int((e.Position.X-theme.InnerPadding())/slot) + 1
 		if star < 1 {
 			star = 1
 		} else if star > 5 {
@@ -1647,6 +1676,7 @@ func (u *ui) reload() {
 		FAlbum:    u.fAlbum,
 		FGenre:    u.fGenre,
 		FYear:     u.fYear,
+		FPlays:    u.fPlays,
 		SortCol:   u.sortCol,
 		Desc:      u.sortDesc,
 		Sort2Col:  u.sortCol2,
@@ -1798,12 +1828,9 @@ func (u *ui) rateSelected(rating int) {
 		dialog.ShowInformation("No selection", "Select a track first.", u.win)
 		return
 	}
-	tr := u.tracks[u.selected]
-	if err := u.db.SetRating(tr.ID, rating); err != nil {
-		dialog.ShowError(err, u.win)
-		return
-	}
-	u.reload()
+	// Update in place (same as the in-row stars) - not via reload(), which rebuilds
+	// the list and momentarily blanks it until the next scroll (a Fyne table quirk).
+	u.setRowRating(u.selected, rating)
 }
 
 // addFolder lets the user pick a folder, catalogs it, and refreshes.
@@ -1878,8 +1905,9 @@ func (u *ui) rescanAll() {
 }
 
 // scanFolders scans the given folders on a background goroutine, updating the
-// status line and reloading the table when done.
-func (u *ui) scanFolders(folders []Folder) {
+// status line and reloading the table when done. Any onDone callbacks run on the
+// UI goroutine after the reload (e.g. the folder manager refreshing its list).
+func (u *ui) scanFolders(folders []Folder, onDone ...func()) {
 	go func() {
 		var total ScanResult
 		for _, f := range folders {
@@ -1898,6 +1926,9 @@ func (u *ui) scanFolders(folders []Folder) {
 			u.status.SetText(fmt.Sprintf("Scan complete: %d files, %d catalogued, %d errors",
 				total.Found, total.Updated, total.Errors))
 			u.startDurationEnricher() // compute lengths for any newly catalogued files
+			for _, fn := range onDone {
+				fn()
+			}
 		})
 	}()
 }

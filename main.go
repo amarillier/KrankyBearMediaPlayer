@@ -15,7 +15,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "0.5.0" // see FyneApp.toml
+	appVersion = "0.5.1" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -106,6 +106,7 @@ func setupSystemTray(a fyne.App, u *ui) {
 		return // not a desktop driver (e.g. mobile/web)
 	}
 	menu := fyne.NewMenu(appName,
+
 		fyne.NewMenuItem("Show All Windows", func() { fyne.Do(u.showAllWindows) }),
 		fyne.NewMenuItem("Hide All Windows", func() { fyne.Do(u.hideAllWindows) }),
 		fyne.NewMenuItemSeparator(),
@@ -113,6 +114,9 @@ func setupSystemTray(a fyne.App, u *ui) {
 		fyne.NewMenuItem("Previous", u.player.Prev),
 		fyne.NewMenuItem("Next", u.player.Next),
 		fyne.NewMenuItem("Stop", u.player.Stop),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("Preferences…", func() { fyne.Do(u.showPreferences) }),
+
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem("Quit", func() { fyne.Do(u.quit) }), // tray runs off the main goroutine
 	)
@@ -164,6 +168,7 @@ func dirWritable(dir string) bool {
 func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 	fileMenu := fyne.NewMenu("Library",
 		fyne.NewMenuItem("Add Folder…", u.addFolder),
+		fyne.NewMenuItem("Manage Folders…", u.manageFolders),
 		fyne.NewMenuItem("Rescan All", u.rescanAll),
 		fyne.NewMenuItem("Relocate Folder… (moved drive)", u.relocateFolder),
 		fyne.NewMenuItemSeparator(),
@@ -203,6 +208,22 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		repeatItemFor("Repeat All", RepeatAll),
 		repeatItemFor("Repeat One", RepeatOne),
 	)
+	rgItem := fyne.NewMenuItem("ReplayGain (volume normalization)", u.toggleReplayGain)
+	rgItem.Checked = a.Preferences().BoolWithFallback(prefReplayGain, false)
+
+	curTrans := transitionMode(a.Preferences().IntWithFallback(prefTransition, int(transGap)))
+	transItemFor := func(label string, m transitionMode) *fyne.MenuItem {
+		it := fyne.NewMenuItem(label, func() { u.setTransition(m) })
+		it.Checked = curTrans == m
+		return it
+	}
+	transitionItem := fyne.NewMenuItem("Track transition", nil)
+	transitionItem.ChildMenu = fyne.NewMenu("",
+		transItemFor("Gap (default)", transGap),
+		transItemFor("Gapless (experimental)", transGapless),
+		transItemFor("Crossfade (experimental)", transCrossfade),
+	)
+
 	playbackMenu := fyne.NewMenu("Playback",
 		playPauseItem,
 		prevItem,
@@ -211,6 +232,8 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		fyne.NewMenuItemSeparator(),
 		shuffleItem,
 		repeatItem,
+		rgItem,
+		transitionItem,
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem("Show Play Queue", u.showQueue),
 	)

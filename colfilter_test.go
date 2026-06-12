@@ -58,4 +58,18 @@ func TestColumnFilters(t *testing.T) {
 			t.Errorf("%s: got %d, want %d", c.name, got, c.want)
 		}
 	}
+
+	// Plays filter (GLOB on play count): bump one track to 5 plays.
+	all, _ := db.Tracks(TrackQuery{Filter: FilterAll, SortCol: -1})
+	for i := 0; i < 5; i++ {
+		if err := db.IncrementPlayCount(all[0].ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := count(TrackQuery{FPlays: "5"}); got != 1 {
+		t.Errorf("FPlays=5: got %d, want 1", got)
+	}
+	if got := count(TrackQuery{FPlays: "0"}); got != 3 {
+		t.Errorf("FPlays=0 (unplayed): got %d, want 3", got)
+	}
 }

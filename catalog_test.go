@@ -101,26 +101,30 @@ func TestCatalogScanRatingAndRelocate(t *testing.T) {
 		t.Fatal("song1.wav not catalogued")
 	}
 
-	// Unplayed filter: both tracks, no plays, no manual rating.
-	if got, _ := db.Tracks(TrackQuery{Filter: FilterUnplayed, SortCol: -1}); len(got) != 2 {
-		t.Fatalf("FilterUnplayed expected 2, got %d", len(got))
+	// Unrated filter: both tracks, no manual rating yet.
+	if got, _ := db.Tracks(TrackQuery{Filter: FilterUnrated, SortCol: -1}); len(got) != 2 {
+		t.Fatalf("FilterUnrated expected 2, got %d", len(got))
 	}
 
-	// Play song1 three times -> auto rating 3.
+	// Ratings are manual-only: playing a track does NOT auto-star it.
 	for i := 0; i < 3; i++ {
 		if err := db.IncrementPlayCount(song1.ID); err != nil {
 			t.Fatal(err)
 		}
 	}
-	got, _ := db.Tracks(TrackQuery{Filter: FilterExactly3, SortCol: -1})
-	if len(got) != 1 || got[0].ID != song1.ID {
-		t.Fatalf("FilterExactly3 expected song1, got %v", got)
+	played, _ := db.Tracks(TrackQuery{Filter: FilterAll, Search: "song1", SortCol: -1})
+	if len(played) != 1 || played[0].PlayCount != 3 {
+		t.Fatalf("expected song1 with 3 plays, got %v", played)
 	}
-	if got[0].EffectiveRating() != 3 {
-		t.Fatalf("auto rating expected 3, got %d", got[0].EffectiveRating())
+	if played[0].EffectiveRating() != 0 {
+		t.Fatalf("manual-only: 3 plays must not auto-rate, got %d", played[0].EffectiveRating())
+	}
+	// It must still be Unrated (plays don't create stars).
+	if got, _ := db.Tracks(TrackQuery{Filter: FilterUnrated, SortCol: -1}); len(got) != 2 {
+		t.Fatalf("after plays, FilterUnrated expected 2, got %d", len(got))
 	}
 
-	// Manual rating overrides auto: set song1 to 5 stars.
+	// A manual rating is what counts: set song1 to 5 stars.
 	if err := db.SetRating(song1.ID, 5); err != nil {
 		t.Fatal(err)
 	}
@@ -229,5 +233,36 @@ func TestCopyFileIntoCollision(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(filepath.Join(dst, "song (2).mp3")); string(b) != "BBB" {
 		t.Errorf("song (2).mp3 = %q, want BBB (collision suffix)", b)
+	}
+}
+
+// TestDeleteFolderCascade verifies removing a folder drops its tracks (FK cascade)
+// and that CountTracksInFolder reports the right number first.
+func TestDeleteFolderCascade(t *testing.T) {
+	db, err := openDB(filepath.Join(t.TempDir(), "lib.db"))
+	if err != nil {
+		t.Fatalf("openDB: %v", err)
+	}
+	defer db.Close()
+	fid, err := db.AddFolder(t.TempDir(), true)
+	if err != nil {
+		t.Fatalf("AddFolder: %v", err)
+	}
+	for _, name := range []string{"a", "b", "c"} {
+		if err := db.UpsertTrack(&Track{FolderID: fid, RelPath: name + ".mp3", Title: name}); err != nil {
+			t.Fatalf("UpsertTrack: %v", err)
+		}
+	}
+	if n, _ := db.CountTracksInFolder(fid); n != 3 {
+		t.Fatalf("CountTracksInFolder = %d, want 3", n)
+	}
+	if err := db.DeleteFolder(fid); err != nil {
+		t.Fatalf("DeleteFolder: %v", err)
+	}
+	if got, _ := db.Tracks(TrackQuery{Filter: FilterAll, SortCol: -1}); len(got) != 0 {
+		t.Fatalf("after DeleteFolder expected 0 tracks (cascade), got %d", len(got))
+	}
+	if folders, _ := db.Folders(); len(folders) != 0 {
+		t.Fatalf("expected 0 folders after delete, got %d", len(folders))
 	}
 }
