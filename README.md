@@ -14,14 +14,22 @@ fixing and performance work. Some areas are a little slow; improving them is ong
   driver — no CGo for the database).
 - **Spreadsheet-style track table** with embedded album-art thumbnails; sort by any
   column (click the header, click again to reverse).
-- **Play tracking**: a play count plus a 1–5 star rating per track (empty = unplayed).
-  Rate manually by clicking the in-row stars, the "Rate:" bar, or the right-click
-  menu — or let an **auto rating** be derived from play count (manual ratings are
-  never overwritten).
+- **Play tracking**: a play count plus a manual 1–5 star rating per track. Rate by
+  clicking the in-row stars, the "Rate:" bar, or the right-click menu. Play count is
+  tracked and shown in its own column.
 - **Configurable play counting**: a play is credited after a chosen percentage of the
   track (25/50/75/90% or end of track); skipping never counts.
-- **Rating filters**: All, Unplayed, exact stars, or N-stars-and-up.
-- **Live search** by title, artist, album, genre, or filename.
+- **Rating filters**: All, Unrated, exact stars, or N-stars-and-up.
+- **Live search** by title, artist, album, genre, or filename, plus an optional
+  **per-column filter row** (substring on text columns; patterns on Year / Plays).
+- **Playlists**: portable static `.m3u8` playlists (paths relative so playlist + music
+  travel together) and **smart playlists** that re-evaluate saved filter criteria live.
+- **Tag editing & file tools**: edit a track's tags and embedded cover (MP3/FLAC
+  writable; OGG/WAV read-only), or edit a whole marked set at once. Build filenames
+  from tags with a token pattern (**Rename file…**, single or batch, with preview),
+  or the inverse — fill tag fields **from the filename**. The batch editor can also
+  set tags per-file from each name, set fixed fields across the selection, and apply
+  or remove one cover image for all.
 - **Playback** of MP3, FLAC, WAV, and OGG (via [gopxl/beep](https://github.com/gopxl/beep)):
   double-click to play, transport controls, seek bar with elapsed/total time, and a
   volume slider.
@@ -32,7 +40,10 @@ fixing and performance work. Some areas are a little slow; improving them is ong
   next to the app for portable use.
 - **System tray** + main menu (mirrored), **hide-all / show-all** windows (pauses
   audio), and **window-size persistence**.
-- **Keyboard shortcuts**: `Alt+P` play/pause, `Alt+H` hide all windows.
+- **ReplayGain** volume normalization (optional) and **gapless / crossfade** track
+  transitions (experimental).
+- **Keyboard shortcuts**: `Alt+P` play/pause, `Alt+H` hide all windows, `Alt+←/→`
+  previous/next track, `Alt+R` Preferences.
 - **Light / Dark / System** themes.
 
 ### Cross-platform support
@@ -64,8 +75,9 @@ To start a brand-new app from this template, use `rename-app.sh "New App Name" "
 
 ## Roadmap
 
-Playlists, album art from disk, multi-column sort, internationalisation (i18n), and
-optional music-video playback. See `ReleaseNotes.txt`.
+Batch find-and-replace within a tag field, internationalisation (i18n), an equalizer
+with presets, and "copy to device" sync for Android. See `ReleaseNotes.txt` for the
+version history and `docs/FUTURE.md` for proposals.
 
 ## Supported audio formats
 

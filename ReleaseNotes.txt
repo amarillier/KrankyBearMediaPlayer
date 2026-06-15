@@ -1,6 +1,33 @@
 Release notes
 KrankyBear MediaPlayer: - Windows, Linux and MacOS media player
 
+Version 0.6.0 - June 14, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Rename files from tags (right-click → Rename file…): build a filename from a
+  track's tags using a pattern of tokens — %track% %title% %artist% %album%
+  %albumartist% %year% %genre% — e.g. "%track% %title% - %artist%". A live preview
+  shows the new name before you apply; the extension is always kept, %track% is
+  zero-padded to two digits, and the catalog updates in place (no re-scan).
+- Rename a whole selection (Library → Rename Selected from pattern…): the same
+  pattern applied to every marked track, with an old → new preview list before you
+  commit. Name clashes get a " (2)" suffix; nothing is overwritten; cancellable.
+- Tags from filename (Edit tags… → Tags from filename): the inverse of rename —
+  parse a file's name into tag fields using the same token pattern, with an
+  optional "leading track number". It fills the editor fields for you to review;
+  it never writes on its own.
+- Batch tag editor, expanded (Library → Edit Tags of Selected…): three kinds of
+  change you can combine in one pass — (1) From filename: set title/artist/track #/
+  etc. per track by parsing each name with a pattern; (2) Set fields: give Artist/
+  Album/Album Artist/Genre/Year/Comment one value across the whole selection
+  (these override the pattern); (3) Cover art: set one image as the cover for all,
+  or remove the cover from all.
+- Right-click Edit tags… / Rename file… now follow the selection: right-click a
+  marked (✓) track and they act on the whole marked set — the menu label says
+  which (e.g. "Edit tags of 5 marked…"). Right-click an unmarked track and they
+  act on just that one, as before.
+
 
 Version 0.5.1 - June 10, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

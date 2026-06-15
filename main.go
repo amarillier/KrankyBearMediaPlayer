@@ -15,7 +15,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "0.5.1" // see FyneApp.toml
+	appVersion = "0.6.0" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -176,6 +176,7 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		fyne.NewMenuItem("Clear Selection", u.clearSelection),
 		fyne.NewMenuItem("Copy Selected to…", u.copySelectedTo),
 		fyne.NewMenuItem("Edit Tags of Selected…", u.editTagsOfSelected),
+		fyne.NewMenuItem("Rename Selected from pattern…", u.renameSelectedFromTags),
 		fyne.NewMenuItem("Add Selected to Queue", u.enqueueSelected),
 		fyne.NewMenuItem("Add All Shown to Queue", u.enqueueShown),
 		fyne.NewMenuItemSeparator(),

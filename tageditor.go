@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -148,7 +149,17 @@ func (u *ui) editTags(row int) {
 		return
 	}
 
-	content := container.NewVScroll(form)
+	// "Tags from filename…" parses the on-disk name into these fields for review
+	// (it populates the entries; it never saves on its own).
+	entries := map[string]*widget.Entry{
+		"title": title, "artist": artist, "album": album,
+		"albumartist": albumArtist, "genre": genre, "year": year, "track": track,
+	}
+	fromName := widget.NewButtonWithIcon("Tags from filename…", theme.SearchIcon(), func() {
+		u.tagsFromFilename(path, entries)
+	})
+
+	content := container.NewBorder(container.NewHBox(fromName), nil, nil, nil, container.NewVScroll(form))
 	d := dialog.NewCustomConfirm("Edit tags — "+tr.RelPath, "Save", "Cancel", content, func(ok bool) {
 		if !ok {
 			return
@@ -231,4 +242,74 @@ func (u *ui) applyEditedTags(trackID int64, edited trackTags, artDirty bool) {
 	u.table.Refresh()
 	u.refreshNowPlaying()
 	u.status.SetText("Tags saved")
+}
+
+// parseFieldOrder is the display/apply order for parsed filename fields.
+var parseFieldOrder = []struct{ key, label string }{
+	{"track", "Track #"}, {"title", "Title"}, {"artist", "Artist"},
+	{"album", "Album"}, {"albumartist", "Album Artist"},
+	{"year", "Year"}, {"genre", "Genre"},
+}
+
+// tagsFromFilename opens the inverse-of-rename dialog: it parses the file's name into
+// tag fields using the shared pattern grammar (pattern.go) and, on Apply, fills only
+// the matched editor entries for the user to review and Save. It never writes to disk.
+func (u *ui) tagsFromFilename(path string, entries map[string]*widget.Entry) {
+	stem := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+
+	leadChk := widget.NewCheck("Filename has a leading track number", nil)
+	preview := widget.NewLabel("")
+	preview.Wrapping = fyne.TextWrapWord
+
+	var patEntry *widget.Entry
+	var presets *widget.Select
+	update := func() {
+		parsed, ok := parseName(patEntry.Text, stem, leadChk.Checked)
+		if !ok {
+			preview.SetText("(no match — adjust the pattern)")
+			return
+		}
+		var b strings.Builder
+		for _, f := range parseFieldOrder {
+			if v, present := parsed[f.key]; present {
+				fmt.Fprintf(&b, "%s = %s\n", f.label, v)
+			}
+		}
+		preview.SetText(strings.TrimRight(b.String(), "\n"))
+	}
+	patEntry, presets = u.patternPicker(prefParsePattern, renamePresets[1], update)
+	leadChk.OnChanged = func(bool) { update() }
+	update()
+
+	help := widget.NewLabelWithStyle(
+		"Source: "+filepath.Base(path)+"\nTokens: %track% %title% %artist% %album% "+
+			"%albumartist% %year% %genre%", fyne.TextAlignLeading, fyne.TextStyle{Italic: true})
+	help.Wrapping = fyne.TextWrapWord
+
+	form := widget.NewForm(
+		widget.NewFormItem("Pattern", patEntry),
+		widget.NewFormItem("", presets),
+		widget.NewFormItem("", leadChk),
+		widget.NewFormItem("Will set", preview),
+	)
+	body := container.NewVBox(form, help)
+	d := dialog.NewCustomConfirm("Tags from filename", "Apply to fields", "Cancel", body, func(ok bool) {
+		if !ok {
+			return
+		}
+		parsed, matched := parseName(patEntry.Text, stem, leadChk.Checked)
+		if !matched {
+			dialog.ShowInformation("Tags from filename",
+				"That pattern doesn't match the filename — nothing changed.", u.win)
+			return
+		}
+		u.app.Preferences().SetString(prefParsePattern, patEntry.Text)
+		for key, val := range parsed {
+			if e, has := entries[key]; has {
+				e.SetText(val)
+			}
+		}
+	}, u.win)
+	d.Resize(fyne.NewSize(520, 320))
+	d.Show()
 }

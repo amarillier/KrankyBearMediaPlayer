@@ -150,6 +150,11 @@ const prefReplayGain = "replayGain" // bool: apply per-track ReplayGain
 const prefTransition = "transition" // int: 0 gap, 1 gapless, 2 crossfade
 const prefVolume = "volume"         // float 0..1 linear gain
 
+// prefRenamePattern / prefParsePattern are the last-used filename patterns for the
+// rename-from-tags and tags-from-filename tools (rename.go, tageditor.go).
+const prefRenamePattern = "renamePattern"
+const prefParsePattern = "parsePattern"
+
 // prefDBPath is the saved custom catalog-database path (empty = default location).
 const prefDBPath = "dbPath"
 
@@ -1446,9 +1451,10 @@ func (u *ui) setRowRating(row, rating int) {
 	u.table.Refresh()
 }
 
-// showRowMenu pops up the right-click row menu. Play and rating are live; the
-// file-management actions are intentionally stubbed as "coming soon" so the
-// menu advertises the roadmap (rename / tag edit / album-art add).
+// showRowMenu pops up the right-click row menu. Play and rating are live. Edit
+// tags / Rename follow the usual selection convention: right-clicking a marked row
+// acts on the whole marked set (batch), while right-clicking an unmarked row acts on
+// just that row - the menu label says which.
 func (u *ui) showRowMenu(row int, pos fyne.Position) {
 	if row < 0 || row >= len(u.tracks) {
 		return
@@ -1468,12 +1474,6 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 		fyne.NewMenuItem("Clear rating", func() { u.setRowRating(r, 0) }),
 	)
 
-	soon := func(label string) *fyne.MenuItem {
-		it := fyne.NewMenuItem(label, nil)
-		it.Disabled = true
-		return it
-	}
-
 	// Album art is stored in the catalog (shown everywhere), not embedded into
 	// the audio file. Source: a local image or an explicit URL - no online search.
 	artItem := fyne.NewMenuItem("Add album art", nil)
@@ -1481,6 +1481,19 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 		fyne.NewMenuItem("From image file…", func() { u.addArtFromFile(r) }),
 		fyne.NewMenuItem("From URL…", func() { u.addArtFromURL(r) }),
 	)
+
+	// Edit tags / Rename act on the marked set when the right-clicked row is itself
+	// marked, otherwise on just this row (Explorer/foobar convention).
+	renameLabel, editLabel := "Rename file…", "Edit tags…"
+	renameFn := func() { u.renameFromTags(r) }
+	editFn := func() { u.editTags(r) }
+	if _, rowMarked := u.marked[u.tracks[r].ID]; rowMarked {
+		n := len(u.marked)
+		renameLabel = fmt.Sprintf("Rename %d marked from pattern…", n)
+		editLabel = fmt.Sprintf("Edit tags of %d marked…", n)
+		renameFn = u.renameSelectedFromTags
+		editFn = u.editTagsOfSelected
+	}
 
 	menu := fyne.NewMenu("",
 		fyne.NewMenuItem("Play", func() { u.player.PlayQueue(u.tracks, r) }),
@@ -1491,8 +1504,8 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 		fyne.NewMenuItem("Show in "+fileManagerName(), func() { u.revealRow(r) }),
 		fyne.NewMenuItem("Show full path…", func() { u.showFullPath(r) }),
 		fyne.NewMenuItemSeparator(),
-		soon("Rename file…  (coming soon)"),
-		fyne.NewMenuItem("Edit tags…", func() { u.editTags(r) }),
+		fyne.NewMenuItem(renameLabel, renameFn),
+		fyne.NewMenuItem(editLabel, editFn),
 	)
 	widget.ShowPopUpMenuAtPosition(menu, u.win.Canvas(), pos)
 }

@@ -1,14 +1,22 @@
 // Package main - batchtag.go is the batch tag editor: it applies a chosen set of
-// tag fields to every marked track at once (e.g. set Album/Album Artist/Genre/
-// Year across a whole album). Only the fields you tick are changed; each track's
-// other tags - including its title, track number, and embedded cover - are read
-// and rewritten untouched. It reuses the single-file writers (tagedit.go) and
-// the Copy Selected progress/cancel pattern. MP3 and FLAC are writable; other
-// formats in the selection are skipped.
+// changes to every marked track at once. Three kinds of change can be combined in a
+// single pass, applied in order:
+//  1. From filename - parse each file's name with the shared pattern grammar
+//     (pattern.go) and set the matched fields (title/artist/track/…) per file. This
+//     is the bulk form of the editor's "Tags from filename".
+//  2. Fixed fields - set Album/Album Artist/Genre/Year/Comment (and Artist) to one
+//     value across the whole selection (the original batch behaviour).
+//  3. Cover art - set one embedded cover image for all, or remove cover from all.
+//
+// Each track's untouched tags are read and rewritten as-is. It reuses the single-file
+// writers (tagedit.go), the thumbnail/catalog reconcile from the single-file editor
+// (tageditor.go), and the Copy Selected progress/cancel pattern. MP3 and FLAC are
+// writable; other formats in the selection are skipped.
 package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"path/filepath"
 	"strconv"
@@ -16,9 +24,19 @@ import (
 	"sync/atomic"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/storage"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+)
+
+// Cover-art modes for a batch patch.
+const (
+	artLeave = iota // don't touch existing covers
+	artSet          // set one chosen image on every track
+	artClear        // remove the embedded cover from every track
 )
 
 // batchTarget is one track to update: its catalog id and on-disk path. Built
@@ -29,20 +47,62 @@ type batchTarget struct {
 	path string
 }
 
-// tagPatch is the set of fields to apply across the selection. A set* flag means
-// "change this field to the paired value"; unflagged fields are left as-is.
+// tagPatch is the set of changes to apply across the selection. A set* flag means
+// "change this field to the paired value"; unflagged fields are left as-is. usePattern
+// derives title/artist/track/… per file from its name; artMode controls the cover.
 type tagPatch struct {
 	setArtist, setAlbum, setAlbumArtist, setGenre, setComment, setYear bool
 	artist, album, albumArtist, genre, comment                         string
 	year                                                               int
+
+	usePattern   bool
+	pattern      string
+	leadingTrack bool
+
+	artMode int // artLeave / artSet / artClear
+	art     []byte
+	artMIME string
 }
 
 func (p tagPatch) any() bool {
-	return p.setArtist || p.setAlbum || p.setAlbumArtist || p.setGenre || p.setComment || p.setYear
+	return p.usePattern || p.artMode != artLeave ||
+		p.setArtist || p.setAlbum || p.setAlbumArtist || p.setGenre || p.setComment || p.setYear
 }
 
-// applyTo overwrites the flagged fields on tt, leaving the rest as they were read.
-func (p tagPatch) applyTo(tt *trackTags) {
+// applyTo overwrites fields on tt, leaving the rest as they were read. Per-file
+// pattern parsing (from the file at path) runs first; fixed-value fields then override
+// it where ticked. Cover art is handled by the caller (it also drives the thumbnail).
+func (p tagPatch) applyTo(tt *trackTags, path string) {
+	if p.usePattern {
+		stem := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+		if parsed, ok := parseName(p.pattern, stem, p.leadingTrack); ok {
+			if v, has := parsed["title"]; has {
+				tt.Title = v
+			}
+			if v, has := parsed["artist"]; has {
+				tt.Artist = v
+			}
+			if v, has := parsed["album"]; has {
+				tt.Album = v
+			}
+			if v, has := parsed["albumartist"]; has {
+				tt.AlbumArtist = v
+			}
+			if v, has := parsed["genre"]; has {
+				tt.Genre = v
+			}
+			if v, has := parsed["track"]; has {
+				if n, err := strconv.Atoi(v); err == nil {
+					tt.Track = n
+				}
+			}
+			if v, has := parsed["year"]; has {
+				if n, err := strconv.Atoi(v); err == nil {
+					tt.Year = n
+				}
+			}
+		}
+	}
 	if p.setArtist {
 		tt.Artist = p.artist
 	}
@@ -76,8 +136,32 @@ func (u *ui) editTagsOfSelected() {
 		targets = append(targets, batchTarget{id: id, path: e.path})
 	}
 
-	// Each field is an entry that's disabled until its "Change" box is ticked, so
-	// only the fields you mean to set get written.
+	// --- Section 1: from filename (per-file pattern) ---
+	patUse := widget.NewCheck("Set tags from each file's name", nil)
+	leadChk := widget.NewCheck("Filename has a leading track number", nil)
+	patEntry, presets := u.patternPicker(prefParsePattern, renamePresets[1], func() {})
+	patEntry.Disable()
+	presets.Disable()
+	leadChk.Disable()
+	patUse.OnChanged = func(on bool) {
+		if on {
+			patEntry.Enable()
+			presets.Enable()
+			leadChk.Enable()
+		} else {
+			patEntry.Disable()
+			presets.Disable()
+			leadChk.Disable()
+		}
+	}
+	patHelp := widget.NewLabelWithStyle(
+		"Tokens: %track% %title% %artist% %album% %albumartist% %year% %genre%. "+
+			"Files whose name doesn't match are left unchanged.",
+		fyne.TextAlignLeading, fyne.TextStyle{Italic: true})
+	patHelp.Wrapping = fyne.TextWrapWord
+	patternSection := container.NewVBox(patUse, patEntry, presets, leadChk, patHelp)
+
+	// --- Section 2: fixed fields (one value for all) ---
 	artist := widget.NewEntry()
 	album := widget.NewEntry()
 	albumArtist := widget.NewEntry()
@@ -86,7 +170,7 @@ func (u *ui) editTagsOfSelected() {
 	comment := widget.NewMultiLineEntry()
 	comment.SetMinRowsVisible(2)
 
-	form := widget.NewForm()
+	fixedForm := widget.NewForm()
 	checks := map[*widget.Entry]*widget.Check{}
 	addField := func(label string, e *widget.Entry) {
 		e.Disable()
@@ -98,7 +182,7 @@ func (u *ui) editTagsOfSelected() {
 			}
 		})
 		checks[e] = chk
-		form.Append(label, container.NewBorder(nil, nil, chk, nil, e))
+		fixedForm.Append(label, container.NewBorder(nil, nil, chk, nil, e))
 	}
 	addField("Artist", artist)
 	addField("Album", album)
@@ -107,13 +191,73 @@ func (u *ui) editTagsOfSelected() {
 	addField("Year", year)
 	addField("Comment", comment)
 
+	// --- Section 3: cover art for all ---
+	artMode := artLeave
+	var curArt []byte
+	var curMIME string
+	preview := canvas.NewImageFromResource(nil)
+	preview.FillMode = canvas.ImageFillContain
+	preview.SetMinSize(fyne.NewSize(96, 96))
+	preview.Hide()
+	chooseBtn := widget.NewButtonWithIcon("Choose image…", theme.FolderOpenIcon(), nil)
+	chooseBtn.Disable()
+	chooseBtn.OnTapped = func() {
+		fd := dialog.NewFileOpen(func(rc fyne.URIReadCloser, err error) {
+			if err != nil || rc == nil {
+				return
+			}
+			defer rc.Close()
+			data, err := io.ReadAll(io.LimitReader(rc, maxArtBytes))
+			if err != nil {
+				dialog.ShowError(err, u.win)
+				return
+			}
+			curArt, curMIME = data, detectImageMIME(data)
+			preview.Resource = fyne.NewStaticResource("cover", curArt)
+			preview.Refresh()
+			preview.Show()
+		}, u.win)
+		fd.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", ".jpeg", ".gif"}))
+		fd.Show()
+	}
+	artRadio := widget.NewRadioGroup(
+		[]string{"Leave covers as-is", "Set one image for all", "Remove cover from all"},
+		func(s string) {
+			switch s {
+			case "Set one image for all":
+				artMode = artSet
+				chooseBtn.Enable()
+			case "Remove cover from all":
+				artMode = artClear
+				chooseBtn.Disable()
+			default:
+				artMode = artLeave
+				chooseBtn.Disable()
+			}
+		})
+	artRadio.SetSelected("Leave covers as-is")
+	coverSection := container.NewVBox(
+		artRadio,
+		container.NewBorder(nil, nil, container.NewGridWrap(fyne.NewSize(100, 100), preview), nil, chooseBtn),
+	)
+
+	sep := widget.NewSeparator
 	note := widget.NewLabel(fmt.Sprintf(
-		"Apply to %d marked track(s). Only ticked fields change; titles, track "+
-			"numbers and cover art are left as-is. MP3 and FLAC only — other formats "+
-			"are skipped.", len(targets)))
+		"Apply to %d marked track(s). MP3 and FLAC only — other formats are skipped.", len(targets)))
 	note.Wrapping = fyne.TextWrapWord
 
-	body := container.NewVScroll(container.NewVBox(note, form))
+	body := container.NewVScroll(container.NewVBox(
+		note,
+		widget.NewLabelWithStyle("From filename", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		patternSection,
+		sep(),
+		widget.NewLabelWithStyle("Set fields (same value for all)", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		fixedForm,
+		sep(),
+		widget.NewLabelWithStyle("Cover art", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		coverSection,
+	))
+
 	d := dialog.NewCustomConfirm("Edit tags of selected", "Apply", "Cancel", body, func(ok bool) {
 		if !ok {
 			return
@@ -130,24 +274,44 @@ func (u *ui) editTagsOfSelected() {
 			albumArtist:    strings.TrimSpace(albumArtist.Text),
 			genre:          strings.TrimSpace(genre.Text),
 			comment:        comment.Text,
+			usePattern:     patUse.Checked,
+			pattern:        strings.TrimSpace(patEntry.Text),
+			leadingTrack:   leadChk.Checked,
+			artMode:        artMode,
+			art:            curArt,
+			artMIME:        curMIME,
 		}
 		patch.year, _ = strconv.Atoi(year.Text)
+
+		if patch.usePattern && patch.pattern == "" {
+			dialog.ShowInformation("Edit tags of selected",
+				"Enter a pattern, or untick \"Set tags from each file's name\".", u.win)
+			return
+		}
+		if patch.artMode == artSet && len(patch.art) == 0 {
+			dialog.ShowInformation("Edit tags of selected",
+				"Choose an image for the cover, or pick a different cover option.", u.win)
+			return
+		}
 		if !patch.any() {
 			dialog.ShowInformation("Edit tags of selected",
-				"Tick the box next to at least one field to change.", u.win)
+				"Pick at least one change: a filename pattern, a ticked field, or a cover option.", u.win)
 			return
+		}
+		if patch.usePattern {
+			u.app.Preferences().SetString(prefParsePattern, patEntry.Text)
 		}
 		u.applyTagPatch(targets, patch)
 	}, u.win)
-	d.Resize(fyne.NewSize(520, 560))
+	d.Resize(fyne.NewSize(560, 640))
 	d.Show()
 }
 
 // applyTagPatch writes the patch to every target on a background goroutine,
 // showing a progress dialog with a Cancel button (mirrors copyEntriesTo). Each
-// file's existing tags are read and merged so unticked fields survive. The
-// catalog row is updated off the UI thread; the in-memory track + table refresh
-// happen on it.
+// file's existing tags are read and merged so untouched fields survive. The catalog
+// row (and, when the cover changes, the thumbnail) is updated off the UI thread; the
+// in-memory track + table refresh happen on it.
 func (u *ui) applyTagPatch(targets []batchTarget, patch tagPatch) {
 	// Stop playback if one of the targets is the currently-playing track - an open
 	// handle blocks the rewrite on Windows (same reason as the single-file editor).
@@ -196,7 +360,13 @@ func (u *ui) applyTagPatch(targets []batchTarget, patch tagPatch) {
 				fyne.Do(func() { prog.SetValue(float64(n)) })
 				continue
 			}
-			patch.applyTo(&tt)
+			patch.applyTo(&tt, t.path)
+			switch patch.artMode {
+			case artSet:
+				tt.Art, tt.ArtMIME = patch.art, patch.artMIME
+			case artClear:
+				tt.Art, tt.ArtMIME = nil, ""
+			}
 			if err := writeTrackTags(t.path, tt); err != nil {
 				log.Printf("batch tags: write %q: %v", t.path, err)
 				failed++
@@ -206,10 +376,22 @@ func (u *ui) applyTagPatch(targets []batchTarget, patch tagPatch) {
 			if err := u.db.UpdateTrackTags(t.id, tt); err != nil { // off-UI DB write is fine
 				log.Printf("batch tags: catalog update %d: %v", t.id, err)
 			}
+			if patch.artMode != artLeave { // reconcile the cached thumbnail
+				if patch.artMode == artSet && len(tt.Art) > 0 {
+					if png, err := makeThumbnail(tt.Art, thumbSize); err == nil {
+						_ = u.db.SetArt(t.id, png)
+					}
+				} else {
+					_ = u.db.ClearArt(t.id)
+				}
+			}
 			updated++
 
-			id, merged := t.id, tt
+			id, merged, artChanged := t.id, tt, patch.artMode != artLeave
 			fyne.Do(func() {
+				if artChanged {
+					delete(u.thumbCache, id)
+				}
 				for j := range u.tracks {
 					if u.tracks[j].ID == id {
 						u.tracks[j].Title = merged.Title
@@ -219,6 +401,9 @@ func (u *ui) applyTagPatch(targets []batchTarget, patch tagPatch) {
 						u.tracks[j].Genre = merged.Genre
 						u.tracks[j].Year = merged.Year
 						u.tracks[j].TrackNo = merged.Track
+						if artChanged {
+							u.tracks[j].HasArt = len(merged.Art) > 0
+						}
 						break
 					}
 				}

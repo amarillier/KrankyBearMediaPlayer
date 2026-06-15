@@ -36,7 +36,7 @@ func TestTagPatchApplyToOnlyTouchesFlagged(t *testing.T) {
 		year:           2024,
 	}
 	got := orig
-	patch.applyTo(&got)
+	patch.applyTo(&got, "/music/song.mp3")
 
 	// Changed:
 	if got.Album != "New Album" || got.AlbumArtist != "Various" || got.Year != 2024 {
@@ -46,5 +46,49 @@ func TestTagPatchApplyToOnlyTouchesFlagged(t *testing.T) {
 	if got.Title != orig.Title || got.Artist != orig.Artist || got.Genre != orig.Genre ||
 		got.Comment != orig.Comment || got.Track != orig.Track || string(got.Art) != string(orig.Art) {
 		t.Errorf("unflagged fields were modified: %+v", got)
+	}
+}
+
+// TestTagPatchApplyToFromPattern verifies per-file pattern parsing fills the matched
+// fields, that fixed fields override the pattern, and that a non-matching filename
+// leaves fields untouched.
+func TestTagPatchApplyToFromPattern(t *testing.T) {
+	base := trackTags{Title: "old", Artist: "old", Track: 1}
+
+	// Pattern fills title/artist/track from the name.
+	got := base
+	p := tagPatch{usePattern: true, pattern: "%track% %title% - %artist%"}
+	p.applyTo(&got, "/music/07 My Song - The Band.mp3")
+	if got.Title != "My Song" || got.Artist != "The Band" || got.Track != 7 {
+		t.Errorf("pattern not applied: %+v", got)
+	}
+
+	// Fixed field overrides the pattern's artist.
+	got = base
+	p = tagPatch{usePattern: true, pattern: "%track% %title% - %artist%",
+		setArtist: true, artist: "Override"}
+	p.applyTo(&got, "/music/07 My Song - The Band.mp3")
+	if got.Artist != "Override" {
+		t.Errorf("fixed field should override pattern, got artist=%q", got.Artist)
+	}
+
+	// Non-matching filename leaves everything as-is.
+	got = base
+	p = tagPatch{usePattern: true, pattern: "%track% - %title%"}
+	p.applyTo(&got, "/music/no separators here.mp3")
+	if got.Title != base.Title || got.Artist != base.Artist || got.Track != base.Track {
+		t.Errorf("non-matching pattern should change nothing, got %+v", got)
+	}
+}
+
+func TestTagPatchAnyPatternAndArt(t *testing.T) {
+	if !(tagPatch{usePattern: true}).any() {
+		t.Error("usePattern should make any()==true")
+	}
+	if !(tagPatch{artMode: artSet}).any() {
+		t.Error("artMode set should make any()==true")
+	}
+	if (tagPatch{artMode: artLeave}).any() {
+		t.Error("artLeave with nothing else should be any()==false")
 	}
 }

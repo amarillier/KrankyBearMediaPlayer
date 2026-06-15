@@ -114,17 +114,34 @@ FINDING & ORGANISING:
   (Name clashes get a " (2)" suffix; nothing is overwritten.)
 • Right-click a track for Play, rating, Add album art (local image file or URL,
   stored in the library), Show in your file manager, and Show full path (with a
-  Copy button). Renaming files from tags is coming soon.
+  Copy button).
+• Right-click Rename file… / Edit tags… normally act on just that track. But if
+  you right-click a track that's marked (✓), they act on the whole marked set
+  instead — the menu label says which (e.g. "Edit tags of 5 marked…").
+• Rename file… (right-click) renames the file on disk from its tags using a
+  pattern of tokens — %track% %title% %artist% %album% %albumartist% %year%
+  %genre% — e.g. "%track% %title% - %artist%". A live preview shows the new name
+  before you apply; the extension is always kept and the catalog updates in place
+  (no re-scan). %track% is zero-padded to two digits.
 • Edit tags… (right-click) opens an editor for title, artist, album, album
   artist, year, track #, genre, comment, and the embedded cover image. Changes
   are written back into the file for MP3 and FLAC; OGG and WAV open read-only for
-  now. If you edit the track that's currently playing, playback stops first so
-  the file can be saved. The catalog (and any thumbnail) updates straight away.
+  now. Tags from filename… (in that editor) parses the file's name into the fields
+  using the same token pattern, for you to review before saving — it never writes
+  on its own. If you edit the track that's currently playing, playback stops first
+  so the file can be saved. The catalog (and any thumbnail) updates straight away.
 • Edit tags of several at once: mark tracks (Selection checkboxes / Select All
-  Shown), then Library → Edit Tags of Selected… Tick the fields you want to set
-  (Artist, Album, Album Artist, Genre, Year, Comment) and they're applied to every
-  marked track; each track's other tags (title, track #, cover) are left as-is. A
-  progress dialog shows each file with a Cancel button; OGG/WAV are skipped.
+  Shown), then Library → Edit Tags of Selected… You can combine three kinds of
+  change in one pass: (1) From filename — set title/artist/track #/etc. on each
+  track by parsing its name with a token pattern (the bulk form of Tags from
+  filename; files that don't match are left alone); (2) Set fields — tick Artist,
+  Album, Album Artist, Genre, Year or Comment to give them one value across the
+  whole selection (these override the pattern); (3) Cover art — set one image as
+  the cover for all, or remove the cover from all. A progress dialog shows each
+  file with a Cancel button; OGG/WAV are skipped.
+• Rename several at once: mark tracks, then Library → Rename Selected from
+  pattern… A preview list shows each old → new name; apply renames them all (name
+  clashes get a " (2)" suffix, nothing is overwritten) with a Cancel button.
 
 PLAYLISTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

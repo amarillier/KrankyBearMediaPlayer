@@ -307,6 +307,23 @@ func (d *DB) UpdateTrackTags(trackID int64, t trackTags) error {
 	return err
 }
 
+// UpdateTrackPath records a file's new location after a rename. relPath is relative
+// to the track's folder root, forward-slash normalized. A clash with another track's
+// path violates UNIQUE(folder_id, rel_path) and surfaces as an error.
+func (d *DB) UpdateTrackPath(trackID int64, relPath string) error {
+	_, err := d.sql.Exec(`UPDATE tracks SET rel_path=? WHERE id=?`, relPath, trackID)
+	return err
+}
+
+// TrackRelPath returns a track's stored rel_path (forward-slash normalized). Used
+// by batch rename to derive a new rel_path for marked tracks that may not be in the
+// current view.
+func (d *DB) TrackRelPath(trackID int64) (string, error) {
+	var rel string
+	err := d.sql.QueryRow(`SELECT rel_path FROM tracks WHERE id=?`, trackID).Scan(&rel)
+	return rel, err
+}
+
 // TracksMissingDuration returns tracks whose playback length hasn't been
 // computed yet (duration <= 0), for the background enricher (enrich.go). Only
 // the fields needed to locate the file and derive bitrate are populated.
