@@ -20,10 +20,16 @@ var aboutWindow fyne.Window
 //   - resourceKrankyBearMediaPlayerPng: Your embedded icon resource
 //   - GitHub and License URLs
 func showAbout(a fyne.App) {
-	if aboutWindow != nil && aboutWindow.Content().Visible() {
+	if aboutWindow != nil {
+		// Re-show the existing window (reused, not rebuilt). Only pop the easter egg
+		// when it was *already* open and the user opened it again.
+		alreadyOpen := windowIsOpen(aboutWindow)
 		aboutWindow.Show()
 		aboutWindow.RequestFocus()
 		markWindowOpen(aboutWindow)
+		if alreadyOpen {
+			showEasterEgg(a, "🐻 About to find something…")
+		}
 		return
 	}
 
@@ -41,7 +47,7 @@ func showAbout(a fyne.App) {
 	version.Alignment = fyne.TextAlignCenter
 
 	// Description - customize for your app
-	description := widget.NewLabel("A comprehensive media player, and media management tool")
+	description := widget.NewLabel("A comprehensive music library manager & player")
 	description.Alignment = fyne.TextAlignCenter
 	description.Wrapping = fyne.TextWrapWord
 

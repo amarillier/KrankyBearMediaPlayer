@@ -623,9 +623,8 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 	// transport block (seek bar / controls / status), nudging those toward the
 	// volume controls. Contained at ~128px so it's clearly visible without eating
 	// much width.
-	logo := canvas.NewImageFromResource(resourceKrankyBearMediaPlayerPng)
-	logo.FillMode = canvas.ImageFillContain
-	logo.SetMinSize(fyne.NewSize(128, 128))
+	logo := newTappableImage(resourceKrankyBearMediaPlayerPng, fyne.NewSize(128, 128),
+		func() { showEasterEgg(u.app, "🐻 You poked the bear!") })
 
 	bottom := container.NewVBox(widget.NewSeparator(), seekRow, controls, u.status)
 	return container.NewBorder(nil, nil, container.NewPadded(logo), nil, bottom)
@@ -1451,6 +1450,30 @@ func (u *ui) setRowRating(row, rating int) {
 	u.table.Refresh()
 }
 
+// setMarkedRating applies a rating (0 clears) to every marked track at once, updating
+// the catalog and the in-memory rows, then refreshing once. Mirrors setRowRating for
+// the right-click-on-a-marked-row case.
+func (u *ui) setMarkedRating(rating int) {
+	var nr sql.NullInt64
+	if rating > 0 {
+		nr = sql.NullInt64{Int64: int64(rating), Valid: true}
+	}
+	for id := range u.marked {
+		if err := u.db.SetRating(id, rating); err != nil {
+			dialog.ShowError(err, u.win)
+			return
+		}
+		for i := range u.tracks {
+			if u.tracks[i].ID == id {
+				u.tracks[i].Rating = nr
+				break
+			}
+		}
+	}
+	u.table.Refresh()
+	u.status.SetText(fmt.Sprintf("Rated %d marked track(s)", len(u.marked)))
+}
+
 // showRowMenu pops up the right-click row menu. Play and rating are live. Edit
 // tags / Rename follow the usual selection convention: right-clicking a marked row
 // acts on the whole marked set (batch), while right-clicking an unmarked row acts on
@@ -1463,15 +1486,32 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 	u.refreshStatus()
 	r := row
 
+	// Edit tags / Rename / Set rating act on the marked set when the right-clicked row
+	// is itself marked, otherwise on just this row (Explorer/foobar convention).
+	_, rowMarked := u.marked[u.tracks[r].ID]
+	nMarked := len(u.marked)
+
+	// setRating routes a chosen rating to the marked set or the single row.
+	setRating := func(n int) {
+		if rowMarked {
+			u.setMarkedRating(n)
+		} else {
+			u.setRowRating(r, n)
+		}
+	}
 	star := func(n int) *fyne.MenuItem {
 		return fyne.NewMenuItem(fmt.Sprintf("%s  (%d)", starString(n), n),
-			func() { u.setRowRating(r, n) })
+			func() { setRating(n) })
 	}
-	ratingItem := fyne.NewMenuItem("Set rating", nil)
+	ratingLabel := "Set rating"
+	if rowMarked {
+		ratingLabel = fmt.Sprintf("Set rating (%d marked)", nMarked)
+	}
+	ratingItem := fyne.NewMenuItem(ratingLabel, nil)
 	ratingItem.ChildMenu = fyne.NewMenu("",
 		star(5), star(4), star(3), star(2), star(1),
 		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Clear rating", func() { u.setRowRating(r, 0) }),
+		fyne.NewMenuItem("Clear rating", func() { setRating(0) }),
 	)
 
 	// Album art is stored in the catalog (shown everywhere), not embedded into
@@ -1482,15 +1522,12 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 		fyne.NewMenuItem("From URL…", func() { u.addArtFromURL(r) }),
 	)
 
-	// Edit tags / Rename act on the marked set when the right-clicked row is itself
-	// marked, otherwise on just this row (Explorer/foobar convention).
 	renameLabel, editLabel := "Rename file…", "Edit tags…"
 	renameFn := func() { u.renameFromTags(r) }
 	editFn := func() { u.editTags(r) }
-	if _, rowMarked := u.marked[u.tracks[r].ID]; rowMarked {
-		n := len(u.marked)
-		renameLabel = fmt.Sprintf("Rename %d marked from pattern…", n)
-		editLabel = fmt.Sprintf("Edit tags of %d marked…", n)
+	if rowMarked {
+		renameLabel = fmt.Sprintf("Rename %d marked from pattern…", nMarked)
+		editLabel = fmt.Sprintf("Edit tags of %d marked…", nMarked)
 		renameFn = u.renameSelectedFromTags
 		editFn = u.editTagsOfSelected
 	}

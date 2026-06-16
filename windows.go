@@ -51,6 +51,30 @@ func markWindowClosed(w fyne.Window) {
 	}
 }
 
+// windowIsOpen reports whether a secondary window is currently shown, per our own
+// open/closed tracking. Use this instead of Content().Visible(), which stays true once
+// the content exists even after the window is hidden/closed.
+func windowIsOpen(w fyne.Window) bool {
+	for _, m := range secondaryWindows {
+		if m.win == w {
+			return m.open
+		}
+	}
+	return false
+}
+
+// forgetWindow drops a secondary window from the registry entirely (used by transient
+// windows like easter eggs that are closed/freed rather than reused, so they don't
+// accumulate stale entries).
+func forgetWindow(w fyne.Window) {
+	for i, m := range secondaryWindows {
+		if m.win == w {
+			secondaryWindows = append(secondaryWindows[:i], secondaryWindows[i+1:]...)
+			return
+		}
+	}
+}
+
 // hideAllWindows is the "boss key": pause playback and hide the main window plus
 // every open secondary window. Open flags are preserved so showAllWindows can
 // restore exactly this set.

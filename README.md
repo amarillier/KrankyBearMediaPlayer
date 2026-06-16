@@ -1,9 +1,9 @@
 # KrankyBear MediaPlayer
 
-A cross-platform music library and player built with Go and the [Fyne](https://fyne.io/)
-GUI toolkit — a small, fast, trustworthy alternative for cataloguing and playing your
-music collection. Inspired by the spreadsheet-style library and play-tracking of
-players like AIMP.
+A cross-platform music **library manager & player** built with Go and the [Fyne](https://fyne.io/)
+GUI toolkit — a small, fast, trustworthy alternative for cataloguing, tagging, and playing
+your music collection. Inspired by the spreadsheet-style library and play-tracking of
+players like AIMP, with the tag- and file-management depth of tools like MusicBee.
 
 Design philosophy aligns with Fyne: ease of use, solid functionality, steady bug
 fixing and performance work. Some areas are a little slow; improving them is ongoing.

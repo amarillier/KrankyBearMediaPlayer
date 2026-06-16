@@ -92,3 +92,34 @@ func TestTagPatchAnyPatternAndArt(t *testing.T) {
 		t.Error("artLeave with nothing else should be any()==false")
 	}
 }
+
+// TestTagPatchFindReplace covers find-and-replace within one field, case-sensitive
+// and insensitive, that other fields are untouched, and the empty-find no-op.
+func TestTagPatchFindReplace(t *testing.T) {
+	base := trackTags{Title: "Song feat. Bob", Artist: "A FEAT. B"}
+
+	// Case-sensitive on Title; Artist untouched.
+	got := base
+	tagPatch{frUse: true, frField: "Title", frFind: "feat.", frReplace: "ft."}.applyTo(&got, "/x.mp3")
+	if got.Title != "Song ft. Bob" {
+		t.Errorf("case-sensitive replace: got %q", got.Title)
+	}
+	if got.Artist != base.Artist {
+		t.Errorf("other field changed: %q", got.Artist)
+	}
+
+	// Case-insensitive on Artist matches the uppercase "FEAT.".
+	got = base
+	tagPatch{frUse: true, frField: "Artist", frFind: "feat.", frReplace: "ft.", frCI: true}.applyTo(&got, "/x.mp3")
+	if got.Artist != "A ft. B" {
+		t.Errorf("case-insensitive replace: got %q", got.Artist)
+	}
+
+	// Empty find is a no-op and doesn't count as a change.
+	if (tagPatch{frUse: true, frFind: ""}).any() {
+		t.Error("empty find should not make any()==true")
+	}
+	if !(tagPatch{frUse: true, frFind: "x"}).any() {
+		t.Error("frUse with a find term should make any()==true")
+	}
+}

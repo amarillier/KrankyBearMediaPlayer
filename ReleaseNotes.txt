@@ -1,5 +1,17 @@
 Release notes
-KrankyBear MediaPlayer: - Windows, Linux and MacOS media player
+KrankyBear MediaPlayer: - Windows, Linux and MacOS music library manager & player
+
+Version 0.7.0 - June 15, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Batch find & replace (Library → Edit Tags of Selected…): a new "Find & replace"
+  section changes text within a single field across the whole marked selection —
+  e.g. replace "feat." with "ft." in Title, with an optional "ignore case". Runs
+  alongside the from-filename and fixed-field options in the same pass.
+- Set ratings on many tracks at once: right-click a marked (✓) track and "Set
+  rating" now applies the stars (or clears them) to the whole marked set. Right-
+  click an unmarked track and it still rates just that one (the label shows which).
 
 Version 0.6.0 - June 14, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

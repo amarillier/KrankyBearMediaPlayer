@@ -19,6 +19,7 @@ import (
 	"io"
 	"log"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -59,14 +60,31 @@ type tagPatch struct {
 	pattern      string
 	leadingTrack bool
 
+	frUse             bool   // find-and-replace within one field
+	frField           string // "Title"/"Artist"/"Album"/"Album Artist"/"Genre"/"Comment"
+	frFind, frReplace string
+	frCI              bool // case-insensitive find
+
 	artMode int // artLeave / artSet / artClear
 	art     []byte
 	artMIME string
 }
 
 func (p tagPatch) any() bool {
-	return p.usePattern || p.artMode != artLeave ||
+	return p.usePattern || p.artMode != artLeave || (p.frUse && p.frFind != "") ||
 		p.setArtist || p.setAlbum || p.setAlbumArtist || p.setGenre || p.setComment || p.setYear
+}
+
+// frFields are the fields find-and-replace can target, in dialog order.
+var frFields = []string{"Title", "Artist", "Album", "Album Artist", "Genre", "Comment"}
+
+// replaceIn applies the patch's find/replace to s (case-sensitive or insensitive).
+func (p tagPatch) replaceIn(s string) string {
+	if p.frCI {
+		re := regexp.MustCompile("(?i)" + regexp.QuoteMeta(p.frFind))
+		return re.ReplaceAllString(s, p.frReplace)
+	}
+	return strings.ReplaceAll(s, p.frFind, p.frReplace)
 }
 
 // applyTo overwrites fields on tt, leaving the rest as they were read. Per-file
@@ -120,6 +138,23 @@ func (p tagPatch) applyTo(tt *trackTags, path string) {
 	}
 	if p.setYear {
 		tt.Year = p.year
+	}
+	// Find-and-replace runs last so it transforms the field's final value.
+	if p.frUse && p.frFind != "" {
+		switch p.frField {
+		case "Title":
+			tt.Title = p.replaceIn(tt.Title)
+		case "Artist":
+			tt.Artist = p.replaceIn(tt.Artist)
+		case "Album":
+			tt.Album = p.replaceIn(tt.Album)
+		case "Album Artist":
+			tt.AlbumArtist = p.replaceIn(tt.AlbumArtist)
+		case "Genre":
+			tt.Genre = p.replaceIn(tt.Genre)
+		case "Comment":
+			tt.Comment = p.replaceIn(tt.Comment)
+		}
 	}
 }
 
@@ -241,6 +276,34 @@ func (u *ui) editTagsOfSelected() {
 		container.NewBorder(nil, nil, container.NewGridWrap(fyne.NewSize(100, 100), preview), nil, chooseBtn),
 	)
 
+	// --- Section 4: find & replace within one field ---
+	frUse := widget.NewCheck("Find & replace in a field", nil)
+	frField := widget.NewSelect(frFields, nil)
+	frField.SetSelectedIndex(0)
+	frFind := widget.NewEntry()
+	frFind.SetPlaceHolder("Find…")
+	frReplace := widget.NewEntry()
+	frReplace.SetPlaceHolder("Replace with…")
+	frCI := widget.NewCheck("Ignore case", nil)
+	frField.Disable()
+	frFind.Disable()
+	frReplace.Disable()
+	frCI.Disable()
+	frUse.OnChanged = func(on bool) {
+		for _, w := range []fyne.Disableable{frField, frFind, frReplace, frCI} {
+			if on {
+				w.Enable()
+			} else {
+				w.Disable()
+			}
+		}
+	}
+	frSection := container.NewVBox(
+		frUse,
+		container.NewBorder(nil, nil, widget.NewLabel("Field"), nil, frField),
+		frFind, frReplace, frCI,
+	)
+
 	sep := widget.NewSeparator
 	note := widget.NewLabel(fmt.Sprintf(
 		"Apply to %d marked track(s). MP3 and FLAC only — other formats are skipped.", len(targets)))
@@ -253,6 +316,9 @@ func (u *ui) editTagsOfSelected() {
 		sep(),
 		widget.NewLabelWithStyle("Set fields (same value for all)", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		fixedForm,
+		sep(),
+		widget.NewLabelWithStyle("Find & replace", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		frSection,
 		sep(),
 		widget.NewLabelWithStyle("Cover art", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		coverSection,
@@ -277,11 +343,22 @@ func (u *ui) editTagsOfSelected() {
 			usePattern:     patUse.Checked,
 			pattern:        strings.TrimSpace(patEntry.Text),
 			leadingTrack:   leadChk.Checked,
+			frUse:          frUse.Checked,
+			frField:        frField.Selected,
+			frFind:         frFind.Text,
+			frReplace:      frReplace.Text,
+			frCI:           frCI.Checked,
 			artMode:        artMode,
 			art:            curArt,
 			artMIME:        curMIME,
 		}
 		patch.year, _ = strconv.Atoi(year.Text)
+
+		if patch.frUse && patch.frFind == "" {
+			dialog.ShowInformation("Edit tags of selected",
+				"Enter the text to find, or untick \"Find & replace in a field\".", u.win)
+			return
+		}
 
 		if patch.usePattern && patch.pattern == "" {
 			dialog.ShowInformation("Edit tags of selected",

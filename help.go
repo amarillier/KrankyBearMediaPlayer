@@ -24,17 +24,23 @@ var helpWindow fyne.Window
 //   - Add keyboard shortcuts
 //   - Provide links to external resources
 func showHelp(a fyne.App) {
-	if helpWindow != nil && helpWindow.Content().Visible() {
+	if helpWindow != nil {
+		// Re-show the existing window (reused, not rebuilt). Only pop the easter egg
+		// when it was *already* open and the user opened it again.
+		alreadyOpen := windowIsOpen(helpWindow)
 		helpWindow.Show()
 		helpWindow.RequestFocus()
 		markWindowOpen(helpWindow)
+		if alreadyOpen {
+			showEasterEgg(a, "🐻 Help is on the way!")
+		}
 		return
 	}
 
 	helpWindow = a.NewWindow(appName + " - Help")
 	helpWindow.SetIcon(resourceKrankyBearMediaPlayerPng)
 
-	helpText := `KrankyBear MediaPlayer - your music library and player
+	helpText := `KrankyBear MediaPlayer - your music library manager & player
 
 GETTING STARTED:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -115,9 +121,10 @@ FINDING & ORGANISING:
 • Right-click a track for Play, rating, Add album art (local image file or URL,
   stored in the library), Show in your file manager, and Show full path (with a
   Copy button).
-• Right-click Rename file… / Edit tags… normally act on just that track. But if
-  you right-click a track that's marked (✓), they act on the whole marked set
-  instead — the menu label says which (e.g. "Edit tags of 5 marked…").
+• Right-click Rename file… / Edit tags… / Set rating normally act on just that
+  track. But if you right-click a track that's marked (✓), they act on the whole
+  marked set instead — the menu label says which (e.g. "Edit tags of 5 marked…",
+  "Set rating (5 marked)").
 • Rename file… (right-click) renames the file on disk from its tags using a
   pattern of tokens — %track% %title% %artist% %album% %albumartist% %year%
   %genre% — e.g. "%track% %title% - %artist%". A live preview shows the new name
@@ -131,14 +138,16 @@ FINDING & ORGANISING:
   on its own. If you edit the track that's currently playing, playback stops first
   so the file can be saved. The catalog (and any thumbnail) updates straight away.
 • Edit tags of several at once: mark tracks (Selection checkboxes / Select All
-  Shown), then Library → Edit Tags of Selected… You can combine three kinds of
+  Shown), then Library → Edit Tags of Selected… You can combine four kinds of
   change in one pass: (1) From filename — set title/artist/track #/etc. on each
   track by parsing its name with a token pattern (the bulk form of Tags from
   filename; files that don't match are left alone); (2) Set fields — tick Artist,
   Album, Album Artist, Genre, Year or Comment to give them one value across the
-  whole selection (these override the pattern); (3) Cover art — set one image as
-  the cover for all, or remove the cover from all. A progress dialog shows each
-  file with a Cancel button; OGG/WAV are skipped.
+  whole selection (these override the pattern); (3) Find & replace — change text
+  within one field across the selection (e.g. "feat."→"ft.", optionally ignoring
+  case); (4) Cover art — set one image as the cover for all, or remove the cover
+  from all. A progress dialog shows each file with a Cancel button; OGG/WAV are
+  skipped.
 • Rename several at once: mark tracks, then Library → Rename Selected from
   pattern… A preview list shows each old → new name; apply renames them all (name
   clashes get a " (2)" suffix, nothing is overwritten) with a Cancel button.
