@@ -111,7 +111,7 @@ func (p *Player) startTransitionLocked() {
 
 	rg := 0.0
 	if p.replayGain {
-		rg = replayGainOffset(tr.AbsPath())
+		rg = replayGainOffset(tr.AbsPath(), p.rgAlbum)
 	}
 	target := gainToVolume(p.gain) + rg
 	crossfade := p.xfade == transCrossfade

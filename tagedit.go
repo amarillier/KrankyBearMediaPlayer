@@ -163,6 +163,53 @@ func writeMP3Tags(path string, tt trackTags) error {
 		})
 	}
 
+	return saveMP3UTF8(t)
+}
+
+// saveMP3UTF8 saves an ID3v2 tag, first converting any UTF-16 text frames to UTF-8.
+// bogem/id3v2 v2.1.4 corrupts UTF-16 frames on write (it emits an odd-length,
+// 3-byte terminator for big-endian/BOM frames - e.g. Amazon downloads - which then
+// can't be re-read). Re-encoding the text-bearing frames to UTF-8, which bogem writes
+// correctly and dhowden/most players read, sidesteps the bug. ISO-8859-1 and UTF-8
+// frames are left as-is; binary frames (APIC, PRIV) are never touched.
+func saveMP3UTF8(t *id3v2.Tag) error {
+	isUTF16 := func(e id3v2.Encoding) bool {
+		return e.Key == id3v2.EncodingUTF16.Key || e.Key == id3v2.EncodingUTF16BE.Key
+	}
+	for id, frames := range t.AllFrames() {
+		var converted []id3v2.Framer
+		changed := false
+		for _, fr := range frames {
+			switch f := fr.(type) {
+			case id3v2.TextFrame:
+				if isUTF16(f.Encoding) {
+					f.Encoding = id3v2.EncodingUTF8
+					changed = true
+				}
+				converted = append(converted, f)
+			case id3v2.UserDefinedTextFrame:
+				if isUTF16(f.Encoding) {
+					f.Encoding = id3v2.EncodingUTF8
+					changed = true
+				}
+				converted = append(converted, f)
+			case id3v2.CommentFrame:
+				if isUTF16(f.Encoding) {
+					f.Encoding = id3v2.EncodingUTF8
+					changed = true
+				}
+				converted = append(converted, f)
+			default:
+				converted = append(converted, fr)
+			}
+		}
+		if changed {
+			t.DeleteFrames(id)
+			for _, fr := range converted {
+				t.AddFrame(id, fr)
+			}
+		}
+	}
 	return t.Save()
 }
 

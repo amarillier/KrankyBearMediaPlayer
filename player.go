@@ -60,6 +60,7 @@ type Player struct {
 	volume     *effects.Volume         // wraps the chain so we can adjust gain
 	gain       float64                 // 0..1 linear volume, persists across tracks
 	replayGain bool                    // apply per-track ReplayGain when available
+	rgAlbum    bool                    // prefer album gain over track gain when present
 	rgOffset   float64                 // current track's ReplayGain offset (log2 factor; 0 = none)
 	// Track transition (player_transition.go): gapless / crossfade. gen rises each
 	// time a new stream becomes current, so a superseded track's end-callback is
@@ -248,7 +249,7 @@ func (p *Player) playLocked() {
 	// ReplayGain (opt-in): fold the track's gain offset into the volume below.
 	p.rgOffset = 0
 	if p.replayGain {
-		p.rgOffset = replayGainOffset(tr.AbsPath())
+		p.rgOffset = replayGainOffset(tr.AbsPath(), p.rgAlbum)
 	}
 
 	// Chain: decoder -> Ctrl (pause) -> resample (if needed) -> Volume (gain).
@@ -622,19 +623,34 @@ func (p *Player) SetVolume(level float64) {
 func (p *Player) SetReplayGain(on bool) {
 	p.mu.Lock()
 	p.replayGain = on
+	p.reapplyReplayGainLocked()
+	p.mu.Unlock()
+}
+
+// SetReplayGainAlbum chooses album gain (when tagged) over track gain and re-applies
+// to the current track. Only meaningful while ReplayGain is on.
+func (p *Player) SetReplayGainAlbum(on bool) {
+	p.mu.Lock()
+	p.rgAlbum = on
+	p.reapplyReplayGainLocked()
+	p.mu.Unlock()
+}
+
+// reapplyReplayGainLocked recomputes the current track's gain offset and folds it into
+// the live volume. Caller holds p.mu; the tag read happens with the lock released.
+func (p *Player) reapplyReplayGainLocked() {
 	var path string
 	if p.index >= 0 && p.index < len(p.queue) {
 		path = p.queue[p.index].AbsPath()
 	}
-	hasVol := p.volume != nil
-	p.mu.Unlock()
-
+	on, album, hasVol := p.replayGain, p.rgAlbum, p.volume != nil
 	if !hasVol {
 		return
 	}
+	p.mu.Unlock()
 	off := 0.0
 	if on && path != "" {
-		off = replayGainOffset(path)
+		off = replayGainOffset(path, album)
 	}
 	p.mu.Lock()
 	p.rgOffset = off
@@ -643,7 +659,6 @@ func (p *Player) SetReplayGain(on bool) {
 		p.volume.Volume = gainToVolume(p.gain) + p.rgOffset
 		speaker.Unlock()
 	}
-	p.mu.Unlock()
 }
 
 // Volume returns the current gain (0..1).

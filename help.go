@@ -62,6 +62,11 @@ PLAYING MUSIC:
   with Next/Previous always moves on, even with Repeat One.
 • Playback → ReplayGain: when on, tracks tagged with ReplayGain play at a
   consistent loudness (peak-limited so boosted tracks don't clip). Off by default.
+  "Prefer album gain" normalizes by album loudness (preserving an album's own
+  quiet/loud balance) when album tags are present, else falls back to track gain.
+  To tag files yourself, mark them and use Library → Scan ReplayGain of Selected…
+  (or right-click → Scan ReplayGain): the app measures loudness (BS.1770 /
+  ReplayGain 2.0) and writes track + album ReplayGain tags into MP3/FLAC.
 • Playback → Track transition: Gap (default), Gapless (tracks butt up with no
   silence), or Crossfade (the outgoing track fades out as the next fades in).
   Gapless/Crossfade are experimental.
@@ -151,6 +156,12 @@ FINDING & ORGANISING:
 • Rename several at once: mark tracks, then Library → Rename Selected from
   pattern… A preview list shows each old → new name; apply renames them all (name
   clashes get a " (2)" suffix, nothing is overwritten) with a Cancel button.
+• Library Report (Library → Library Report…): summarise your collection grouped by
+  Artist, Album, or Genre; hierarchically (Artist → Album, Album → Artist, Genre →
+  Artist); or as a flat track listing. Tick "List tracks" to expand each grouping
+  and show the tracks within it. Sort by Name or Year with an ascending/descending
+  toggle, switch between the whole library and the current filtered view, and
+  Export CSV… to save the report.
 
 PLAYLISTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

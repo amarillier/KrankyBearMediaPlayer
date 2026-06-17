@@ -144,11 +144,12 @@ const prefPlayCountPct = "playCountPercent"
 const defaultPlayCountPct = 50
 
 // Playback mode preferences (remembered across launches).
-const prefShuffle = "shuffle"       // bool
-const prefRepeat = "repeatMode"     // int: 0 off, 1 all, 2 one
-const prefReplayGain = "replayGain" // bool: apply per-track ReplayGain
-const prefTransition = "transition" // int: 0 gap, 1 gapless, 2 crossfade
-const prefVolume = "volume"         // float 0..1 linear gain
+const prefShuffle = "shuffle"         // bool
+const prefRepeat = "repeatMode"       // int: 0 off, 1 all, 2 one
+const prefReplayGain = "replayGain"   // bool: apply per-track ReplayGain
+const prefRGAlbum = "replayGainAlbum" // bool: prefer album gain over track gain
+const prefTransition = "transition"   // int: 0 gap, 1 gapless, 2 crossfade
+const prefVolume = "volume"           // float 0..1 linear gain
 
 // prefRenamePattern / prefParsePattern are the last-used filename patterns for the
 // rename-from-tags and tags-from-filename tools (rename.go, tageditor.go).
@@ -298,6 +299,7 @@ func buildMainWindow(a fyne.App, win fyne.Window, db *DB, player *Player) *ui {
 	player.SetCountThreshold(float64(pct) / 100)
 	player.SetShuffle(prefs.BoolWithFallback(prefShuffle, false))
 	player.SetRepeat(RepeatMode(prefs.IntWithFallback(prefRepeat, int(RepeatOff))))
+	player.SetReplayGainAlbum(prefs.BoolWithFallback(prefRGAlbum, false))
 	player.SetReplayGain(prefs.BoolWithFallback(prefReplayGain, false))
 	player.SetTransitionMode(transitionMode(prefs.IntWithFallback(prefTransition, int(transGap))))
 	vol := prefs.FloatWithFallback(prefVolume, 1.0)
@@ -377,6 +379,15 @@ func (u *ui) toggleReplayGain() {
 	on := !u.app.Preferences().BoolWithFallback(prefReplayGain, false)
 	u.player.SetReplayGain(on)
 	u.app.Preferences().SetBool(prefReplayGain, on)
+	fyne.Do(func() { u.win.SetMainMenu(buildMenu(u.app, u)) })
+}
+
+// toggleReplayGainAlbum flips the "prefer album gain" preference, persists it, and
+// re-applies it to the current track.
+func (u *ui) toggleReplayGainAlbum() {
+	on := !u.app.Preferences().BoolWithFallback(prefRGAlbum, false)
+	u.player.SetReplayGainAlbum(on)
+	u.app.Preferences().SetBool(prefRGAlbum, on)
 	fyne.Do(func() { u.win.SetMainMenu(buildMenu(u.app, u)) })
 }
 
@@ -1522,14 +1533,17 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 		fyne.NewMenuItem("From URL…", func() { u.addArtFromURL(r) }),
 	)
 
-	renameLabel, editLabel := "Rename file…", "Edit tags…"
+	renameLabel, editLabel, scanLabel := "Rename file…", "Edit tags…", "Scan ReplayGain"
 	renameFn := func() { u.renameFromTags(r) }
 	editFn := func() { u.editTags(r) }
+	scanFn := func() { u.scanReplayGainOf([]Track{u.tracks[r]}) }
 	if rowMarked {
 		renameLabel = fmt.Sprintf("Rename %d marked from pattern…", nMarked)
 		editLabel = fmt.Sprintf("Edit tags of %d marked…", nMarked)
+		scanLabel = fmt.Sprintf("Scan ReplayGain (%d marked)", nMarked)
 		renameFn = u.renameSelectedFromTags
 		editFn = u.editTagsOfSelected
+		scanFn = func() { u.scanReplayGainOf(u.markedTracksForScan()) }
 	}
 
 	menu := fyne.NewMenu("",
@@ -1543,6 +1557,7 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem(renameLabel, renameFn),
 		fyne.NewMenuItem(editLabel, editFn),
+		fyne.NewMenuItem(scanLabel, scanFn),
 	)
 	widget.ShowPopUpMenuAtPosition(menu, u.win.Canvas(), pos)
 }

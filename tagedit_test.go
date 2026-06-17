@@ -94,6 +94,34 @@ func roundTrip(t *testing.T, path string, art []byte) {
 	}
 }
 
+// TestUTF16MP3SurvivesWrite guards against the bogem/id3v2 UTF-16 corruption bug:
+// a tag with a UTF-16BE (FE FF BOM) text frame (e.g. Amazon downloads) must remain
+// readable after we rewrite it. saveMP3UTF8 transcodes such frames to UTF-8.
+func TestUTF16MP3SurvivesWrite(t *testing.T) {
+	// Minimal ID3v2.3 tag: one TIT2 frame, UTF-16BE with FE FF BOM, text "Hi".
+	body := []byte{0x01, 0xFE, 0xFF, 0x00, 'H', 0x00, 'i', 0x00, 0x00}
+	frame := append([]byte("TIT2"), 0, 0, 0, byte(len(body)), 0, 0)
+	frame = append(frame, body...)
+	tag := append([]byte("ID3"), 0x03, 0x00, 0x00, 0, 0, 0, byte(len(frame)))
+	tag = append(tag, frame...)
+
+	path := filepath.Join(t.TempDir(), "utf16.mp3")
+	if err := os.WriteFile(path, tag, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// Any write path that calls saveMP3UTF8 must leave it dhowden-readable.
+	if err := writeReplayGainTags(path, -6, 0.9, -6, 0.9); err != nil {
+		t.Fatalf("writeReplayGainTags: %v", err)
+	}
+	tt, err := readTrackTags(path)
+	if err != nil {
+		t.Fatalf("dhowden could not read after write (UTF-16 corruption): %v", err)
+	}
+	if tt.Title != "Hi" {
+		t.Errorf("title not preserved: got %q", tt.Title)
+	}
+}
+
 func TestRoundTripMP3(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "song.mp3")
 	if err := os.WriteFile(path, nil, 0o644); err != nil { // id3v2 creates the tag on a tagless file

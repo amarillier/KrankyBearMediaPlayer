@@ -15,7 +15,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "0.7.0" // see FyneApp.toml
+	appVersion = "0.8.0" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -177,7 +177,10 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		fyne.NewMenuItem("Copy Selected to…", u.copySelectedTo),
 		fyne.NewMenuItem("Edit Tags of Selected…", u.editTagsOfSelected),
 		fyne.NewMenuItem("Rename Selected from pattern…", u.renameSelectedFromTags),
+		fyne.NewMenuItem("Scan ReplayGain of Selected…", u.scanReplayGainSelected),
 		fyne.NewMenuItem("Add Selected to Queue", u.enqueueSelected),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("Library Report…", u.showLibraryReport),
 		fyne.NewMenuItem("Add All Shown to Queue", u.enqueueShown),
 		fyne.NewMenuItemSeparator(),
 		// Defer via fyne.Do: quitting directly from the menu popup's click handler
@@ -211,6 +214,8 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 	)
 	rgItem := fyne.NewMenuItem("ReplayGain (volume normalization)", u.toggleReplayGain)
 	rgItem.Checked = a.Preferences().BoolWithFallback(prefReplayGain, false)
+	rgAlbumItem := fyne.NewMenuItem("ReplayGain: prefer album gain", u.toggleReplayGainAlbum)
+	rgAlbumItem.Checked = a.Preferences().BoolWithFallback(prefRGAlbum, false)
 
 	curTrans := transitionMode(a.Preferences().IntWithFallback(prefTransition, int(transGap)))
 	transItemFor := func(label string, m transitionMode) *fyne.MenuItem {
@@ -234,6 +239,7 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		shuffleItem,
 		repeatItem,
 		rgItem,
+		rgAlbumItem,
 		transitionItem,
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem("Show Play Queue", u.showQueue),

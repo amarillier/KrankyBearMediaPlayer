@@ -1,6 +1,35 @@
 Release notes
 KrankyBear MediaPlayer: - Windows, Linux and MacOS music library manager & player
 
+Version 0.8.0 - June 16, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Scan ReplayGain (Library → Scan ReplayGain of Selected…, or right-click): the
+  app can now MEASURE loudness and WRITE the ReplayGain tags itself — no external
+  tool needed. It analyses each marked MP3/FLAC (ITU-R BS.1770 / ReplayGain 2.0,
+  -18 LUFS reference) and writes replaygain_track_gain/_peak plus album_gain/_peak
+  (album values pool every scanned track of the same album). A progress dialog
+  shows each file and can be cancelled; OGG/WAV are skipped. Pairs with the
+  existing Playback → ReplayGain toggle, which reads these tags.
+- Playback → "ReplayGain: prefer album gain": when album-gain tags are present,
+  normalize by album loudness (keeps an album's quiet/loud track balance) instead
+  of per-track. Falls back to track gain when album gain isn't tagged.
+- Library Report (Library → Library Report…): summarise your library grouped by
+  Artist, Album, or Genre; hierarchically (Artist → Album, Album → Artist, Genre →
+  Artist); or as a flat track listing. "List tracks" expands each grouping to show
+  the tracks within it. Sort by Name or Year (ascending/descending), report on the
+  whole library or just the current filtered view, and export any report to CSV.
+
+🐛 FIXES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- MP3 tag writing no longer corrupts files whose tags use UTF-16 text (common in
+  store-bought downloads, e.g. Amazon). The underlying ID3 library wrote those
+  frames with a bad length; affected files became unreadable. We now save such
+  text as UTF-8. This covers Edit Tags, batch tagging, rename, and the new
+  ReplayGain scan. Re-saving an already-damaged file (e.g. Scan ReplayGain again)
+  repairs it.
+
 Version 0.7.0 - June 15, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ NEW FEATURES
