@@ -125,6 +125,10 @@ func (p *Player) startTransitionLocked() {
 	if format.SampleRate != playerSampleRate {
 		stream = beep.Resample(4, format.SampleRate, playerSampleRate, ctrl)
 	}
+	eq := newEQStreamer(stream, p.eqGains, p.eqEnabled)
+	stream = eq
+	bal := newBalanceStreamer(stream, p.balance)
+	stream = bal
 	vol := &effects.Volume{Streamer: stream, Base: 2, Volume: startVol, Silent: p.gain <= 0}
 
 	credited, creditedID := p.creditPlayLocked() // the outgoing track is done
@@ -138,6 +142,8 @@ func (p *Player) startTransitionLocked() {
 	// (in beginStreamLocked), so the outgoing track's callback is now stale.
 	p.index, p.pos = nextIndex, np
 	p.streamer, p.format, p.ctrl, p.volume = s, format, ctrl, vol
+	p.eqCur = eq
+	p.balCur = bal
 	p.currentID, p.counted, p.rgOffset = tr.ID, false, rg
 	p.beginStreamLocked(tr) // Play (mixes - does NOT clear, so the old keeps draining)
 

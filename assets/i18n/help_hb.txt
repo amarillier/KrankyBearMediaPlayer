@@ -1,0 +1,77 @@
+{{app_name}} - Quick Start
+
+**OVERVIEW**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Movin' yer Tanium settings between servers is a heap easier now, usin' them fancy REST APIs and a sprinkle of GraphQL.
+It handles the Core Platform, them Shared Services, and every last one of them application modules (we do 'em in ABC order, and save Connect for the very last). It'll let ya pick and choose what moves, and it knows how to handle things that are already there.
+
+**What's that funny gopher logo?**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+It’s a little tip of the hat to the Go programmin' language’s gopher mascot, and also a nod to how we like to repeat things and stay at 'em—not like *Groundhog Day*, but more like a real gopher.
+Gophers are busy, hard-workin' critters, always diggin', haulin', and doin' the same chores over and over with a whole lotta spirit.
+For {{app_name}}, that gopher is the Tanium Gopher: always movin' settings from one server to another, gettin' the job done on purpose. Efficiently. Reliably.
+VERY lickety-split.
+
+**QUICK START**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+0. Optional: Open the "Migration Checklist" from the Help menu or that button on the Server Configuration tab.
+1. Server Configuration tab: Put in yer source and target URLs, and them API tokens (or yer username and passcode).
+2. Connect Server on both ends (read on the source, write on the target).
+3. Optional: Flip the switch for "Auto-skip all duplicate items" so ya don't get pestered.
+4. Optional: Set yer snooze timer in the Fixin's (Preferences) box (5 minutes is the usual).
+5. Migration Options tab: Pick the modules and bits ya want (do Core Phase 1 first, then the Phase 2 modules).
+6. Use Browse & Select to pick specific things, or just grab the whole kit and caboodle.
+7. Start Migration (the button's the same on both tabs) → Keep an eye on how it's goin' → Export yer report to a file.
+8. View the Log if ya need to see every little thing it's doin'.
+
+**KEY FEATURES**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Phased tabs: Core (that's the foundation) → Shared Services → Modules (do Connect last).
+• Hover yer mouse over the buttons and controls to see helpful hints if ya get stuck.
+• Browse & Select lets ya be picky about what gets moved for parts that support it.
+• Duplicate checkin': You can skip, skip 'em all, or just holler "Stop" (when auto-skip is off).
+• Export report: A nice list of what made it, what got skipped, and what tripped up.
+• Debug mode: Start the program with `-debug` or `-x` if ya want a whole book's worth of log messages.
+
+**REQUIREMENTS**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• A computer runnin' Windows, MacOS, or Linux that can handle a screen.
+• Tanium Gateway on both servers (that's the GraphQL part).
+• REST/GraphQL API access for most of the modules.
+• API tokens or secrets with the right keys to the kingdom.
+
+**TANIUM CLOUD (TaaS)**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Put in yer console URL (like `https://server.cloud.tanium.com`). The app swaps it to the `-api` part all by itself. Use API Token sign-in.
+Flip on "API throttling (Cloud/TitanKube)" if the server starts gettin' grumpy.
+
+**TITANKUBE**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Put in yer console URL (like `https://tk-5a92p9.titankube.com`). The app'll swap it to the `-api` part (like `tk-5a92p9-api.titankube.com`). Use API Token.
+Flip on "API throttling (Cloud/TitanKube)" if ya get hosed with rate-limits.
+
+**DOCUMENTATION**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Migration Checklist | Go to Help → Migration Checklist for a built-in guide ya can check off as ya go (it saves yer place automatically).
+
+TESTING.md          | The full testin' checklist and the right order to move things. [cite: 30]
+*Note: Followin' the order helps keep things from breakin'.*
+
+ReleaseNotes.txt    | Details on what modules we got, what's workin', and the history. [cite: 31]
+
+TitanKube: Use yer console URL. [cite: 32] The app'll take care of the `-api` part. Use an API token. Toggle "API throttling" if ya need to. [cite: 33] Movin' files for airgapped networks is somethin' we're lookin' to add later on.
+
+**CLI / SCHEDULED SYNC**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Click "Export Config for CLI" (right under Diff) to save `tanium-geminatus.json`.
+• Tweak that JSON file to turn parts on or off (they're all on by default).
+• Run it without the fancy windows (cron or Windows Task Scheduler style):
+  `tanium-geminatus -sync -source-url <url> -target-url <url> -source-token <token> -target-token <token> -config tanium-geminatus.json`
+• Duplicates get skipped automatically in CLI mode. [cite: 34] Use `-debug` or `-x` if ya want lots of extra talkin'. [cite: 35]
+
+**NAME REPLACEMENT (REGEX)**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Use Server Configuration → Name Replacement if ya need to change names while they're movin'. [cite: 36]
+It uses Go's way of doin' regex. Use `^` and `$` to anchor it; `(.*)` and `$1` to grab parts of the name. [cite: 37]
+Example: Pattern `^IAM (.*)` → Replacement `MyOrg $1` turns "IAM Servers" into "MyOrg Servers".
+Click the `?` [cite: 38] icon next to Name Replacement if ya need help with the regex tricks or a link to regex101.com.

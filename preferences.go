@@ -72,6 +72,10 @@ func (u *ui) showPreferences() {
 	volSlider.OnChanged = func(v float64) { volPct.SetText(fmt.Sprintf("%d%%", int(v*100+0.5))) }
 	volRow := container.NewBorder(nil, nil, nil, volPct, volSlider)
 
+	// --- Playback: open equalizer on launch ---
+	eqLaunchChk := widget.NewCheck("Open equalizer on startup", nil)
+	eqLaunchChk.Checked = prefs.BoolWithFallback(prefShowEQAtLaunch, false)
+
 	// --- Library: optional columns ---
 	trackChk := widget.NewCheck("Track # column", nil)
 	trackChk.Checked = prefs.BoolWithFallback(prefShowTrackCol, false)
@@ -132,6 +136,7 @@ func (u *ui) showPreferences() {
 			widget.NewFormItem("Count a play after", pctSel),
 			widget.NewFormItem("Volume", volRow),
 		),
+		eqLaunchChk,
 		section("Library columns"),
 		durChk, fmtChk, brChk, genreChk, trackChk, fileChk, selChk, colFilterChk,
 		section("Database location"),
@@ -164,6 +169,8 @@ func (u *ui) showPreferences() {
 		u.player.SetVolume(volSlider.Value)
 		prefs.SetFloat(prefVolume, volSlider.Value)
 		u.volSlider.SetValue(volSlider.Value)
+		// Open equalizer on launch.
+		prefs.SetBool(prefShowEQAtLaunch, eqLaunchChk.Checked)
 		// Optional columns.
 		prefs.SetBool(prefShowTrackCol, trackChk.Checked)
 		prefs.SetBool(prefShowFilenameCol, fileChk.Checked)

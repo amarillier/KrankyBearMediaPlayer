@@ -1,5 +1,7 @@
 Current Version: {{version}}
 
-KrankyBear MediaPlayer URL
+Tanium Geminatus releases are hosted on Tanium's internal GitHub server, which requires authentication for automated version checking.
+
+Tanium internal use only: To check for updates, please visit the releases page below and compare the latest release tag with your current version.
 
 {{releases_url}}

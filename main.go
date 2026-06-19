@@ -15,7 +15,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "0.8.0" // see FyneApp.toml
+	appVersion = "0.9.0" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -240,6 +240,7 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		repeatItem,
 		rgItem,
 		rgAlbumItem,
+		fyne.NewMenuItem("Equalizer…", u.showEqualizer),
 		transitionItem,
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem("Show Play Queue", u.showQueue),

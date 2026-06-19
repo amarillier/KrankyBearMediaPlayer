@@ -62,6 +62,11 @@ type Player struct {
 	replayGain bool                    // apply per-track ReplayGain when available
 	rgAlbum    bool                    // prefer album gain over track gain when present
 	rgOffset   float64                 // current track's ReplayGain offset (log2 factor; 0 = none)
+	eqEnabled  bool                    // graphic equalizer on/off (eq.go)
+	eqGains    [eqBandCount]float64    // per-band gain (dB)
+	eqCur      *eqStreamer             // the current stream's EQ stage, for live updates
+	balance    float64                 // stereo balance -1 (full left) .. 0 (centre) .. +1 (full right)
+	balCur     *balanceStreamer        // the current stream's balance stage, for live updates
 	// Track transition (player_transition.go): gapless / crossfade. gen rises each
 	// time a new stream becomes current, so a superseded track's end-callback is
 	// ignored. armed = the current track may still pre-trigger its transition.
@@ -252,12 +257,16 @@ func (p *Player) playLocked() {
 		p.rgOffset = replayGainOffset(tr.AbsPath(), p.rgAlbum)
 	}
 
-	// Chain: decoder -> Ctrl (pause) -> resample (if needed) -> Volume (gain).
+	// Chain: decoder -> Ctrl (pause) -> resample (if needed) -> EQ -> Balance -> Volume (gain).
 	p.ctrl = &beep.Ctrl{Streamer: s}
 	var stream beep.Streamer = p.ctrl
 	if format.SampleRate != playerSampleRate {
 		stream = beep.Resample(4, format.SampleRate, playerSampleRate, p.ctrl)
 	}
+	p.eqCur = newEQStreamer(stream, p.eqGains, p.eqEnabled)
+	stream = p.eqCur
+	p.balCur = newBalanceStreamer(stream, p.balance)
+	stream = p.balCur
 	p.volume = &effects.Volume{
 		Streamer: stream,
 		Base:     2,
@@ -625,6 +634,50 @@ func (p *Player) SetReplayGain(on bool) {
 	p.replayGain = on
 	p.reapplyReplayGainLocked()
 	p.mu.Unlock()
+}
+
+// SetEQ stores the equalizer enable flag + band gains and applies them live to the
+// currently-playing stream (under speaker.Lock, like SetReplayGain mutates volume).
+func (p *Player) SetEQ(enabled bool, gains [eqBandCount]float64) {
+	p.mu.Lock()
+	p.eqEnabled = enabled
+	p.eqGains = gains
+	eq := p.eqCur
+	p.mu.Unlock()
+	if eq == nil {
+		return
+	}
+	speaker.Lock()
+	eq.enabled = enabled
+	eq.setGains(gains)
+	speaker.Unlock()
+}
+
+// SetBalance sets the stereo balance (-1 full left .. 0 centre .. +1 full right)
+// and applies it live to the current stream (under speaker.Lock, like SetEQ).
+func (p *Player) SetBalance(pos float64) {
+	if pos < -1 {
+		pos = -1
+	} else if pos > 1 {
+		pos = 1
+	}
+	p.mu.Lock()
+	p.balance = pos
+	bal := p.balCur
+	p.mu.Unlock()
+	if bal == nil {
+		return
+	}
+	speaker.Lock()
+	bal.setBalance(pos)
+	speaker.Unlock()
+}
+
+// Balance returns the current stereo balance (-1..+1; 0 = centred).
+func (p *Player) Balance() float64 {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.balance
 }
 
 // SetReplayGainAlbum chooses album gain (when tagged) over track gain and re-applies

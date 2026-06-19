@@ -31,8 +31,10 @@ fixing and performance work. Some areas are a little slow; improving them is ong
   set tags per-file from each name, set fixed fields across the selection, and apply
   or remove one cover image for all.
 - **Playback** of MP3, FLAC, WAV, and OGG (via [gopxl/beep](https://github.com/gopxl/beep)):
-  double-click to play, transport controls, seek bar with elapsed/total time, and a
-  volume slider.
+  double-click to play, transport controls, seek bar with elapsed/total time, app and
+  system volume sliders, and a **stereo balance** control for asymmetric speaker setups.
+- **10-band graphic equalizer** (31 Hz – 16 kHz, ±12 dB) with built-in presets and
+  saveable custom presets; live, and transparent when disabled.
 - **Portable library**: track paths are stored relative to their watched folder, so a
   USB drive that mounts as `D:` on one machine and `E:` on another can be relocated
   with a single **Library → Relocate Folder** — play counts and ratings come along.
@@ -75,9 +77,9 @@ To start a brand-new app from this template, use `rename-app.sh "New App Name" "
 
 ## Roadmap
 
-Batch find-and-replace within a tag field, internationalisation (i18n), an equalizer
-with presets, and "copy to device" sync for Android. See `ReleaseNotes.txt` for the
-version history and `docs/FUTURE.md` for proposals.
+Internationalisation (i18n) is the next milestone; "copy to device" sync for Android
+is parked. See `ReleaseNotes.txt` for the version history and `docs/FUTURE.md` for
+proposals.
 
 ## Supported audio formats
 

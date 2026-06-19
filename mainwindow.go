@@ -150,11 +150,19 @@ const prefReplayGain = "replayGain"   // bool: apply per-track ReplayGain
 const prefRGAlbum = "replayGainAlbum" // bool: prefer album gain over track gain
 const prefTransition = "transition"   // int: 0 gap, 1 gapless, 2 crossfade
 const prefVolume = "volume"           // float 0..1 linear gain
+const prefBalance = "balance"         // float -1..+1 stereo balance (0 = centred)
 
 // prefRenamePattern / prefParsePattern are the last-used filename patterns for the
 // rename-from-tags and tags-from-filename tools (rename.go, tageditor.go).
 const prefRenamePattern = "renamePattern"
 const prefParsePattern = "parsePattern"
+
+// Equalizer preferences (eq.go / eqwindow.go).
+const prefEQEnabled = "eqEnabled"           // bool
+const prefEQGains = "eqGains"               // CSV of 10 band gains (dB)
+const prefEQPreset = "eqPreset"             // last-selected preset name ("" = custom)
+const prefEQCustom = "eqCustom"             // JSON map of user-saved presets
+const prefShowEQAtLaunch = "eqShowAtLaunch" // bool: open the equalizer window on startup
 
 // prefDBPath is the saved custom catalog-database path (empty = default location).
 const prefDBPath = "dbPath"
@@ -212,6 +220,7 @@ type ui struct {
 	timeLabel  *widget.Label
 	seeking    bool           // true while the user drags the seek slider
 	volSlider  *widget.Slider // per-stream playback gain (player.go)
+	balSlider  *widget.Slider // stereo balance -1..+1 (player.go, balance.go)
 
 	// System output volume controls (sysvolume.go), distinct from the gain
 	// above: these move the whole OS output level. A background poll keeps them
@@ -301,10 +310,14 @@ func buildMainWindow(a fyne.App, win fyne.Window, db *DB, player *Player) *ui {
 	player.SetRepeat(RepeatMode(prefs.IntWithFallback(prefRepeat, int(RepeatOff))))
 	player.SetReplayGainAlbum(prefs.BoolWithFallback(prefRGAlbum, false))
 	player.SetReplayGain(prefs.BoolWithFallback(prefReplayGain, false))
+	player.SetEQ(prefs.BoolWithFallback(prefEQEnabled, false), gainsFromCSV(prefs.String(prefEQGains)))
 	player.SetTransitionMode(transitionMode(prefs.IntWithFallback(prefTransition, int(transGap))))
 	vol := prefs.FloatWithFallback(prefVolume, 1.0)
 	player.SetVolume(vol)
 	u.volSlider.SetValue(vol) // reflect the restored volume in the slider
+	bal := prefs.FloatWithFallback(prefBalance, 0)
+	player.SetBalance(bal)
+	u.balSlider.SetValue(bal) // reflect the restored balance in the slider
 
 	// Restore the saved sort sequence before the first load so the table opens
 	// ordered as the user left it.
@@ -318,6 +331,12 @@ func buildMainWindow(a fyne.App, win fyne.Window, db *DB, player *Player) *ui {
 	u.startSystemVolumePoll()
 	u.startDurationEnricher() // fill in any missing track lengths in the background
 	u.restoreLastTrack()      // select + scroll to the track last playing (no audio)
+
+	// Optionally open the equalizer on startup. Deferred via fyne.Do so it runs on
+	// a clean loop iteration once the event loop is running (matches the menu path).
+	if prefs.BoolWithFallback(prefShowEQAtLaunch, false) {
+		fyne.Do(u.showEqualizer)
+	}
 	return u
 }
 
@@ -624,9 +643,11 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 		container.NewHBox(widget.NewLabel("App"), widget.NewIcon(theme.VolumeUpIcon())), nil,
 		container.NewGridWrap(fyne.NewSize(100, 28), u.volSlider))
 
+	balBox := u.buildBalance()
+
 	sysVolBox := u.buildSystemVolume()
 
-	right := container.NewHBox(volBox, sysVolBox, widget.NewSeparator(), u.buildRatingBar())
+	right := container.NewHBox(volBox, balBox, sysVolBox, widget.NewSeparator(), u.buildRatingBar())
 	nowBox := container.NewBorder(nil, nil, u.nowArt, nil, u.nowPlaying)
 	controls := container.NewBorder(nil, nil, transport, right, nowBox)
 
@@ -639,6 +660,32 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 
 	bottom := container.NewVBox(widget.NewSeparator(), seekRow, controls, u.status)
 	return container.NewBorder(nil, nil, container.NewPadded(logo), nil, bottom)
+}
+
+// balCentreSnap is the soft "detent" half-width: a balance setting within this of
+// centre snaps to dead-centre, so the user can land on 0 without fiddling.
+const balCentreSnap = 0.06
+
+// buildBalance builds the stereo balance control: an L..R slider centred at 0 with
+// a soft centre detent, plus a button that snaps it back to centre. It drives
+// player.SetBalance live and persists the position (balance.go / player.go).
+func (u *ui) buildBalance() fyne.CanvasObject {
+	u.balSlider = widget.NewSlider(-1, 1)
+	u.balSlider.Step = 0.02
+	u.balSlider.Value = u.player.Balance()
+	u.balSlider.OnChanged = func(v float64) {
+		if v > -balCentreSnap && v < balCentreSnap {
+			v = 0 // soft centre detent
+		}
+		u.player.SetBalance(v)
+		u.app.Preferences().SetFloat(prefBalance, v)
+	}
+	centreBtn := ttwidget.NewButton("C", func() { u.balSlider.SetValue(0) })
+	centreBtn.Importance = widget.LowImportance
+	centreBtn.SetToolTip("Centre the balance (L / R)")
+	return container.NewBorder(nil, nil,
+		widget.NewLabel("Bal"), centreBtn,
+		container.NewGridWrap(fyne.NewSize(100, 28), u.balSlider))
 }
 
 // buildSystemVolume builds the OS output-volume control (sysvolume_*.go): a mute

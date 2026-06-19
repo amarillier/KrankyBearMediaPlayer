@@ -2,8 +2,8 @@
 ID = "com.github.amarillier.KrankyBearMediaPlayer"
 Name = "KrankyBear MediaPlayer"
 Creator = "Allan Marillier"
-Version = "0.8.0"
-Build = 3
+Version = "0.9.0"
+Build = 1
 Icon = "KrankyBearMediaPlayer.png"
 
 [Migrations]

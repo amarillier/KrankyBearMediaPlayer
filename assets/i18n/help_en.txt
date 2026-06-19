@@ -2,23 +2,124 @@
 
 OVERVIEW
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Migrate Tanium configuration between servers using mostly REST APIs (and some GraphQL).
+Supports Core Platform, Shared Services, and all application modules (in alphabetical sequence, with Connect last) and all migratable components within each module, with selective migration and duplicate handling.
 
 What's that funny gopher logo?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+It's a playful nod to both the Go programming language's gopher mascot, and also the idea of repetition and persistence — not to Groundhog Day, but to the gopher's own nature. Gophers are busy, relentless creatures, constantly tunneling, hauling, and repeating tasks with tireless energy.
+For {{app_name}}, the gopher represents the Tanium Gopher: always migrating configurations between servers, repeating tasks with purpose. Efficiently. Reliably. VERY quickly.
 
 QUICK START
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+0. Optional: Open "Migration Checklist" from Help menu or the Server Configuration tab button
+1. Server Configuration tab: Enter source and target URLs and API tokens (API-token-only as of v0.9.5 — username/password authentication has been removed). Tick "Remember API token (system keychain)" per server to persist via macOS Keychain / Windows Credential Manager / Linux Secret Service; default off.
+2. Connect Server on both servers (read on source, write on target)
+3. Optional: Enable "Auto-skip all duplicate items" to avoid prompts
+4. Optional: Set inactivity timeout in Preferences dialog (default 5 minutes)
+5. Migration Options tab: Select modules and components (Core Phase 1 tab, then Modules Phase 2 tab)
+6. Use Browse & Select to choose specific items within each module, or select all
+7. Start Migration (same button label on both tabs) → Monitor progress → Export report to file
+8. View Log for real-time detailed output
 
 KEY FEATURES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• 
+• Phased tabs: Core (foundation) → Shared Services → Modules (Connect last)
+• Hover tooltips on controls (migration, servers, browse/select, module tabs, and more) for extra context
+• Browse & Select for selective migration on supported components
+• Duplicate detection: Skip, Skip All, or Cancel (when auto-skip disabled)
+• Export report: Detailed succeeded/skipped/failed items
+• Debug mode: Launch with -debug or -x for verbose logging
+• File [DEBUG] output: the small file icon in the header (left of the file-status text) or Enable Debug Logging on Server Configuration; turn off the same way
+
+SECURITY & DATA HANDLING (v0.9.4 → v0.9.6)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• API-token-only authentication (username/password removed).
+• "Remember API token (system keychain)" checkbox per server — default off; stores in
+  macOS Keychain / Windows Credential Manager / Linux Secret Service. Linux without
+  Secret Service prompts session-only vs plaintext-fallback. Stored tokens are never
+  re-displayed in the entry widget; the eye-icon toggle reveals nothing.
+• "Clear Recent" wipes both the URL list and any stored keychain tokens for that side,
+  with a confirm dialog stating the counts.
+• At launch the app scans recent server lists and offers to prune URLs unused for more
+  than N days (default 7, configurable in Preferences; 0 disables). Pruned entries take
+  their stored API tokens with them.
+• File → Clean up exports & logs… (also a button next to Verify TLS, badged with a
+  warning icon; matching tray entry) scans the launch directory (or a Browse-selected
+  location) for tool-produced files: export folders/zips, manifests, debug logs, sample
+  CSVs. Per-row opt-in; selected files are overwritten with random bytes (best effort,
+  ≤256 MiB) before unlink. Audit line in the in-app action log.
+• Files written by the tool: 0600 (directories 0700) since v0.9.4.
+• TLS: per-host fingerprint pinning in the GUI cert validator (gui-known-hosts.json,
+  0600). Mismatch on a known host is *refused* with a rotation-detected dialog. CLI
+  trust store uses the same SHA-256 keying with an interactive yes/no on first encounter.
+• Debug log body redaction (v0.9.6, default on): password / secret / token / credential
+  / bearer / *_key field values are replaced with ***REDACTED*** in HTTP body logs.
+  -debug-redact=false to disable for support; prints a banner.
+• Scheduled-action migration (v0.9.6): start_now_flag forced false; per-action confirm
+  dialog (GUI) with All-Computers warning banner; CLI auto-approves with verbose audit.
 
 REQUIREMENTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Windows, MacOS or Linux with OpenGL display support (most modern systems have this)
-• 
+• Tanium Gateway on both servers (GraphQL API)
+• REST/GraphQL API access for many modules
+• API tokens with appropriate read (source) / write (target) permissions. Username/password auth was removed in v0.9.5. Best practice: scope `allowed_ip` to the migration host and pair short token expiry with any wildcarded allowed_ip values.
+
+TANIUM CLOUD (TaaS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Enter your console URL (e.g. https://server.cloud.tanium.com). The app
+converts to the -api subdomain automatically. Use API Token authentication.
+Enable "API throttling (Cloud/TitanKube)" if needed.
+
+TITANKUBE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Enter your console URL (e.g. https://tk-5a92p9.titankube.com). The app
+converts to the -api subdomain (tk-5a92p9-api.titankube.com). Use API Token.
+Enable "API throttling (Cloud/TitanKube)" if rate-limited.
+
+DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GETTING_STARTED_*.md  In this folder (e.g. GETTING_STARTED_en.md): same getting-started
+                    guide; copies per locale. Repo root GETTING_STARTED.md is an index
+
+Migration Checklist  Open Help → Migration Checklist for an in-app guide with
+                     persistent checkboxes (saved automatically between sessions)
+
+TESTING.md          Full testing checklist and migration sequence reference
+NOTE: Following sequence guidance reduces dependency-related migration failures.
+
+ReleaseNotes.txt   Module details, what's supported, version history
+
+TitanKube: Use your console URL (e.g. https://tk-xxx.titankube.com). The app converts to the -api subdomain. Use API Token. Enable "API throttling (Cloud/TitanKube)" if needed.
+
+Export and import of configuration payloads to file to allow for airgapped migrations is planned for a future release.
 
 CLI / SCHEDULED SYNC
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• 
+• Click "Export Config for CLI" (below Diff) to save tanium-geminatus.json
+• Edit the JSON to enable/disable migration components (all default true when exported)
+• Run without GUI for cron or Windows Task Scheduler:
+  tanium-geminatus -sync -source-url <url> -target-url <url> -config tanium-geminatus.json
+• Token input (v0.9.5+): the -source-token / -target-token flags were removed (they leaked
+  tokens into `ps` / argv). Three supported ways to supply tokens to a CLI run:
+    1. Env vars: TANIUM_SOURCE_TOKEN, TANIUM_TARGET_TOKEN
+    2. Interactive: stdin no-echo prompt when stdin is a tty
+    3. Piped stdin: source token on line 1, target on line 2, e.g.
+         printf '%s\n%s\n' "$SRC" "$TGT" | tanium-geminatus -sync ...
+• Scheduled-action migration (v0.9.6): every action POST is preceded by a confirmation
+  dialog in the GUI; CLI auto-approves with a verbose audit line per action. start_now_flag
+  is forced false on every migrated action. "All Computers" targeting raises a banner.
+• TLS (v0.9.5+): -trust-on-first-use prompts with full cert details + SHA-256 fingerprint
+  on first encounter; -accept-unknown-certs allows non-interactive pinning. Pin mismatches
+  refuse the connection with a rotation-detected message.
+• Duplicates are auto-skipped in CLI mode. Use -debug or -x for verbose output.
+• -debug-redact=false disables sensitive-field redaction in HTTP body logs (default on);
+  use only for support-driven debugging and scrub the captured log before sharing.
 
+NAME REPLACEMENT (REGEX)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Use Server Configuration → Name Replacement to substitute names during migration.
+Patterns use Go's regexp (RE2 syntax). Use ^ and $ for anchors; (.*) and $1 for capture groups.
+Example: Pattern ^IAM (.*) → Replacement MyOrg $1 transforms "IAM Servers" to "MyOrg Servers".
+Click the ? icon next to the Name Replacement section for detailed regex help and a link to regex101.com.

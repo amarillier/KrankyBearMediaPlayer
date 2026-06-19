@@ -67,6 +67,10 @@ PLAYING MUSIC:
   To tag files yourself, mark them and use Library → Scan ReplayGain of Selected…
   (or right-click → Scan ReplayGain): the app measures loudness (BS.1770 /
   ReplayGain 2.0) and writes track + album ReplayGain tags into MP3/FLAC.
+• Playback → Equalizer…: a 10-band graphic equalizer (31 Hz – 16 kHz, ±12 dB) that
+  shapes tone live. Tick Enable, drag the band sliders, or pick a preset (Flat, Bass
+  Boost, Vocal, Rock, …). Save your own settings with "Save preset…" and remove them
+  with "Delete preset". Reset (Flat) zeroes the bands; disabling is transparent.
 • Playback → Track transition: Gap (default), Gapless (tracks butt up with no
   silence), or Crossfade (the outgoing track fades out as the next fades in).
   Gapless/Crossfade are experimental.
@@ -83,6 +87,9 @@ PLAYING MUSIC:
     it. It stays in sync with the system level — including changes you make with
     the volume keys or the OS mixer — and moves the whole machine's volume, not
     just this app.
+• "Bal" sets the left/right stereo balance (remembered across launches). It has a
+  soft centre detent, and the "C" button beside it snaps back to dead-centre.
+  Handy when speakers aren't placed symmetrically.
 • The selected-row indicator follows the track that is now playing.
 
 RATINGS & PLAY TRACKING:
@@ -199,8 +206,9 @@ PREFERENCES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • View → Preferences… (Alt+R) gathers the common settings in one place:
   theme, "count a play after" threshold, playback volume (remembered across
-  launches), the optional columns, and the database location. The same toggles
-  remain on the View menu for quick one-off changes.
+  launches), whether to open the equalizer on startup, the optional columns,
+  and the database location. The same toggles remain on the View menu for quick
+  one-off changes.
 
 SMART FEATURES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

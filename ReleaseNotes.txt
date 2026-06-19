@@ -1,6 +1,23 @@
 Release notes
 KrankyBear MediaPlayer: - Windows, Linux and MacOS music library manager & player
 
+Version 0.9.0 - June 17, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Equalizer (Playback → Equalizer…): a 10-band graphic EQ (31 Hz – 16 kHz, ±12 dB)
+  that shapes playback tone in real time. Built-in presets — Flat, Bass Boost,
+  Treble Boost, Vocal, Rock, Classical, Pop, Jazz, Dance, Loudness — and you can
+  save your own slider settings as named custom presets (and delete them later).
+  Enable/disable, band positions and the last preset are all remembered. Disabling
+  it is completely transparent (no effect on the audio). A new Preferences option,
+  "Open equalizer on startup", reopens the EQ window automatically at launch.
+- Stereo balance ("Bal" slider, bottom right beside the volume controls): shift the
+  left/right balance for speakers that aren't placed symmetrically, or to favour one
+  ear. It has a soft centre detent and a "C" button that snaps back to dead-centre;
+  centre is a true bypass (no effect on the audio). The position is remembered across
+  launches and applies live to whatever is playing.
+
 Version 0.8.0 - June 16, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ NEW FEATURES

@@ -1,0 +1,12 @@
+Copyright (c) Tanium Inc. 2026
+
+Tanium Geminatus is "Beta Software" as defined in the license agreement found at the link below.  Please take a moment to read the license agreement:
+ 
+https://www.tanium.com/end-user-license-agreement-policy
+ 
+In addition, please note that:
+ 
+- Geminatus should only be used under the supervision of a Tanium Enterprise Services Engineer.
+- Geminatus endeavors to preserve content during migration.  In some scenarios, content may be malformed or incorrect. Manual verification of content is recommended on the destination to ensure correct importation.
+ 
+When you first run the application, read this text in the license agreement window. To accept the terms of the License Agreement, acknowledge that this is Beta Software, and acknowledge the additional terms above, click Confirm. Click Quit to decline and exit.
