@@ -77,8 +77,8 @@ To start a brand-new app from this template, use `rename-app.sh "New App Name" "
 
 ## Roadmap
 
-Internationalisation (i18n) is the next milestone; "copy to device" sync for Android
-is parked. See `ReleaseNotes.txt` for the version history and `docs/FUTURE.md` for
+Internationalisation (i18n) has been added, possible additional languages; "copy to device" sync for Android
+is parked; additional supported playback formats potentially - .m4a is the most likely priority. See `ReleaseNotes.txt` for the version history and `docs/FUTURE.md` for
 proposals.
 
 ## Supported audio formats
