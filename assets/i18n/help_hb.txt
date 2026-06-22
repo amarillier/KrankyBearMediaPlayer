@@ -1,77 +1,185 @@
-{{app_name}} - Quick Start
+{{app_name}} - yer music stash wrangler an' player
 
-**OVERVIEW**
+GITTIN' STARTED:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Movin' yer Tanium settings between servers is a heap easier now, usin' them fancy REST APIs and a sprinkle of GraphQL.
-It handles the Core Platform, them Shared Services, and every last one of them application modules (we do 'em in ABC order, and save Connect for the very last). It'll let ya pick and choose what moves, and it knows how to handle things that are already there.
+• Music Stash → Toss In a Folder: pick a folder o' music; it gits looked over into the catalog.
+  Toss in as many folders / spots as ya like.
+• Music Stash → Wrangle Folders: see ever watched folder with its song count; add,
+  point at a moved drive, look again, or chuck one out. Chuckin' one takes its songs outta the
+  stash but never deletes files off the disk.
+• Music Stash → Look Again at Everthang: look over watched folders to pick up new or changed files.
+• Yer stash is a li'l SQLite database. Song name, who sung it, record, kind, year,
+  track number an' tucked-in album pitcher git read from ever file.
 
-**What's that funny gopher logo?**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-It’s a little tip of the hat to the Go programmin' language’s gopher mascot, and also a nod to how we like to repeat things and stay at 'em—not like *Groundhog Day*, but more like a real gopher.
-Gophers are busy, hard-workin' critters, always diggin', haulin', and doin' the same chores over and over with a whole lotta spirit.
-For {{app_name}}, that gopher is the Tanium Gopher: always movin' settings from one server to another, gettin' the job done on purpose. Efficiently. Reliably.
-VERY lickety-split.
-
-**QUICK START**
+PLAYIN' MUSIC:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-0. Optional: Open the "Migration Checklist" from the Help menu or that button on the Server Configuration tab.
-1. Server Configuration tab: Put in yer source and target URLs, and them API tokens (or yer username and passcode).
-2. Connect Server on both ends (read on the source, write on the target).
-3. Optional: Flip the switch for "Auto-skip all duplicate items" so ya don't get pestered.
-4. Optional: Set yer snooze timer in the Fixin's (Preferences) box (5 minutes is the usual).
-5. Migration Options tab: Pick the modules and bits ya want (do Core Phase 1 first, then the Phase 2 modules).
-6. Use Browse & Select to pick specific things, or just grab the whole kit and caboodle.
-7. Start Migration (the button's the same on both tabs) → Keep an eye on how it's goin' → Export yer report to a file.
-8. View the Log if ya need to see every little thing it's doin'.
+• Double-click any song to start playin' from there on through the rest o' the list.
+• Transport (bottom bar): Back One, Play/Hold On, Whoa, On to the Next.
+• Pickin' & Grinnin' menu: Mix 'Em Up plays the line in a scrambled order; Do It Again → Quit
+  After / Loop the Whole Mess (loop the line) / Loop This'n (loop the song playin'). Both git
+  remembered. Skippin' with Next/Back always moves on, even with Loop This'n.
+• Pickin' & Grinnin' → ReplayGain: when on, songs tagged with ReplayGain play at a steady
+  loudness (peak-limited so boosted songs don't clip). Off to start. "Loudness: Go by the Album"
+  evens out by album loudness (keepin' an album's own quiet/loud balance) when album tags are
+  there, else it falls back to track gain. To tag files yerself, mark 'em an' use Music Stash →
+  Measure Loudness o' Marked… (or right-click → Scan ReplayGain): the app measures loudness
+  (BS.1770 / ReplayGain 2.0) an' writes track + album ReplayGain tags into MP3/FLAC.
+• Pickin' & Grinnin' → Tone Knobs…: a 10-band graphic equalizer (31 Hz – 16 kHz, ±12 dB) that
+  shapes the tone live. Tick Enable, drag the band sliders, or pick a preset (Flat, Bass Boost,
+  Vocal, Rock, …). Save yer own settin's with "Save preset…" an' chuck 'em with "Delete preset".
+  Reset (Flat) zeroes the bands; turnin' it off is plumb transparent.
+• Pickin' & Grinnin' → 'Tween Songs: Quiet Bit (usual), No Gap (songs butt up with no silence),
+  or Fade Into It (the goin'-out song fades out as the next'n fades in).
+  No Gap/Fade Into It are still bein' tinkered with.
+• Show What's Comin' (Pickin' & Grinnin' → Show What's Comin'): see what's lined up in play order,
+  with the song playin' marked ▶. Right-click a song → Add to the Line (or Music Stash → Add
+  Marked / Add All Showin' to the Line) tacks 'em on without buttin' in on what's playin'.
+  In the line winder: Play the picked song, Chuck it, move it Up/Down, or Clear It All.
+• Hover a toolbar or transport button to see a li'l note explainin' what it does.
+• Position bar shows time gone by / total time — drag it to jump around in a song.
+• Two loudness knobs sit bottom right:
+  - "App" sets just this player's own level (remembered ever launch).
+  - "Sys" drives yer 'puter's main output volume, with a hush toggle beside it. It stays in
+    step with the system level — includin' changes ya make with the volume keys or the OS mixer
+    — an' moves the whole machine's volume, not just this app.
+• "Bal" sets the left/right stereo balance (remembered ever launch). It's got a soft middle
+  catch, an' the "C" button beside it snaps back to dead-center.
+  Handy when the speakers ain't set up even.
+• The picked-row marker follows the song that's playin' now.
 
-**KEY FEATURES**
+STARS & PLAY COUNTIN':
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Phased tabs: Core (that's the foundation) → Shared Services → Modules (do Connect last).
-• Hover yer mouse over the buttons and controls to see helpful hints if ya get stuck.
-• Browse & Select lets ya be picky about what gets moved for parts that support it.
-• Duplicate checkin': You can skip, skip 'em all, or just holler "Stop" (when auto-skip is off).
-• Export report: A nice list of what made it, what got skipped, and what tripped up.
-• Debug mode: Start the program with `-debug` or `-x` if ya want a whole book's worth of log messages.
+• Stars are by hand: set a 1–5 star ratin' yerself. Times played gits counted separate (its own
+  column) an' is NOT turned into stars.
+• Click the stars in a song's Stars column to set a ratin'; click the same star again to wipe it
+  (back to no stars). The "Stars:" buttons (bottom) an' the right-click menu do the same. All
+  five stars are clickable.
+• Lookin' → Count a Play After: pick how much o' a song's gotta play afore its play count goes
+  up (25 / 50 / 75 / 90% or Plumb to the End). Skippin' never counts.
+• Tip: sift by Times Played (column sift) to find, say, everthang ya played 5 times, then star
+  them songs however ya like.
 
-**REQUIREMENTS**
+FINDIN' & SORTIN' OUT:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• A computer runnin' Windows, MacOS, or Linux that can handle a screen.
-• Tanium Gateway on both servers (that's the GraphQL part).
-• REST/GraphQL API access for most of the modules.
-• API tokens or secrets with the right keys to the kingdom.
+• Hunt box (top): sifts by song name, who sung it, record, kind or file name as ya type.
+• Column sifts (Lookin' → Show the Filter Boxes): a row o' per-column boxes — type in Song Name,
+  Who Sung It, Record, Kind to match a piece; Year an' Times Played take a pattern (e.g. Year
+  202[456] matches 2024-2026; Times Played 5 = played exactly five times, 0 = never played). They
+  team up with each other an' the hunt/Show sift. Wipe 'em with the ✕ button; hidin' the row wipes
+  'em too.
+• "Show" sift (top): All the Songs, No Stars Yet, exact stars, or N-stars-an'-up.
+• Click a column header to sort; click again to flip it (the Pitcher column don't sort).
+• Lookin' menu: show the Length, Format, Bitrate, Kind, Track # an' File Name columns if ya like
+  (Length's on to start, the rest off; yer picks git remembered). Length an' Bitrate fill in
+  shortly after launch/scan as the app reads ever song's play time in the background, so they may
+  be blank fer a moment.
+• Jump to the song playin': click its name in the bottom bar, or use the toolbar "Now Playin'"
+  button (next to Look Again). Handy after ya scrolled, hunted, or sorted away. (It only finds the
+  song — it don't start or stop playin'.)
+• Picks up where ya left off: the app remembers yer sort order an', on relaunch, picks an' scrolls
+  to the song ya was last playin' (it don't auto-play).
+• Copy songs to another spot: Lookin' → Markin' Checkboxes adds a ✓ column; tick rows (click the
+  ✓ header to flip all showin'), or Music Stash → Mark All Showin'. Then Music Stash → Copy Marked
+  To… lets ya pick Flat or Sort into Who-Sung-It/Record folders, then a spot - e.g. sift to 5
+  stars, mark all, copy to a USB stick. A progress box shows ever file an' lets ya Quit it.
+  (Name clashes git a " (2)" tacked on; nothin' gits writ over.)
+• Right-click a song fer Play, stars, Stick On a Pitcher (local image file or web link, kept in
+  the stash), Show in yer file manager, an' Show the Whole Path (with a Copy button).
+• Right-click Rename the File… / Fix the Tags… / Give Stars normally work on just that one song.
+  But if ya right-click a song that's marked (✓), they work on the whole marked bunch instead —
+  the menu says which (e.g. "Fix Tags on 5 marked…", "Give Stars (5 marked)").
+• Rename the File… (right-click) renames the file on disk from its tags usin' a pattern o' tokens
+  — %track% %title% %artist% %album% %albumartist% %year% %genre% — e.g. "%track% %title% -
+  %artist%". A live peek shows the new name afore ya do it; the extension's always kept an' the
+  catalog updates right in place (no lookin' again). %track% gits zero-padded to two digits.
+• Fix the Tags… (right-click) opens an editor fer song name, who sung it, record, album artist,
+  year, track #, kind, comment, an' the tucked-in cover pitcher. Changes git writ back into the
+  file fer MP3 an' FLAC; OGG an' WAV open read-only fer now. Tags from filename… (in that editor)
+  reads the file's name into the fields usin' the same token pattern, fer ya to look over afore
+  savin' — it never writes on its own. If ya fix the song that's playin' right now, playin' stops
+  first so the file can be saved. The catalog (an' any thumbnail) updates straight away.
+• Fix tags on a bunch at once: mark songs (Markin' Checkboxes / Mark All Showin'), then Music
+  Stash → Fix Tags on Marked… Ya can mix four kinds o' change in one pass: (1) From filename — set
+  song name/who-sung-it/track #/etc. on ever song by readin' its name with a token pattern (the
+  bulk form o' Tags from filename; files that don't match git left be); (2) Set fields — tick Who
+  Sung It, Record, Album Artist, Kind, Year or Comment to give 'em one value across the whole
+  bunch (these beat the pattern); (3) Find & replace — change text within one field across the
+  bunch (e.g. "feat."→"ft.", ignore case if ya like); (4) Cover pitcher — set one image as the
+  cover fer all, or yank the cover off all. A progress box shows ever file with a Quit button;
+  OGG/WAV git skipped.
+• Rename a bunch at once: mark songs, then Music Stash → Rename Marked by Pattern… A peek list
+  shows ever old → new name; doin' it renames 'em all (name clashes git a " (2)" tacked on,
+  nothin' gits writ over) with a Quit button.
+• Stash Rundown (Music Stash → Stash Rundown…): sum up yer collection grouped by Who Sung It,
+  Record, or Kind; in layers (Who Sung It → Record, Record → Who Sung It, Kind → Who Sung It); or
+  as a flat song list. Tick "List tracks" to open up ever group an' show the songs in it. Sort by
+  Name or Year with an up/down toggle, switch between the whole stash an' the current sifted view,
+  an' Export CSV… to save the rundown.
 
-**TANIUM CLOUD (TaaS)**
+SONG LISTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Put in yer console URL (like `https://server.cloud.tanium.com`). The app swaps it to the `-api` part all by itself. Use API Token sign-in.
-Flip on "API throttling (Cloud/TitanKube)" if the server starts gettin' grumpy.
+• Static song lists (Song Lists menu): Save This List… writes the songs yer lookin' at to a
+  totin'-around .m3u8 file, with paths relative to the file so a list an' its music travel
+  together (e.g. on a USB stick). Open a List… loads one an' plays it; files still in yer catalog
+  keep their stars/play counts.
+• Smart lists (Song Lists → New Smart List…): save sift rules — a ratin', an' maybe Kind / Who
+  Sung It / Record (partial, don't mind the case — e.g. "Wickham" matches "Phil Wickham"), plus
+  free-text Hunt — under a name. Pickin' it from the Song Lists menu re-applies the rules live
+  (the status bar shows ♫ <name>). They update on their own as yer stash changes. Wrangle Smart
+  Lists… lets ya fix a saved list's rules (the pencil button, which can rename it too) or chuck
+  ones ya don't want no more.
 
-**TITANKUBE**
+WINDERS & SYSTEM TRAY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Put in yer console URL (like `https://tk-5a92p9.titankube.com`). The app'll swap it to the `-api` part (like `tk-5a92p9-api.titankube.com`). Use API Token.
-Flip on "API throttling (Cloud/TitanKube)" if ya get hosed with rate-limits.
+• A system-tray icon + menu mirrors the controls: Show/Hide all winders, Play/Hold On, Back One,
+  On to the Next, Whoa, Skedaddle.
+• Hide It All tucks the app away an' holds playin'; Show It All brings it back (press Play to git
+  goin' again).
+• The main winder remembers its size betwixt launches.
 
-**DOCUMENTATION**
+TOTIN'-AROUND STASH (movin' betwixt machines or drives):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Migration Checklist | Go to Help → Migration Checklist for a built-in guide ya can check off as ya go (it saves yer place automatically).
+• Song spots are kept relative to each watched folder, so if a totin'-around drive shows up as
+  D:\ on one PC an' E:\ on another, just use Music Stash → Point at a Moved Drive to re-point the
+  folder — ever song under it follows along, keepin' its play counts an' stars.
+• The database spot can be set with the -db command-line flag, the KBMP_DB environment variable,
+  or Lookin' → Yer Druthers → Where the Stash Lives (restart to take hold); to start it sits next
+  to the app (handy on a USB stick).
 
-TESTING.md          | The full testin' checklist and the right order to move things. [cite: 30]
-*Note: Followin' the order helps keep things from breakin'.*
-
-ReleaseNotes.txt    | Details on what modules we got, what's workin', and the history. [cite: 31]
-
-TitanKube: Use yer console URL. [cite: 32] The app'll take care of the `-api` part. Use an API token. Toggle "API throttling" if ya need to. [cite: 33] Movin' files for airgapped networks is somethin' we're lookin' to add later on.
-
-**CLI / SCHEDULED SYNC**
+YER DRUTHERS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Click "Export Config for CLI" (right under Diff) to save `tanium-geminatus.json`.
-• Tweak that JSON file to turn parts on or off (they're all on by default).
-• Run it without the fancy windows (cron or Windows Task Scheduler style):
-  `tanium-geminatus -sync -source-url <url> -target-url <url> -source-token <token> -target-token <token> -config tanium-geminatus.json`
-• Duplicates get skipped automatically in CLI mode. [cite: 34] Use `-debug` or `-x` if ya want lots of extra talkin'. [cite: 35]
+• Lookin' → Yer Druthers… (Alt+R) gathers the common settin's in one spot: look, lingo,
+  "count a play after" threshold, play loudness (remembered ever launch), whether to open the
+  tone knobs at startup, the extra columns, an' where the stash lives. The same toggles stay on
+  the Lookin' menu fer quick one-off changes.
 
-**NAME REPLACEMENT (REGEX)**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Use Server Configuration → Name Replacement if ya need to change names while they're movin'. [cite: 36]
-It uses Go's way of doin' regex. Use `^` and `$` to anchor it; `(.*)` and `$1` to grab parts of the name. [cite: 37]
-Example: Pattern `^IAM (.*)` → Replacement `MyOrg $1` turns "IAM Servers" into "MyOrg Servers".
-Click the `?` [cite: 38] icon next to Name Replacement if ya need help with the regex tricks or a link to regex101.com.
+SMART DOIN'S:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ Tucked-in album pitchers shown as thumbnails in the table an' the now-playin' area.
+✨ Smart lists that re-figure live as yer stash changes.
+✨ Look support: Bright as Day, Dark as Holler, or Whatever the 'Puter Says (Lookin' menu).
+
+KEYBOARD SHORTCUTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Alt+P — Play / Hold On
+• Alt+→ — Next song   • Alt+← — Song afore
+• Alt+H — Hide all winders (an' hold). No shortcut to show again, on purpose —
+  use the system tray or Lookin' → Show It All.
+• Alt+R — Yer Druthers
+• Cmd/Ctrl+Q — Skedaddle   • Cmd/Ctrl+W — Close winder   • Cmd/Ctrl+M — Tuck Down
+
+WHAT IT CAN'T DO YET:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Audio kinds it'll play: MP3, FLAC, WAV, OGG (M4A/AAC/ALAC ain't handled yet).
+⚠️  Music-video playin' is in the works but ain't ready yet.
+
+MORE TO KNOW:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Fer documentation, bug reports, or feature requests:
+📦 GitHub: https://github.com/amarillier/KrankyBearMediaPlayer
+📄 License: https://github.com/amarillier/KrankyBearMediaPlayer/blob/allanm/LICENSE
+📝 Release Notes: Check "Help → Check fer Newer"
+
+FREE SOFTWARE - Use anywhere, anytime, any purpose!
+No signin' up, no trackin'. The only network use is a quiet update check -
+once a day on launch, plus the by-hand "Check fer Newer".

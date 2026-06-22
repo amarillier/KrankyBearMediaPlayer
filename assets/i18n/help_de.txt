@@ -1,0 +1,200 @@
+{{app_name}} - Ihr Musikbibliotheks-Verwalter und -Player
+
+ERSTE SCHRITTE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Bibliothek → Ordner hinzufügen: Wählen Sie einen Musikordner; er wird in den Katalog eingelesen.
+  Fügen Sie so viele Ordner / Speicherorte hinzu, wie Sie möchten.
+• Bibliothek → Ordner verwalten: Sehen Sie jeden überwachten Ordner mit seiner Titelanzahl; hinzufügen,
+  verschieben (auf ein verschobenes Laufwerk verweisen), neu einlesen oder einen entfernen. Das Entfernen nimmt seine
+  Titel aus der Bibliothek, löscht aber niemals Dateien auf der Festplatte.
+• Bibliothek → Alles neu einlesen: Überwachte Ordner neu einlesen, um neue oder geänderte Dateien zu erfassen.
+• Ihre Bibliothek ist eine kleine SQLite-Datenbank. Titel, Interpret, Album, Genre, Jahr,
+  Titelnummer und eingebettetes Albumcover werden aus jeder Datei gelesen.
+
+MUSIK ABSPIELEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Doppelklicken Sie auf einen beliebigen Titel, um die Wiedergabe von dort durch den Rest der Liste zu starten.
+• Steuerung (untere Leiste): Vorheriger, Wiedergabe/Pause, Stopp, Nächster.
+• Menü Wiedergabe: Zufällig spielt die Warteschlange in zufälliger Reihenfolge ab; Wiederholen → Aus / Alle wiederholen
+  (Warteschlange wiederholen) / Einen wiederholen (aktuellen Titel wiederholen). Beide werden gemerkt. Das Überspringen
+  mit Nächster/Vorheriger geht immer weiter, auch bei Einen wiederholen.
+• Wiedergabe → ReplayGain: Wenn aktiviert, werden mit ReplayGain getaggte Titel mit
+  gleichmäßiger Lautheit abgespielt (Spitzen-begrenzt, damit angehobene Titel nicht übersteuern). Standardmäßig aus.
+  "Album-Gain bevorzugen" normalisiert nach Album-Lautheit (wodurch die eigene
+  leise/laute Balance eines Albums erhalten bleibt), wenn Album-Tags vorhanden sind, andernfalls wird auf Track-Gain zurückgegriffen.
+  Um Dateien selbst zu taggen, markieren Sie sie und verwenden Sie Bibliothek → ReplayGain der Ausgewählten ermitteln…
+  (oder Rechtsklick → ReplayGain ermitteln): Die App misst die Lautheit (BS.1770 /
+  ReplayGain 2.0) und schreibt Track- + Album-ReplayGain-Tags in MP3/FLAC.
+• Wiedergabe → Equalizer…: ein grafischer 10-Band-Equalizer (31 Hz – 16 kHz, ±12 dB), der
+  den Klang live formt. Aktivieren Sie ihn, ziehen Sie die Band-Regler oder wählen Sie eine Voreinstellung (Flat, Bass
+  Boost, Vocal, Rock, …). Speichern Sie Ihre eigenen Einstellungen mit "Voreinstellung speichern…" und entfernen Sie sie
+  mit "Voreinstellung löschen". Zurücksetzen (Flat) stellt die Bänder auf null; das Deaktivieren ist transparent.
+• Wiedergabe → Titelübergang: Pause (Standard), Übergangslos (Titel reihen sich ohne
+  Stille aneinander) oder Überblenden (der ausklingende Titel blendet aus, während der nächste einblendet).
+  Übergangslos/Überblenden sind experimentell.
+• Wiedergabe-Warteschlange (Wiedergabe → Wiedergabe-Warteschlange anzeigen): Sehen Sie, was in Abspielreihenfolge ansteht, wobei
+  der aktuelle Titel mit ▶ markiert ist. Rechtsklick auf einen Titel → Zur Warteschlange hinzufügen (oder Bibliothek → Ausgewählte
+  zur Warteschlange hinzufügen / Alle angezeigten zur Warteschlange hinzufügen) hängt an, ohne die laufende Wiedergabe zu unterbrechen.
+  Im Warteschlangenfenster: Wiedergeben des ausgewählten Titels, Entfernen, Nach oben/Nach unten verschieben oder
+  Alle löschen.
+• Bewegen Sie den Mauszeiger über eine Symbolleisten- oder Steuerungs-Schaltfläche, um einen Tooltip mit der Funktionserklärung zu sehen.
+• Die Fortschrittsleiste zeigt verstrichene / gesamte Zeit — ziehen Sie sie, um innerhalb eines Titels zu springen.
+• Zwei Lautstärkeregler befinden sich unten rechts:
+  - "App" passt nur den eigenen Pegel dieses Players an (wird über Starts hinweg gemerkt).
+  - "Sys" steuert die Hauptausgabelautstärke Ihres Computers, mit einem Stummschalter daneben.
+    Sie bleibt mit dem Systempegel synchron — einschließlich Änderungen, die Sie mit den
+    Lautstärketasten oder dem Betriebssystem-Mixer vornehmen — und bewegt die Lautstärke des gesamten Geräts, nicht
+    nur dieser App.
+• "Bal" stellt die linke/rechte Stereo-Balance ein (wird über Starts hinweg gemerkt). Sie hat eine
+  weiche Mittenrastung, und die Schaltfläche "C" daneben springt zurück zur genauen Mitte.
+  Praktisch, wenn Lautsprecher nicht symmetrisch aufgestellt sind.
+• Die Markierung der ausgewählten Zeile folgt dem gerade gespielten Titel.
+
+BEWERTUNGEN & WIEDERGABE-VERFOLGUNG:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Bewertungen sind manuell: Vergeben Sie selbst eine Bewertung von 1–5 Sternen. Die Wiedergabezahl wird
+  separat verfolgt (in einer eigenen Spalte) und wird NICHT in Sterne umgewandelt.
+• Klicken Sie auf die Sterne in der Spalte Bewertung eines Titels, um eine Bewertung festzulegen; klicken Sie denselben Stern
+  erneut an, um sie zu löschen (zurück zu keinen Sternen). Die Schaltflächen "Bewerten:" (unten) und das
+  Rechtsklick-Menü tun dasselbe. Alle fünf Sterne sind anklickbar.
+• Ansicht → Wiedergabe zählen nach: Wählen Sie, wie viel eines Titels abgespielt werden muss, bevor seine Wiedergabe-
+  zahl steigt (25 / 50 / 75 / 90 % oder Ende des Titels). Das Überspringen zählt nie.
+• Tipp: Filtern Sie nach Wiedergaben (Spaltenfilter), um z. B. alles zu finden, was Sie 5
+  Mal abgespielt haben, und bewerten Sie diese Titel dann nach Belieben.
+
+FINDEN & ORGANISIEREN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Suchfeld (oben): Filtert während der Eingabe nach Titel, Interpret, Album, Genre oder Dateiname.
+• Spaltenfilter (Ansicht → Spaltenfilter anzeigen): eine Zeile mit Feldern pro Spalte — tippen Sie in
+  Titel, Interpret, Album, Genre, um eine Teilzeichenfolge abzugleichen; Jahr und Wiedergaben akzeptieren ein Muster
+  (z. B. passt Jahr 202[456] zu 2024-2026; Wiedergaben 5 = genau fünf Mal gespielt, 0 =
+  nie gespielt). Sie werden miteinander
+  und mit dem Such-/Anzeigen-Filter kombiniert. Leeren Sie sie mit der Schaltfläche ✕; das Ausblenden der Zeile
+  leert sie ebenfalls.
+• Filter "Anzeigen" (oben): Alle, Unbewertet, genaue Sterne oder N-Sterne-und-mehr.
+• Klicken Sie auf einen Spaltenkopf zum Sortieren; klicken Sie erneut, um umzukehren (die Spalte Cover sortiert nicht).
+• Menü Ansicht: zeigen Sie optional die Spalten Länge, Format, Bitrate, Genre, Titelnr. und
+  Dateiname an (Länge ist standardmäßig an, der Rest aus; die Auswahl wird gemerkt).
+  Länge und Bitrate werden kurz nach dem Start/Einlesen ausgefüllt, während die App die
+  Wiedergabezeit jedes Titels im Hintergrund liest, sodass sie kurz leer sein können.
+• Zum gespielten Titel springen: Klicken Sie auf seinen Namen in der unteren Leiste oder verwenden Sie die Symbolleisten-
+  Schaltfläche "Aktuelle Wiedergabe" (neben Neu einlesen). Praktisch nach dem Scrollen, Suchen oder
+  Wegsortieren. (Sie lokalisiert nur den Titel — sie startet oder stoppt keine Wiedergabe.)
+• Setzt dort fort, wo Sie aufgehört haben: Die App merkt sich Ihre Sortierreihenfolge und wählt beim Neustart
+  den zuletzt gespielten Titel aus und scrollt zu ihm (sie startet keine automatische Wiedergabe).
+• Titel an einen anderen Ort kopieren: Ansicht → Auswahlkästchen fügt eine Spalte ✓ hinzu; markieren Sie
+  Zeilen (klicken Sie auf den Kopf ✓, um alle angezeigten umzuschalten) oder Bibliothek → Alle angezeigten auswählen.
+  Dann können Sie mit Bibliothek → Ausgewählte kopieren nach… Flach oder In Interpret-/Album-Ordner ordnen
+  und anschließend ein Ziel wählen — z. B. nach 5 Sternen filtern, alle markieren,
+  auf ein USB-Laufwerk kopieren. Ein Fortschrittsdialog zeigt jede Datei und erlaubt das Abbrechen.
+  (Namenskollisionen erhalten ein Suffix " (2)"; es wird nichts überschrieben.)
+• Rechtsklicken Sie auf einen Titel für Wiedergeben, Bewertung, Albumcover hinzufügen (lokale Bilddatei oder URL,
+  in der Bibliothek gespeichert), In Ihrem Dateimanager anzeigen und Vollständigen Pfad anzeigen (mit einer
+  Schaltfläche Kopieren).
+• Rechtsklick Datei umbenennen… / Tags bearbeiten… / Bewertung festlegen wirken normalerweise nur auf diesen
+  Titel. Wenn Sie aber auf einen markierten Titel (✓) rechtsklicken, wirken sie stattdessen auf die gesamte
+  markierte Auswahl — die Menübezeichnung gibt an, welche (z. B. "Tags von 5 markierten bearbeiten…",
+  "Bewertung festlegen (5 markiert)").
+• Datei umbenennen… (Rechtsklick) benennt die Datei auf der Festplatte anhand ihrer Tags mit einem
+  Muster aus Tokens um — %track% %title% %artist% %album% %albumartist% %year%
+  %genre% — z. B. "%track% %title% - %artist%". Eine Live-Vorschau zeigt den neuen Namen
+  vor dem Anwenden; die Erweiterung wird immer beibehalten und der Katalog wird an Ort und Stelle aktualisiert
+  (kein erneutes Einlesen). %track% wird auf zwei Stellen mit Nullen aufgefüllt.
+• Tags bearbeiten… (Rechtsklick) öffnet einen Editor für Titel, Interpret, Album, Album-
+  Interpret, Jahr, Titel #, Genre, Kommentar und das eingebettete Coverbild. Änderungen
+  werden bei MP3 und FLAC zurück in die Datei geschrieben; OGG und WAV öffnen vorerst
+  schreibgeschützt. Tags aus Dateiname… (in diesem Editor) zerlegt den Namen der Datei in die Felder
+  anhand desselben Token-Musters, damit Sie ihn vor dem Speichern überprüfen können — es schreibt nie
+  von selbst. Wenn Sie den gerade gespielten Titel bearbeiten, wird die Wiedergabe zuerst gestoppt,
+  damit die Datei gespeichert werden kann. Der Katalog (und jede Miniaturansicht) wird sofort aktualisiert.
+• Mehrere Tags auf einmal bearbeiten: Markieren Sie Titel (Auswahlkästchen / Alle angezeigten
+  auswählen), dann Bibliothek → Tags der Ausgewählten bearbeiten… Sie können vier Arten von
+  Änderungen in einem Durchgang kombinieren: (1) Aus Dateiname — Titel/Interpret/Titel #/usw. bei jedem
+  Titel festlegen, indem sein Name mit einem Token-Muster zerlegt wird (die Massenform von Tags aus
+  Dateiname; Dateien, die nicht passen, bleiben unangetastet); (2) Felder festlegen — markieren Sie Interpret,
+  Album, Album-Interpret, Genre, Jahr oder Kommentar, um ihnen einen Wert über die
+  gesamte Auswahl zu geben (diese setzen das Muster außer Kraft); (3) Suchen und ersetzen — Text
+  innerhalb eines Feldes über die Auswahl ändern (z. B. "feat."→"ft.", optional ohne Berücksichtigung
+  der Groß-/Kleinschreibung); (4) Coverbild — ein Bild als Cover für alle festlegen oder das Cover
+  von allen entfernen. Ein Fortschrittsdialog zeigt jede Datei mit einer Schaltfläche Abbrechen; OGG/WAV werden
+  übersprungen.
+• Mehrere auf einmal umbenennen: Markieren Sie Titel, dann Bibliothek → Ausgewählte nach
+  Muster umbenennen… Eine Vorschauliste zeigt jeden alten → neuen Namen; beim Anwenden werden alle umbenannt (Namens-
+  kollisionen erhalten ein Suffix " (2)", es wird nichts überschrieben) mit einer Schaltfläche Abbrechen.
+• Bibliotheksbericht (Bibliothek → Bibliotheksbericht…): Fassen Sie Ihre Sammlung gruppiert nach
+  Interpret, Album oder Genre zusammen; hierarchisch (Interpret → Album, Album → Interpret, Genre →
+  Interpret); oder als flache Titelliste. Aktivieren Sie "Titel auflisten", um jede Gruppierung zu erweitern
+  und die darin enthaltenen Titel anzuzeigen. Sortieren Sie nach Name oder Jahr mit einem Umschalter für aufsteigend/absteigend,
+  wechseln Sie zwischen der gesamten Bibliothek und der aktuellen gefilterten Ansicht, und
+  CSV exportieren…, um den Bericht zu speichern.
+
+WIEDERGABELISTEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Statische Wiedergabelisten (Menü Wiedergabelisten): Wiedergabeliste speichern… schreibt die gerade
+  angezeigten Titel in eine portable .m3u8-Datei, mit Pfaden relativ zur Datei, sodass eine
+  Wiedergabeliste und ihre Musik zusammen reisen (z. B. auf einem USB-Stick). Wiedergabeliste öffnen…
+  lädt eine und spielt sie ab; Dateien, die noch in Ihrem Katalog sind, behalten ihre Sterne/Wiedergabezahlen.
+• Intelligente Wiedergabelisten (Wiedergabelisten → Neue intelligente Wiedergabeliste…): Speichern Sie Filterkriterien — eine
+  Bewertung und optional Genre / Interpret / Album (teilweise, ohne Berücksichtigung der Groß-/Kleinschreibung — z. B.
+  passt "Wickham" zu "Phil Wickham"), plus freie Textsuche — unter einem Namen. Die Auswahl
+  aus dem Menü Wiedergabelisten wendet die Kriterien live erneut an (die Statusleiste zeigt
+  ♫ <Name>). Sie aktualisieren sich automatisch, wenn sich Ihre Bibliothek ändert. Intelligente
+  Wiedergabelisten verwalten… erlaubt das Bearbeiten der Kriterien einer gespeicherten Wiedergabeliste (die Stift-Schaltfläche, die
+  sie auch umbenennen kann) oder das Löschen nicht mehr benötigter.
+
+FENSTER & SYSTEMLEISTE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Ein Symbol + Menü in der Systemleiste spiegelt die Steuerung wider: Alle Fenster anzeigen/ausblenden,
+  Wiedergabe/Pause, Vorheriger, Nächster, Stopp, Beenden.
+• Alle Fenster ausblenden räumt die App weg und pausiert die Wiedergabe; Alle anzeigen bringt sie
+  zurück (drücken Sie Wiedergabe, um fortzusetzen).
+• Das Hauptfenster merkt sich seine Größe zwischen den Starts.
+
+PORTABLE BIBLIOTHEK (zwischen Geräten oder Laufwerken bewegen):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Titelspeicherorte werden relativ zu jedem überwachten Ordner gespeichert, sodass, wenn ein portables
+  Laufwerk auf einem PC als D:\ und auf einem anderen als E:\ eingebunden wird, einfach
+  Bibliothek → Ordner verschieben verwenden, um den Ordner neu zu verweisen — jeder Titel darunter folgt,
+  unter Beibehaltung seiner Wiedergabezahlen und Bewertungen.
+• Der Datenbankspeicherort kann mit der Befehlszeilenoption -db, der Umgebungsvariable KBMP_DB
+  oder über Ansicht → Einstellungen → Datenbankspeicherort gesetzt werden (Neustart erforderlich, damit
+  es wirksam wird); standardmäßig liegt er neben der App (praktisch auf einem USB-Stick).
+
+EINSTELLUNGEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Ansicht → Einstellungen… (Alt+R) bündelt die häufigen Einstellungen an einem Ort:
+  Design, Sprache, Schwelle "Wiedergabe zählen nach", Wiedergabelautstärke (über Starts hinweg
+  gemerkt), ob der Equalizer beim Start geöffnet wird, die optionalen Spalten
+  und der Datenbankspeicherort. Dieselben Umschalter bleiben im Menü Ansicht für schnelle
+  einmalige Änderungen.
+
+INTELLIGENTE FUNKTIONEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ Eingebettetes Albumcover wird als Miniaturansichten in der Tabelle und im Bereich der aktuellen Wiedergabe angezeigt.
+✨ Intelligente Wiedergabelisten, die sich live neu auswerten, wenn sich Ihre Bibliothek ändert.
+✨ Design-Unterstützung: Helles, Dunkles oder Systemdesign (Menü Ansicht).
+
+TASTENKOMBINATIONEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Alt+P — Wiedergabe / Pause
+• Alt+→ — Nächster Titel   • Alt+← — Vorheriger Titel
+• Alt+H — Alle Fenster ausblenden (und pausieren). Kein Shortcut zum erneuten Anzeigen, beabsichtigt —
+  verwenden Sie die Systemleiste oder Ansicht → Alle Fenster anzeigen.
+• Alt+R — Einstellungen
+• Cmd/Ctrl+Q — Beenden   • Cmd/Ctrl+W — Fenster schließen   • Cmd/Ctrl+M — Minimieren
+
+BEKANNTE EINSCHRÄNKUNGEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Unterstützte Audioformate: MP3, FLAC, WAV, OGG (M4A/AAC/ALAC noch nicht unterstützt).
+⚠️  Die Wiedergabe von Musikvideos ist geplant, aber noch nicht verfügbar.
+
+WEITERE INFORMATIONEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Für Dokumentation, Fehlerberichte oder Funktionswünsche:
+📦 GitHub: https://github.com/amarillier/KrankyBearMediaPlayer
+📄 Lizenz: https://github.com/amarillier/KrankyBearMediaPlayer/blob/allanm/LICENSE
+📝 Versionshinweise: Siehe "Hilfe → Nach Updates suchen"
+
+FREIE SOFTWARE - Überall, jederzeit, für jeden Zweck nutzbar!
+Keine Registrierung, kein Tracking. Die einzige Netzwerknutzung ist eine dezente Update-Prüfung —
+einmal täglich beim Start, plus die manuelle "Nach Updates suchen".

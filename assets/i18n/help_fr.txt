@@ -1,0 +1,200 @@
+{{app_name}} - votre gestionnaire et lecteur de bibliothèque musicale
+
+POUR COMMENCER :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Bibliothèque → Ajouter un dossier : choisissez un dossier de musique ; il est analysé dans le catalogue.
+  Ajoutez autant de dossiers / emplacements que vous le souhaitez.
+• Bibliothèque → Gérer les dossiers : voyez chaque dossier surveillé avec son nombre de pistes ; ajoutez,
+  relocalisez (repointez vers un lecteur déplacé), réanalysez ou retirez-en un. Retirer enlève ses
+  pistes de la bibliothèque mais ne supprime jamais les fichiers sur le disque.
+• Bibliothèque → Tout réanalyser : réanalyse les dossiers surveillés pour détecter les fichiers nouveaux ou modifiés.
+• Votre bibliothèque est une petite base de données SQLite. Le titre, l'artiste, l'album, le genre, l'année,
+  le numéro de piste et la pochette d'album intégrée sont lus depuis chaque fichier.
+
+LIRE DE LA MUSIQUE :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Double-cliquez sur une piste pour commencer la lecture à partir de celle-ci et continuer dans le reste de la liste.
+• Transport (barre du bas) : Précédent, Lecture/Pause, Arrêter, Suivant.
+• Menu Lecture : Aléatoire lit la file dans un ordre aléatoire ; Répéter → Désactivé / Tout répéter
+  (boucler la file) / Répéter une fois (boucler la piste en cours). Les deux sont mémorisés. Passer
+  avec Suivant/Précédent avance toujours, même avec Répéter une fois.
+• Lecture → ReplayGain : lorsqu'il est activé, les pistes étiquetées avec ReplayGain sont lues à un
+  volume cohérent (limité en crête pour que les pistes amplifiées n'écrêtent pas). Désactivé par défaut.
+  « Préférer le gain d'album » normalise selon le volume de l'album (préservant l'équilibre fort/faible
+  propre à l'album) lorsque les tags d'album sont présents, sinon revient au gain de piste.
+  Pour étiqueter vos fichiers vous-même, cochez-les et utilisez Bibliothèque → Analyser le ReplayGain de la sélection…
+  (ou clic droit → Analyser le ReplayGain) : l'application mesure le volume (BS.1770 /
+  ReplayGain 2.0) et écrit les tags ReplayGain de piste + d'album dans les MP3/FLAC.
+• Lecture → Égaliseur… : un égaliseur graphique à 10 bandes (31 Hz – 16 kHz, ±12 dB) qui
+  façonne le son en direct. Cochez Activer, faites glisser les curseurs de bande, ou choisissez un préréglage (Flat, Bass
+  Boost, Vocal, Rock, …). Enregistrez vos propres réglages avec « Enregistrer le préréglage… » et supprimez-les
+  avec « Supprimer le préréglage ». Réinitialiser (Flat) remet les bandes à zéro ; le désactiver est transparent.
+• Lecture → Transition entre pistes : Silence (par défaut), Sans silence (les pistes s'enchaînent sans
+  silence), ou Fondu enchaîné (la piste sortante s'estompe pendant que la suivante apparaît).
+  Sans silence/Fondu enchaîné sont expérimentaux.
+• File de lecture (Lecture → Afficher la file de lecture) : voyez ce qui est aligné dans l'ordre de lecture, avec
+  la piste en cours marquée ▶. Clic droit sur une piste → Ajouter à la file (ou Bibliothèque → Ajouter
+  la sélection à la file / Ajouter tous les affichés à la file) ajoute à la suite sans interrompre la lecture en cours.
+  Dans la fenêtre de file : Lire la piste sélectionnée, la Retirer, la déplacer Monter/Descendre, ou
+  Tout effacer.
+• Survolez un bouton de la barre d'outils ou du transport pour afficher une infobulle expliquant son rôle.
+• La barre de progression indique le temps écoulé / total — faites-la glisser pour vous déplacer dans une piste.
+• Deux commandes de volume se trouvent en bas à droite :
+  - « App » ajuste uniquement le niveau de ce lecteur (mémorisé entre les lancements).
+  - « Sys » pilote le volume de sortie principal de votre ordinateur, avec un bouton de coupure à côté
+    de lui. Il reste synchronisé avec le niveau système — y compris les changements que vous faites avec
+    les touches de volume ou le mélangeur de l'OS — et déplace le volume de toute la machine, pas
+    seulement de cette application.
+• « Bal » règle la balance stéréo gauche/droite (mémorisée entre les lancements). Elle a un
+  léger cran central, et le bouton « C » à côté la ramène pile au centre.
+  Pratique quand les haut-parleurs ne sont pas placés symétriquement.
+• L'indicateur de ligne sélectionnée suit la piste en cours de lecture.
+
+NOTES ET SUIVI DES LECTURES :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Les notes sont manuelles : attribuez vous-même une note de 1 à 5 étoiles. Le nombre de lectures est suivi
+  séparément (sa propre colonne) et n'est PAS converti en étoiles.
+• Cliquez sur les étoiles de la colonne Note d'une piste pour attribuer une note ; cliquez à nouveau sur la même étoile
+  pour l'effacer (retour à aucune étoile). Les boutons « Noter : » (en bas) et le
+  menu du clic droit font de même. Les cinq étoiles sont cliquables.
+• Affichage → Compter une lecture après : choisissez quelle proportion d'une piste doit être lue avant que son nombre
+  de lectures n'augmente (25 / 50 / 75 / 90 % ou Fin de la piste). Passer ne compte jamais.
+• Astuce : filtrez par Lectures (filtre de colonne) pour trouver, par exemple, tout ce que vous avez écouté 5
+  fois, puis notez ces pistes comme bon vous semble.
+
+RECHERCHER ET ORGANISER :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Champ de recherche (en haut) : filtre par titre, artiste, album, genre ou nom de fichier au fur et à mesure de la saisie.
+• Filtres de colonne (Affichage → Afficher les filtres par colonne) : une ligne de champs par colonne — saisissez dans
+  Titre, Artiste, Album, Genre pour correspondre à une sous-chaîne ; Année et Lectures acceptent un motif
+  (p. ex. Année 202[456] correspond à 2024-2026 ; Lectures 5 = lu exactement cinq fois, 0 =
+  jamais lu). Ils se combinent les uns
+  avec les autres ainsi qu'avec la recherche/le filtre Afficher. Effacez-les avec le bouton ✕ ; masquer la ligne
+  les efface aussi.
+• Filtre « Afficher » (en haut) : Toutes, Non notées, étoiles exactes, ou N étoiles et plus.
+• Cliquez sur un en-tête de colonne pour trier ; cliquez à nouveau pour inverser (la colonne Pochette ne se trie pas).
+• Menu Affichage : affichez éventuellement les colonnes Durée, Format, Débit, Genre, N° de piste et
+  Nom de fichier (Durée est activée par défaut, les autres désactivées ; les choix sont mémorisés).
+  Durée et Débit se remplissent peu après le lancement/l'analyse, à mesure que l'application lit le temps
+  de lecture de chaque piste en arrière-plan, ils peuvent donc être vides un instant.
+• Sauter à la piste en cours : cliquez sur son nom dans la barre du bas, ou utilisez le bouton « En cours de lecture »
+  de la barre d'outils (à côté de Réanalyser). Pratique après avoir fait défiler, recherché ou
+  trié ailleurs. (Cela localise seulement la piste — cela ne démarre ni n'arrête la lecture.)
+• Reprend là où vous en étiez : l'application mémorise votre ordre de tri et, au redémarrage,
+  sélectionne et fait défiler jusqu'à la dernière piste que vous écoutiez (elle ne se lance pas automatiquement).
+• Copier des pistes ailleurs : Affichage → Cases de sélection ajoute une colonne ✓ ; cochez
+  des lignes (cliquez sur l'en-tête ✓ pour tout (dé)cocher), ou Bibliothèque → Tout sélectionner (affichés).
+  Puis Bibliothèque → Copier la sélection vers… vous laisse choisir À plat ou Organiser en dossiers
+  Artiste/Album, puis une destination — p. ex. filtrez sur 5 étoiles, cochez tout,
+  copiez vers une clé USB. Une boîte de dialogue de progression montre chaque fichier et permet d'Annuler.
+  (Les conflits de nom reçoivent un suffixe « (2) » ; rien n'est écrasé.)
+• Faites un clic droit sur une piste pour Lire, noter, Ajouter une pochette d'album (fichier image local ou URL,
+  stockée dans la bibliothèque), Afficher dans votre gestionnaire de fichiers, et Afficher le chemin complet (avec un
+  bouton Copier).
+• Clic droit Renommer le fichier… / Modifier les tags… / Définir la note agissent normalement uniquement sur cette
+  piste. Mais si vous faites un clic droit sur une piste cochée (✓), ils agissent sur tout l'ensemble
+  coché — l'étiquette du menu indique laquelle (p. ex. « Modifier les tags de 5 cochée(s)… »,
+  « Définir la note (5 cochée(s)) »).
+• Renommer le fichier… (clic droit) renomme le fichier sur le disque à partir de ses tags à l'aide d'un
+  motif de jetons — %track% %title% %artist% %album% %albumartist% %year%
+  %genre% — p. ex. « %track% %title% - %artist% ». Un aperçu en direct montre le nouveau nom
+  avant que vous n'appliquiez ; l'extension est toujours conservée et le catalogue se met à jour sur place
+  (sans réanalyse). %track% est complété par des zéros à deux chiffres.
+• Modifier les tags… (clic droit) ouvre un éditeur pour le titre, l'artiste, l'album, l'artiste
+  de l'album, l'année, le n° de piste, le genre, le commentaire et l'image de pochette intégrée. Les modifications
+  sont réécrites dans le fichier pour MP3 et FLAC ; OGG et WAV s'ouvrent en lecture seule pour
+  l'instant. Tags depuis le nom de fichier… (dans cet éditeur) analyse le nom du fichier en champs
+  à l'aide du même motif de jetons, pour que vous puissiez les vérifier avant d'enregistrer — il n'écrit
+  jamais de lui-même. Si vous modifiez la piste en cours de lecture, la lecture s'arrête d'abord
+  pour que le fichier puisse être enregistré. Le catalogue (et toute miniature) se met à jour aussitôt.
+• Modifier les tags de plusieurs à la fois : cochez des pistes (Cases de sélection / Tout sélectionner
+  (affichés)), puis Bibliothèque → Modifier les tags de la sélection… Vous pouvez combiner quatre types de
+  changement en une seule passe : (1) Depuis le nom de fichier — définir titre/artiste/n° de piste/etc. sur chaque
+  piste en analysant son nom avec un motif de jetons (la forme groupée de Tags depuis le
+  nom de fichier ; les fichiers qui ne correspondent pas sont laissés tels quels) ; (2) Définir les champs — cochez Artiste,
+  Album, Artiste de l'album, Genre, Année ou Commentaire pour leur donner une seule valeur sur
+  toute la sélection (ils priment sur le motif) ; (3) Rechercher et remplacer — changer du texte
+  dans un champ sur l'ensemble de la sélection (p. ex. « feat. »→« ft. », en ignorant éventuellement
+  la casse) ; (4) Pochette — définir une seule image comme pochette pour tous, ou retirer la pochette
+  de tous. Une boîte de dialogue de progression montre chaque fichier avec un bouton Annuler ; OGG/WAV sont
+  ignorés.
+• Renommer plusieurs à la fois : cochez des pistes, puis Bibliothèque → Renommer la sélection selon un
+  motif… Une liste d'aperçu montre chaque ancien → nouveau nom ; appliquer les renomme tous (les
+  conflits de nom reçoivent un suffixe « (2) », rien n'est écrasé) avec un bouton Annuler.
+• Rapport de bibliothèque (Bibliothèque → Rapport de bibliothèque…) : résumez votre collection groupée par
+  Artiste, Album ou Genre ; hiérarchiquement (Artiste → Album, Album → Artiste, Genre →
+  Artiste) ; ou sous forme de liste de pistes à plat. Cochez « Lister les pistes » pour déplier chaque groupe
+  et montrer les pistes qu'il contient. Triez par Nom ou Année avec un basculement croissant/décroissant,
+  passez de toute la bibliothèque à l'affichage filtré actuel, et
+  Exporter en CSV… pour enregistrer le rapport.
+
+LISTES DE LECTURE :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Listes de lecture statiques (menu Listes de lecture) : Enregistrer la liste de lecture… écrit les pistes que vous
+  consultez actuellement dans un fichier .m3u8 portable, avec des chemins relatifs au fichier pour qu'une
+  liste de lecture et sa musique voyagent ensemble (p. ex. sur une clé USB). Ouvrir une liste de lecture…
+  en charge une et la lit ; les fichiers encore dans votre catalogue conservent leurs étoiles/nombres de lectures.
+• Listes intelligentes (Listes de lecture → Nouvelle liste intelligente…) : enregistrez des critères de filtre — une
+  note, et éventuellement Genre / Artiste / Album (partiel, insensible à la casse — p. ex.
+  « Wickham » correspond à « Phil Wickham »), plus une Recherche en texte libre — sous un nom. La choisir
+  dans le menu Listes de lecture réapplique les critères en direct (la barre d'état affiche
+  ♫ <nom>). Elles se mettent à jour automatiquement à mesure que votre bibliothèque change. Gérer les listes
+  intelligentes… vous laisse modifier les critères d'une liste enregistrée (le bouton crayon, qui
+  peut aussi la renommer) ou supprimer celles dont vous ne voulez plus.
+
+FENÊTRES ET ZONE DE NOTIFICATION :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Une icône + un menu dans la zone de notification reflètent les commandes : Afficher/Masquer toutes les fenêtres,
+  Lecture/Pause, Précédent, Suivant, Arrêter, Quitter.
+• Masquer toutes les fenêtres range l'application et met la lecture en pause ; Afficher toutes la
+  ramène (appuyez sur Lecture pour reprendre).
+• La fenêtre principale mémorise sa taille entre les lancements.
+
+BIBLIOTHÈQUE PORTABLE (déplacement entre machines ou lecteurs) :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Les emplacements des pistes sont stockés relativement à chaque dossier surveillé, donc si un lecteur
+  portable est monté en D:\ sur un PC et E:\ sur un autre, utilisez simplement
+  Bibliothèque → Relocaliser le dossier pour repointer le dossier — chaque piste qu'il contient suit,
+  en conservant ses nombres de lectures et ses notes.
+• L'emplacement de la base de données peut être défini avec l'option de ligne de commande -db, la variable
+  d'environnement KBMP_DB, ou Affichage → Préférences → Emplacement de la base de données (redémarrer pour prendre
+  effet) ; par défaut, elle se trouve à côté de l'application (pratique sur une clé USB).
+
+PRÉFÉRENCES :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Affichage → Préférences… (Alt+R) rassemble les réglages courants au même endroit :
+  thème, langue, seuil « compter une lecture après », volume de lecture (mémorisé
+  entre les lancements), l'ouverture ou non de l'égaliseur au démarrage, les colonnes optionnelles,
+  et l'emplacement de la base de données. Les mêmes bascules restent dans le menu Affichage pour des changements
+  rapides et ponctuels.
+
+FONCTIONS INTELLIGENTES :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ Pochette d'album intégrée affichée en miniatures dans le tableau et la zone « en cours de lecture ».
+✨ Listes intelligentes qui se réévaluent en direct à mesure que votre bibliothèque change.
+✨ Prise en charge des thèmes : thème Clair, Sombre ou Système (menu Affichage).
+
+RACCOURCIS CLAVIER :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Alt+P — Lecture / Pause
+• Alt+→ — Piste suivante   • Alt+← — Piste précédente
+• Alt+H — Masquer toutes les fenêtres (et mettre en pause). Pas de raccourci pour réafficher, par conception —
+  utilisez la zone de notification ou Affichage → Afficher toutes les fenêtres.
+• Alt+R — Préférences
+• Cmd/Ctrl+Q — Quitter   • Cmd/Ctrl+W — Fermer la fenêtre   • Cmd/Ctrl+M — Réduire
+
+LIMITATIONS CONNUES :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Formats audio pris en charge : MP3, FLAC, WAV, OGG (M4A/AAC/ALAC pas encore pris en charge).
+⚠️  La lecture de clips musicaux est prévue mais pas encore disponible.
+
+PLUS D'INFORMATIONS :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Pour la documentation, les signalements de bogues ou les demandes de fonctionnalités :
+📦 GitHub : https://github.com/amarillier/KrankyBearMediaPlayer
+📄 Licence : https://github.com/amarillier/KrankyBearMediaPlayer/blob/allanm/LICENSE
+📝 Notes de version : Consultez « Aide → Vérifier les mises à jour »
+
+LOGICIEL LIBRE - Utilisez-le n'importe où, n'importe quand, dans n'importe quel but !
+Pas d'inscription, pas de pistage. La seule utilisation du réseau est une discrète vérification de mise à jour -
+une fois par jour au lancement, plus la vérification manuelle « Vérifier les mises à jour ».

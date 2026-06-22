@@ -21,13 +21,13 @@ const (
 	eqQ         = 1.41 // ~one octave per band
 )
 
-// eqFreqs are the ISO octave centre frequencies (Hz) for the 10 bands.
+// eqFreqs are the ISO octave center frequencies (Hz) for the 10 bands.
 var eqFreqs = [eqBandCount]float64{31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000}
 
 // eqFreqLabels are the slider captions.
 var eqFreqLabels = [eqBandCount]string{"31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"}
 
-// setPeaking sets RBJ "cookbook" peaking-EQ coefficients for a centre frequency, gain
+// setPeaking sets RBJ "cookbook" peaking-EQ coefficients for a center frequency, gain
 // (dB) and Q at sample rate fs. It updates coefficients only, leaving the filter state
 // intact so a live gain change doesn't pop. At 0 dB the section is an identity filter.
 func (b *biquad) setPeaking(freq, gainDB, q, fs float64) {

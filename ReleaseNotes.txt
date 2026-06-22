@@ -1,6 +1,22 @@
 Release notes
 KrankyBear MediaPlayer: - Windows, Linux and MacOS music library manager & player
 
+Version 1.0.0 - June 22, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Internationalization: the interface is now available in 11 languages — English,
+  Afrikaans, German, Spanish, French, Italian, Japanese, Korean, Dutch, Polish and
+  Portuguese. Pick one in View → Preferences → Language (it applies after a restart),
+  or start once with -lang <code> (e.g. -lang fr). Menus, the system-tray menu,
+  dialogs, tooltips, column headers, and the Help and About windows are all translated.
+  Your music's own tags, the equalizer preset names, and product/audio terms
+  (ReplayGain, MP3, FLAC, …) are deliberately left as-is. Fyne's built-in dialog chrome
+  (OK/Cancel, the file picker) is localized too for the languages it ships translations for.
+- Contributor language packs: drop a <code>.json (plus optional help_<code>.txt /
+  about_<code>.txt) into the assets/i18n folder beside the app and restart to add or
+  override a language — no rebuild needed. See assets/i18n/LanguagePacks.md.
+
 Version 0.9.0 - June 17, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ NEW FEATURES
@@ -14,8 +30,8 @@ Version 0.9.0 - June 17, 2026
   "Open equalizer on startup", reopens the EQ window automatically at launch.
 - Stereo balance ("Bal" slider, bottom right beside the volume controls): shift the
   left/right balance for speakers that aren't placed symmetrically, or to favour one
-  ear. It has a soft centre detent and a "C" button that snaps back to dead-centre;
-  centre is a true bypass (no effect on the audio). The position is remembered across
+  ear. It has a soft center detent and a "C" button that snaps back to dead-center;
+  center is a true bypass (no effect on the audio). The position is remembered across
   launches and applies live to whatever is playing.
 
 Version 0.8.0 - June 16, 2026

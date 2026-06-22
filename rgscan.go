@@ -23,6 +23,8 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/gopxl/beep/v2"
+
+	"mediaplayer/internal/i18n"
 )
 
 const (
@@ -221,21 +223,21 @@ func (u *ui) scanReplayGainOf(tracks []Track) {
 		for _, t := range tracks {
 			if t.ID == cur.ID {
 				u.player.Stop()
-				u.status.SetText("Stopped playback to scan ReplayGain")
+				u.status.SetText(i18n.T("status.stopped_scan_rg"))
 				break
 			}
 		}
 	}
 
 	total := len(tracks)
-	statusLbl := widget.NewLabel(fmt.Sprintf("Scanning %d track(s)…", total))
+	statusLbl := widget.NewLabel(i18n.TC("rgscan.scanning_n", map[string]string{"n": fmt.Sprintf("%d", total)}))
 	statusLbl.Truncation = fyne.TextTruncateEllipsis
 	prog := widget.NewProgressBar()
 	prog.Max = float64(total)
 	var canceled atomic.Bool
-	cancelBtn := widget.NewButton("Cancel", func() { canceled.Store(true) })
+	cancelBtn := widget.NewButton(i18n.T("common.cancel"), func() { canceled.Store(true) })
 	cancelBtn.Importance = widget.DangerImportance
-	d := dialog.NewCustomWithoutButtons("Scanning ReplayGain", container.NewVBox(
+	d := dialog.NewCustomWithoutButtons(i18n.T("rgscan.scanning_title"), container.NewVBox(
 		statusLbl, prog, container.NewCenter(cancelBtn),
 	), u.win)
 	d.Resize(fyne.NewSize(440, 150))
@@ -259,7 +261,9 @@ func (u *ui) scanReplayGainOf(tracks []Track) {
 			}
 			n, name := i+1, filepath.Base(t.RelPath)
 			fyne.Do(func() {
-				statusLbl.SetText(fmt.Sprintf("Scanning %d of %d: %s", n, total, name))
+				statusLbl.SetText(i18n.TC("rgscan.scanning_progress", map[string]string{
+					"n": fmt.Sprintf("%d", n), "total": fmt.Sprintf("%d", total), "name": name,
+				}))
 				prog.SetValue(float64(n))
 			})
 			if !tagsWritable(t.AbsPath()) {
@@ -306,17 +310,17 @@ func (u *ui) scanReplayGainOf(tracks []Track) {
 		wasCanceled := canceled.Load()
 		fyne.Do(func() {
 			d.Hide()
-			summary := fmt.Sprintf("Wrote ReplayGain to %d track(s)", written)
+			summary := i18n.TC("rgscan.wrote", map[string]string{"n": fmt.Sprintf("%d", written)})
 			if skipped > 0 {
-				summary += fmt.Sprintf("; %d skipped (OGG/WAV not writable)", skipped)
+				summary += i18n.TC("common.skipped_unwritable", map[string]string{"n": fmt.Sprintf("%d", skipped)})
 			}
 			if failed > 0 {
-				summary += fmt.Sprintf("; %d failed (see log)", failed)
+				summary += i18n.TC("common.failed_log", map[string]string{"n": fmt.Sprintf("%d", failed)})
 			}
-			title := "ReplayGain scan complete"
+			title := i18n.T("rgscan.complete")
 			if wasCanceled {
-				title = "ReplayGain scan cancelled"
-				summary = "Cancelled before finishing. " + summary
+				title = i18n.T("rgscan.cancelled")
+				summary = i18n.T("common.cancelled_prefix") + summary
 			}
 			u.status.SetText(summary)
 			dialog.ShowInformation(title, summary, u.win)
@@ -327,9 +331,7 @@ func (u *ui) scanReplayGainOf(tracks []Track) {
 // scanReplayGainSelected is the Library-menu entry point: scan the marked tracks.
 func (u *ui) scanReplayGainSelected() {
 	if len(u.marked) == 0 {
-		dialog.ShowInformation("Scan ReplayGain",
-			"No tracks are marked. Turn on View → Selection checkboxes and tick some "+
-				"tracks (or Library → Select All Shown), then try again.", u.win)
+		dialog.ShowInformation(i18n.T("rgscan.scan_title"), i18n.T("queue.none_marked"), u.win)
 		return
 	}
 	u.scanReplayGainOf(u.markedTracksForScan())

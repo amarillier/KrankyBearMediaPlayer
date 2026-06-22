@@ -15,6 +15,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+
+	"mediaplayer/internal/i18n"
 )
 
 // report group-by modes (also the dialog labels). Flat modes produce one row per
@@ -409,15 +411,45 @@ func buildReport(tracks []Track, mode, sortBy string, desc, listTracks bool) (he
 
 // showLibraryReport opens the report dialog (Library → Library Report…).
 func (u *ui) showLibraryReport() {
-	sourceSel := widget.NewRadioGroup([]string{"Whole library", "Current view"}, nil)
-	sourceSel.SetSelected("Whole library")
+	// The report's group-by/sort/source values double as internal logic keys (used in
+	// switches and CSV filenames), so the Selects show translated labels mapped back to
+	// the stable English keys. The report BODY/CSV headers stay English for now.
+	srcWhole, srcView := i18n.T("report.source_whole"), i18n.T("report.source_view")
+	sourceSel := widget.NewRadioGroup([]string{srcWhole, srcView}, nil)
+	sourceSel.SetSelected(srcWhole)
 	sourceSel.Horizontal = true
-	modeSel := widget.NewSelect(reportModes, nil)
-	modeSel.SetSelected(reportByArtist)
-	sortSel := widget.NewSelect(reportSorts, nil)
-	sortSel.SetSelected("Name")
-	descChk := widget.NewCheck("Descending", nil)
-	tracksChk := widget.NewCheck("List tracks", nil)
+
+	modeLabelByKey := map[string]string{
+		reportByArtist:    i18n.T("report.mode_by_artist"),
+		reportByAlbum:     i18n.T("report.mode_by_album"),
+		reportByGenre:     i18n.T("report.mode_by_genre"),
+		reportArtistAlbum: i18n.T("report.mode_artist_album"),
+		reportAlbumArtist: i18n.T("report.mode_album_artist"),
+		reportGenreArtist: i18n.T("report.mode_genre_artist"),
+		reportTracks:      i18n.T("report.mode_all_tracks"),
+	}
+	modeKeyByLabel := map[string]string{}
+	modeLabels := make([]string, len(reportModes))
+	for i, k := range reportModes {
+		modeLabels[i] = modeLabelByKey[k]
+		modeKeyByLabel[modeLabelByKey[k]] = k
+	}
+	modeSel := widget.NewSelect(modeLabels, nil)
+	modeSel.SetSelected(modeLabelByKey[reportByArtist])
+	modeKey := func() string { return modeKeyByLabel[modeSel.Selected] }
+
+	sortLabelByKey := map[string]string{"Name": i18n.T("report.sort_name"), "Year": i18n.T("report.sort_year")}
+	sortKeyByLabel := map[string]string{}
+	sortLabels := make([]string, len(reportSorts))
+	for i, k := range reportSorts {
+		sortLabels[i] = sortLabelByKey[k]
+		sortKeyByLabel[sortLabelByKey[k]] = k
+	}
+	sortSel := widget.NewSelect(sortLabels, nil)
+	sortSel.SetSelected(sortLabelByKey["Name"])
+
+	descChk := widget.NewCheck(i18n.T("report.descending"), nil)
+	tracksChk := widget.NewCheck(i18n.T("report.list_tracks"), nil)
 
 	summary := widget.NewLabel("")
 	var header []string
@@ -438,7 +470,7 @@ func (u *ui) showLibraryReport() {
 
 	rebuild := func() {
 		var tracks []Track
-		if sourceSel.Selected == "Current view" {
+		if sourceSel.Selected == srcView {
 			tracks = append([]Track(nil), u.tracks...)
 		} else {
 			t, err := u.db.Tracks(TrackQuery{})
@@ -449,14 +481,14 @@ func (u *ui) showLibraryReport() {
 			tracks = t
 		}
 		var s string
-		header, rows, display, s = buildReport(tracks, modeSel.Selected, sortSel.Selected, descChk.Checked, tracksChk.Checked)
+		header, rows, display, s = buildReport(tracks, modeKey(), sortKeyByLabel[sortSel.Selected], descChk.Checked, tracksChk.Checked)
 		summary.SetText(strings.Join(header, "   |   ") + "\n" + s)
 		list.Refresh()
 		list.ScrollToTop()
 	}
 	// "List tracks" is meaningless for the flat All-tracks listing.
 	modeSel.OnChanged = func(string) {
-		if modeSel.Selected == reportTracks {
+		if modeKey() == reportTracks {
 			tracksChk.Disable()
 		} else {
 			tracksChk.Enable()
@@ -469,21 +501,21 @@ func (u *ui) showLibraryReport() {
 	tracksChk.OnChanged = func(bool) { rebuild() }
 	rebuild()
 
-	exportBtn := widget.NewButton("Export CSV…", func() {
-		u.exportReportCSV(header, rows, modeSel.Selected)
+	exportBtn := widget.NewButton(i18n.T("report.export_csv"), func() {
+		u.exportReportCSV(header, rows, modeKey())
 	})
 
 	controls := container.NewVBox(
-		container.NewBorder(nil, nil, widget.NewLabel("Source:"), tracksChk, sourceSel),
+		container.NewBorder(nil, nil, widget.NewLabel(i18n.T("report.source")), tracksChk, sourceSel),
 		container.NewGridWithColumns(2,
-			container.NewBorder(nil, nil, widget.NewLabel("Group by:"), nil, modeSel),
-			container.NewBorder(nil, nil, widget.NewLabel("Sort:"), descChk, sortSel),
+			container.NewBorder(nil, nil, widget.NewLabel(i18n.T("report.group_by")), nil, modeSel),
+			container.NewBorder(nil, nil, widget.NewLabel(i18n.T("report.sort")), descChk, sortSel),
 		),
 		container.NewBorder(nil, nil, nil, exportBtn, summary),
 		widget.NewSeparator(),
 	)
 	body := container.NewBorder(controls, nil, nil, nil, list)
-	d := dialog.NewCustom("Library Report", "Close", body, u.win)
+	d := dialog.NewCustom(i18n.T("report.title"), i18n.T("common.close"), body, u.win)
 	d.Resize(fyne.NewSize(720, 640))
 	d.Show()
 }
@@ -503,7 +535,7 @@ func (u *ui) exportReportCSV(header []string, rows [][]string, mode string) {
 			dialog.ShowError(err, u.win)
 			return
 		}
-		u.status.SetText(fmt.Sprintf("Exported %d rows to %s", len(rows), w.URI().Name()))
+		u.status.SetText(i18n.TC("report.exported", map[string]string{"n": fmt.Sprintf("%d", len(rows)), "file": w.URI().Name()}))
 	}, u.win)
 	name := "library-report-" + strings.ToLower(strings.ReplaceAll(mode, " ", "-")) + ".csv"
 	name = strings.ReplaceAll(name, "→", "to")

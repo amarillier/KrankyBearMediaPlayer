@@ -42,6 +42,8 @@ rsrc_windows_amd64.syso
 !Inno/*
 
 /KrankyBearMediaPlayer.db
+/KrankyBearMediaPlayer.db-shm
+/KrankyBearMediaPlayer.db-wal
 /KrankyBearMediaPlayer
 /mediaplayer
 /iconprep.sh

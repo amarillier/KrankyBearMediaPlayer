@@ -19,6 +19,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+
+	"mediaplayer/internal/i18n"
 )
 
 // renameOnDisk renames absPath to newBase within the same directory, keeping the
@@ -62,7 +64,7 @@ func (u *ui) patternPicker(prefKey, fallback string, onChange func()) (*widget.E
 	entry.SetText(u.app.Preferences().StringWithFallback(prefKey, fallback))
 	entry.OnChanged = func(string) { onChange() }
 	presets := widget.NewSelect(renamePresets, func(s string) { entry.SetText(s) })
-	presets.PlaceHolder = "Presets…"
+	presets.PlaceHolder = i18n.T("rename.presets_ph")
 	return entry, presets
 }
 
@@ -86,7 +88,7 @@ func (u *ui) renameFromTags(row int) {
 	update := func() {
 		base := buildName(patEntry.Text, tt)
 		if base == "" {
-			preview.SetText("(pattern produces an empty name)")
+			preview.SetText(i18n.T("rename.empty_preview"))
 		} else {
 			preview.SetText(base + ext)
 		}
@@ -95,23 +97,22 @@ func (u *ui) renameFromTags(row int) {
 	update()
 
 	help := widget.NewLabelWithStyle(
-		"Tokens: %track% %title% %artist% %album% %albumartist% %year% %genre% "+
-			"(the .ext is kept).", fyne.TextAlignLeading, fyne.TextStyle{Italic: true})
+		i18n.T("rename.tokens_note"), fyne.TextAlignLeading, fyne.TextStyle{Italic: true})
 	help.Wrapping = fyne.TextWrapWord
 
 	form := widget.NewForm(
-		widget.NewFormItem("Pattern", patEntry),
+		widget.NewFormItem(i18n.T("rename.pattern_label"), patEntry),
 		widget.NewFormItem("", presets),
-		widget.NewFormItem("New name", preview),
+		widget.NewFormItem(i18n.T("rename.new_name"), preview),
 	)
 	body := container.NewVBox(form, help)
-	d := dialog.NewCustomConfirm("Rename file — "+filepath.Base(path), "Rename", "Cancel", body, func(ok bool) {
+	d := dialog.NewCustomConfirm(i18n.TC("rename.single_title", map[string]string{"file": filepath.Base(path)}), i18n.T("rename.rename"), i18n.T("common.cancel"), body, func(ok bool) {
 		if !ok {
 			return
 		}
 		base := buildName(patEntry.Text, tt)
 		if base == "" {
-			dialog.ShowInformation("Rename file", "That pattern produces an empty filename.", u.win)
+			dialog.ShowInformation(i18n.T("rename.rename"), i18n.T("rename.empty_name"), u.win)
 			return
 		}
 		u.app.Preferences().SetString(prefRenamePattern, patEntry.Text)
@@ -127,7 +128,7 @@ func (u *ui) renameFromTags(row int) {
 func (u *ui) applyRename(tr Track, newBase string) {
 	if cur, ok := u.player.Current(); ok && cur.ID == tr.ID {
 		u.player.Stop()
-		u.status.SetText("Stopped playback to rename file")
+		u.status.SetText(i18n.T("status.stopped_rename"))
 	}
 	abs := tr.AbsPath()
 	newAbs, err := renameOnDisk(abs, newBase)
@@ -136,7 +137,7 @@ func (u *ui) applyRename(tr Track, newBase string) {
 		return
 	}
 	if newAbs == abs {
-		u.status.SetText("Name unchanged")
+		u.status.SetText(i18n.T("status.name_unchanged"))
 		return
 	}
 	rel := newRelPath(tr.RelPath, newAbs)
@@ -152,7 +153,7 @@ func (u *ui) applyRename(tr Track, newBase string) {
 	}
 	u.table.Refresh()
 	u.refreshNowPlaying()
-	u.status.SetText("Renamed to " + filepath.Base(newAbs))
+	u.status.SetText(i18n.TC("status.renamed_to", map[string]string{"file": filepath.Base(newAbs)}))
 }
 
 // renameItem is one marked track prepared for batch rename: its id, current on-disk
@@ -167,9 +168,7 @@ type renameItem struct {
 // renameSelectedFromTags opens the batch rename dialog for the marked tracks.
 func (u *ui) renameSelectedFromTags() {
 	if len(u.marked) == 0 {
-		dialog.ShowInformation("Rename Selected from pattern",
-			"No tracks are marked. Turn on View → Selection checkboxes and tick some "+
-				"tracks (or Library → Select All Shown), then try again.", u.win)
+		dialog.ShowInformation(i18n.T("rename.batch_title"), i18n.T("queue.none_marked"), u.win)
 		return
 	}
 
@@ -184,8 +183,7 @@ func (u *ui) renameSelectedFromTags() {
 		items = append(items, renameItem{id: id, path: e.path, tt: tt, ext: filepath.Ext(e.path)})
 	}
 	if len(items) == 0 {
-		dialog.ShowInformation("Rename Selected from pattern",
-			"Could not read tags from any of the marked files.", u.win)
+		dialog.ShowInformation(i18n.T("rename.batch_title"), i18n.T("rename.no_tags"), u.win)
 		return
 	}
 
@@ -193,7 +191,7 @@ func (u *ui) renameSelectedFromTags() {
 	nameFor := func(it renameItem) string {
 		base := buildName(patEntry.Text, it.tt)
 		if base == "" {
-			return "(empty — skipped)"
+			return i18n.T("rename.empty_skipped")
 		}
 		return base + it.ext
 	}
@@ -211,19 +209,17 @@ func (u *ui) renameSelectedFromTags() {
 	var presets *widget.Select
 	patEntry, presets = u.patternPicker(prefRenamePattern, renamePresets[1], func() { list.Refresh() })
 
-	note := widget.NewLabel(fmt.Sprintf(
-		"Preview for %d marked track(s). The extension is kept; name clashes get a "+
-			"\" (2)\" suffix.", len(items)))
+	note := widget.NewLabel(i18n.TC("rename.preview_note", map[string]string{"n": fmt.Sprintf("%d", len(items))}))
 	note.Wrapping = fyne.TextWrapWord
 	top := container.NewVBox(
 		note,
 		widget.NewForm(
-			widget.NewFormItem("Pattern", patEntry),
+			widget.NewFormItem(i18n.T("rename.pattern_label"), patEntry),
 			widget.NewFormItem("", presets),
 		),
 	)
 	body := container.NewBorder(top, nil, nil, nil, list)
-	d := dialog.NewCustomConfirm("Rename Selected from pattern", "Rename", "Cancel", body, func(ok bool) {
+	d := dialog.NewCustomConfirm(i18n.T("rename.batch_title"), i18n.T("rename.rename"), i18n.T("common.cancel"), body, func(ok bool) {
 		if !ok {
 			return
 		}
@@ -251,14 +247,14 @@ func (u *ui) applyBatchRename(items []renameItem, pattern string) {
 	}
 
 	total := len(items)
-	statusLbl := widget.NewLabel(fmt.Sprintf("Renaming %d file(s)…", total))
+	statusLbl := widget.NewLabel(i18n.TC("rename.renaming_n", map[string]string{"n": fmt.Sprintf("%d", total)}))
 	statusLbl.Truncation = fyne.TextTruncateEllipsis
 	prog := widget.NewProgressBar()
 	prog.Max = float64(total)
 	var canceled atomic.Bool
-	cancelBtn := widget.NewButton("Cancel", func() { canceled.Store(true) })
+	cancelBtn := widget.NewButton(i18n.T("common.cancel"), func() { canceled.Store(true) })
 	cancelBtn.Importance = widget.DangerImportance
-	d := dialog.NewCustomWithoutButtons("Renaming files", container.NewVBox(
+	d := dialog.NewCustomWithoutButtons(i18n.T("rename.renaming_title"), container.NewVBox(
 		statusLbl, prog, container.NewCenter(cancelBtn),
 	), u.win)
 	d.Resize(fyne.NewSize(420, 150))
@@ -271,7 +267,11 @@ func (u *ui) applyBatchRename(items []renameItem, pattern string) {
 				break
 			}
 			n, name := i+1, filepath.Base(it.path)
-			fyne.Do(func() { statusLbl.SetText(fmt.Sprintf("Renaming %d of %d: %s", n, total, name)) })
+			fyne.Do(func() {
+				statusLbl.SetText(i18n.TC("rename.renaming_progress", map[string]string{
+					"n": fmt.Sprintf("%d", n), "total": fmt.Sprintf("%d", total), "name": name,
+				}))
+			})
 
 			base := buildName(pattern, it.tt)
 			if base == "" {
@@ -324,17 +324,17 @@ func (u *ui) applyBatchRename(items []renameItem, pattern string) {
 			d.Hide()
 			u.table.Refresh()
 			u.refreshNowPlaying()
-			summary := fmt.Sprintf("Renamed %d file(s)", renamed)
+			summary := i18n.TC("rename.renamed", map[string]string{"n": fmt.Sprintf("%d", renamed)})
 			if skipped > 0 {
-				summary += fmt.Sprintf("; %d skipped (empty name or unchanged)", skipped)
+				summary += i18n.TC("rename.skipped", map[string]string{"n": fmt.Sprintf("%d", skipped)})
 			}
 			if failed > 0 {
-				summary += fmt.Sprintf("; %d failed (see log)", failed)
+				summary += i18n.TC("common.failed_log", map[string]string{"n": fmt.Sprintf("%d", failed)})
 			}
-			title := "Files renamed"
+			title := i18n.T("rename.complete")
 			if wasCanceled {
-				title = "Rename cancelled"
-				summary = "Cancelled before finishing. " + summary
+				title = i18n.T("rename.cancelled")
+				summary = i18n.T("common.cancelled_prefix") + summary
 			}
 			u.status.SetText(summary)
 			dialog.ShowInformation(title, summary, u.win)

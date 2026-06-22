@@ -9,6 +9,8 @@
 // shows and what the rating filters operate on: the manual rating, or 0.
 package main
 
+import "mediaplayer/internal/i18n"
+
 // Filter selects which tracks the library view shows, by manual star rating.
 type Filter int
 
@@ -55,50 +57,53 @@ func (f Filter) where() string {
 	}
 }
 
-// filterOptions is the ordered list of (label, Filter) pairs for the UI's
-// filter dropdown. These read against the manual star rating.
+// filterOptions is the ordered list of (i18n key, Filter) pairs for the UI's
+// filter dropdown. These read against the manual star rating. The Key is a stable
+// catalog key (filter.rating.*); the visible label is translated at render time
+// (filterOptions is a package var that inits before i18n.Init, so we cannot bake
+// the translated string in here).
 var filterOptions = []struct {
-	Label  string
+	Key    string
 	Filter Filter
 }{
-	{"All tracks", FilterAll},
-	{"Unrated", FilterUnrated},
-	{"5 stars", FilterExactly5},
-	{"4 stars", FilterExactly4},
-	{"3 stars", FilterExactly3},
-	{"2 stars", FilterExactly2},
-	{"1 star", FilterExactly1},
-	{"4 stars & up", FilterAtLeast4},
-	{"3 stars & up", FilterAtLeast3},
-	{"2 stars & up", FilterAtLeast2},
-	{"1 star & up", FilterAtLeast1},
+	{"filter.rating.all", FilterAll},
+	{"filter.rating.unrated", FilterUnrated},
+	{"filter.rating.exactly5", FilterExactly5},
+	{"filter.rating.exactly4", FilterExactly4},
+	{"filter.rating.exactly3", FilterExactly3},
+	{"filter.rating.exactly2", FilterExactly2},
+	{"filter.rating.exactly1", FilterExactly1},
+	{"filter.rating.atleast4", FilterAtLeast4},
+	{"filter.rating.atleast3", FilterAtLeast3},
+	{"filter.rating.atleast2", FilterAtLeast2},
+	{"filter.rating.atleast1", FilterAtLeast1},
 }
 
-// filterByLabel returns the Filter for a dropdown label.
+// filterByLabel returns the Filter for a (translated) dropdown label.
 func filterByLabel(label string) Filter {
 	for _, o := range filterOptions {
-		if o.Label == label {
+		if i18n.T(o.Key) == label {
 			return o.Filter
 		}
 	}
 	return FilterAll
 }
 
-// filterLabelFor returns the dropdown label for a filter (for summaries).
+// filterLabelFor returns the translated dropdown label for a filter (for summaries).
 func filterLabelFor(f Filter) string {
 	for _, o := range filterOptions {
 		if o.Filter == f {
-			return o.Label
+			return i18n.T(o.Key)
 		}
 	}
 	return ""
 }
 
-// filterLabels returns just the labels, for building the dropdown.
+// filterLabels returns the translated labels, for building the dropdown.
 func filterLabels() []string {
 	labels := make([]string, len(filterOptions))
 	for i, o := range filterOptions {
-		labels[i] = o.Label
+		labels[i] = i18n.T(o.Key)
 	}
 	return labels
 }

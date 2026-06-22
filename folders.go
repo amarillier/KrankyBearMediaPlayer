@@ -12,6 +12,8 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	"mediaplayer/internal/i18n"
 )
 
 // manageFolders opens the watched-folders manager.
@@ -27,21 +29,21 @@ func (u *ui) manageFolders() {
 		}
 		box.RemoveAll()
 		if len(folders) == 0 {
-			box.Add(widget.NewLabel("No watched folders yet — click \"Add Folder…\" below."))
+			box.Add(widget.NewLabel(i18n.T("folders.empty")))
 		}
 		for _, f := range folders {
 			f := f // capture
 			n, _ := u.db.CountTracksInFolder(f.ID)
-			label := widget.NewLabel(fmt.Sprintf("%s\n%d track(s)", f.Path, n))
+			label := widget.NewLabel(i18n.TC("folders.track_count", map[string]string{"path": f.Path, "n": fmt.Sprintf("%d", n)}))
 			label.Wrapping = fyne.TextWrapWord
 
-			relocate := widget.NewButtonWithIcon("Relocate…", theme.FolderOpenIcon(), func() {
+			relocate := widget.NewButtonWithIcon(i18n.T("folders.relocate"), theme.FolderOpenIcon(), func() {
 				u.relocateFolderTo(f, rebuild)
 			})
-			rescan := widget.NewButtonWithIcon("Rescan", theme.ViewRefreshIcon(), func() {
+			rescan := widget.NewButtonWithIcon(i18n.T("folders.rescan"), theme.ViewRefreshIcon(), func() {
 				u.scanFolders([]Folder{f}, rebuild) // refresh the count when done
 			})
-			del := widget.NewButtonWithIcon("Remove", theme.DeleteIcon(), func() {
+			del := widget.NewButtonWithIcon(i18n.T("folders.remove"), theme.DeleteIcon(), func() {
 				u.confirmRemoveFolder(f, rebuild)
 			})
 			del.Importance = widget.DangerImportance
@@ -52,7 +54,7 @@ func (u *ui) manageFolders() {
 	}
 	rebuild()
 
-	addBtn := widget.NewButtonWithIcon("Add Folder…", theme.FolderOpenIcon(), func() {
+	addBtn := widget.NewButtonWithIcon(i18n.T("folders.add_folder"), theme.FolderOpenIcon(), func() {
 		dialog.ShowFolderOpen(func(list fyne.ListableURI, err error) {
 			if err != nil || list == nil {
 				return
@@ -67,15 +69,12 @@ func (u *ui) manageFolders() {
 			rebuild() // show the folder immediately; the count fills in after the scan
 		}, u.win)
 	})
-	note := widget.NewLabel("Relocate repoints a folder at a new location (e.g. a moved or " +
-		"re-lettered drive) and instantly moves its tracks — no re-scan needed. Rescan picks up " +
-		"new/changed files. Remove takes a folder's tracks out of the library but never deletes " +
-		"files on disk.")
+	note := widget.NewLabel(i18n.T("folders.note"))
 	note.Wrapping = fyne.TextWrapWord
 
 	content := container.NewBorder(nil, container.NewVBox(widget.NewSeparator(), addBtn, note),
 		nil, nil, container.NewVScroll(box))
-	d := dialog.NewCustom("Watched folders", "Close", content, u.win)
+	d := dialog.NewCustom(i18n.T("folders.title"), i18n.T("common.close"), content, u.win)
 	d.Resize(fyne.NewSize(640, 460))
 	d.Show()
 }
@@ -94,7 +93,7 @@ func (u *ui) relocateFolderTo(f Folder, onDone func()) {
 			return
 		}
 		u.reload()
-		u.status.SetText("Relocated to: " + list.Path())
+		u.status.SetText(i18n.TC("status.relocated", map[string]string{"path": list.Path()}))
 		if onDone != nil {
 			onDone()
 		}
@@ -105,9 +104,8 @@ func (u *ui) relocateFolderTo(f Folder, onDone func()) {
 // tracks), then reloads the library and runs onRemoved (to refresh the manager).
 func (u *ui) confirmRemoveFolder(f Folder, onRemoved func()) {
 	n, _ := u.db.CountTracksInFolder(f.ID)
-	msg := fmt.Sprintf("Remove this watched folder and its %d catalogued track(s) from the "+
-		"library?\n\n%s\n\nThe files on disk are NOT deleted.", n, f.Path)
-	dialog.ShowConfirm("Remove folder", msg, func(ok bool) {
+	msg := i18n.TC("folders.remove_confirm", map[string]string{"n": fmt.Sprintf("%d", n), "path": f.Path})
+	dialog.ShowConfirm(i18n.T("folders.remove_title"), msg, func(ok bool) {
 		if !ok {
 			return
 		}
@@ -116,7 +114,7 @@ func (u *ui) confirmRemoveFolder(f Folder, onRemoved func()) {
 			return
 		}
 		u.reload()
-		u.status.SetText("Removed folder: " + f.Path)
+		u.status.SetText(i18n.TC("folders.removed", map[string]string{"path": f.Path}))
 		onRemoved()
 	}, u.win)
 }

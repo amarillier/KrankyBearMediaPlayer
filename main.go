@@ -6,16 +6,19 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/driver/desktop"
+
+	"mediaplayer/internal/i18n"
 )
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "0.9.0" // see FyneApp.toml
+	appVersion = "1.0.0" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -33,10 +36,12 @@ func buildCopyrightNotice() string {
 
 func main() {
 	dbFlag := flag.String("db", "", "path to the media library database file (overrides the default/saved location)")
+	langFlag := flag.String("lang", "", "UI language code (e.g. en, de); overrides the saved preference for this run")
 	flag.Parse()
 
 	a := app.NewWithID("com.github.amarillier.KrankyBearMediaPlayer")
 	a.SetIcon(resourceKrankyBearMediaPlayerPng)
+	setupI18n(a, *langFlag) // load message catalog + resolve UI language before building any UI
 	loadTheme(a)
 
 	dbPath := *dbFlag
@@ -107,18 +112,18 @@ func setupSystemTray(a fyne.App, u *ui) {
 	}
 	menu := fyne.NewMenu(appName,
 
-		fyne.NewMenuItem("Show All Windows", func() { fyne.Do(u.showAllWindows) }),
-		fyne.NewMenuItem("Hide All Windows", func() { fyne.Do(u.hideAllWindows) }),
+		fyne.NewMenuItem(i18n.T("tray.show_all"), func() { fyne.Do(u.showAllWindows) }),
+		fyne.NewMenuItem(i18n.T("tray.hide_all"), func() { fyne.Do(u.hideAllWindows) }),
 		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Play / Pause", func() { fyne.Do(u.onPlayPause) }),
-		fyne.NewMenuItem("Previous", u.player.Prev),
-		fyne.NewMenuItem("Next", u.player.Next),
-		fyne.NewMenuItem("Stop", u.player.Stop),
+		fyne.NewMenuItem(i18n.T("tray.play_pause"), func() { fyne.Do(u.onPlayPause) }),
+		fyne.NewMenuItem(i18n.T("tray.previous"), u.player.Prev),
+		fyne.NewMenuItem(i18n.T("tray.next"), u.player.Next),
+		fyne.NewMenuItem(i18n.T("tray.stop"), u.player.Stop),
 		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Preferences…", func() { fyne.Do(u.showPreferences) }),
+		fyne.NewMenuItem(i18n.T("tray.preferences"), func() { fyne.Do(u.showPreferences) }),
 
 		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Quit", func() { fyne.Do(u.quit) }), // tray runs off the main goroutine
+		fyne.NewMenuItem(i18n.T("tray.quit"), func() { fyne.Do(u.quit) }), // tray runs off the main goroutine
 	)
 	desk.SetSystemTrayMenu(menu)
 	desk.SetSystemTrayIcon(resourceKrankyBearMediaPlayerPng)
@@ -163,42 +168,67 @@ func dirWritable(dir string) bool {
 	return true
 }
 
+// macOSSpecialItems builds the menu entries for an item that macOS hoists into the
+// application menu purely by its exact English label (see Fyne's menu_darwin.go:
+// "About", "Preferences…", "Settings…"). Translating the label means Fyne no longer
+// recognises it, so it would stay in the menu bar instead of the app menu.
+//
+// To get BOTH the native app-menu slot AND a localized entry, on darwin we return the
+// English item (which Fyne moves to the app menu) plus — when the active locale differs
+// — a translated copy that stays in the menu bar. Off darwin (no hoisting) we return
+// just the translated item. An optional shortcut goes on the menu-bar-visible item.
+func macOSSpecialItems(englishLabel, localized string, action func(), shortcut fyne.Shortcut) []*fyne.MenuItem {
+	if runtime.GOOS != "darwin" {
+		it := fyne.NewMenuItem(localized, action)
+		it.Shortcut = shortcut
+		return []*fyne.MenuItem{it}
+	}
+	hoisted := fyne.NewMenuItem(englishLabel, action) // Fyne moves this into the app menu
+	if localized == englishLabel {
+		hoisted.Shortcut = shortcut
+		return []*fyne.MenuItem{hoisted}
+	}
+	bar := fyne.NewMenuItem(localized, action) // stays in the menu bar
+	bar.Shortcut = shortcut
+	return []*fyne.MenuItem{hoisted, bar}
+}
+
 // buildMenu builds the application main menu. Help/About/Update/Theme reuse the
 // existing template dialogs; File/Library drive the catalog.
 func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
-	fileMenu := fyne.NewMenu("Library",
-		fyne.NewMenuItem("Add Folder…", u.addFolder),
-		fyne.NewMenuItem("Manage Folders…", u.manageFolders),
-		fyne.NewMenuItem("Rescan All", u.rescanAll),
-		fyne.NewMenuItem("Relocate Folder… (moved drive)", u.relocateFolder),
+	fileMenu := fyne.NewMenu(i18n.T("menu.library.label"),
+		fyne.NewMenuItem(i18n.T("menu.library.add_folder"), u.addFolder),
+		fyne.NewMenuItem(i18n.T("menu.library.manage_folders"), u.manageFolders),
+		fyne.NewMenuItem(i18n.T("menu.library.rescan_all"), u.rescanAll),
+		fyne.NewMenuItem(i18n.T("menu.library.relocate"), u.relocateFolder),
 		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Select All Shown", u.selectAllShown),
-		fyne.NewMenuItem("Clear Selection", u.clearSelection),
-		fyne.NewMenuItem("Copy Selected to…", u.copySelectedTo),
-		fyne.NewMenuItem("Edit Tags of Selected…", u.editTagsOfSelected),
-		fyne.NewMenuItem("Rename Selected from pattern…", u.renameSelectedFromTags),
-		fyne.NewMenuItem("Scan ReplayGain of Selected…", u.scanReplayGainSelected),
-		fyne.NewMenuItem("Add Selected to Queue", u.enqueueSelected),
+		fyne.NewMenuItem(i18n.T("menu.library.select_all_shown"), u.selectAllShown),
+		fyne.NewMenuItem(i18n.T("menu.library.clear_selection"), u.clearSelection),
+		fyne.NewMenuItem(i18n.T("menu.library.copy_selected"), u.copySelectedTo),
+		fyne.NewMenuItem(i18n.T("menu.library.edit_tags"), u.editTagsOfSelected),
+		fyne.NewMenuItem(i18n.T("menu.library.rename_selected"), u.renameSelectedFromTags),
+		fyne.NewMenuItem(i18n.T("menu.library.scan_replaygain"), u.scanReplayGainSelected),
+		fyne.NewMenuItem(i18n.T("menu.library.add_selected_queue"), u.enqueueSelected),
 		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Library Report…", u.showLibraryReport),
-		fyne.NewMenuItem("Add All Shown to Queue", u.enqueueShown),
+		fyne.NewMenuItem(i18n.T("menu.library.library_report"), u.showLibraryReport),
+		fyne.NewMenuItem(i18n.T("menu.library.add_all_queue"), u.enqueueShown),
 		fyne.NewMenuItemSeparator(),
 		// Defer via fyne.Do: quitting directly from the menu popup's click handler
 		// hangs on Windows (closes the window from inside the popup callback).
-		fyne.NewMenuItem("Quit", func() { fyne.Do(u.quit) }),
+		fyne.NewMenuItem(i18n.T("menu.library.quit"), func() { fyne.Do(u.quit) }),
 	)
 
-	hideItem := fyne.NewMenuItem("Hide All Windows", u.hideAllWindows)
+	hideItem := fyne.NewMenuItem(i18n.T("menu.view.hide_all"), u.hideAllWindows)
 	hideItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyH, Modifier: fyne.KeyModifierAlt}
-	playPauseItem := fyne.NewMenuItem("Play / Pause", u.onPlayPause)
+	playPauseItem := fyne.NewMenuItem(i18n.T("menu.playback.play_pause"), u.onPlayPause)
 	playPauseItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyP, Modifier: fyne.KeyModifierAlt}
-	prevItem := fyne.NewMenuItem("Previous", u.player.Prev)
+	prevItem := fyne.NewMenuItem(i18n.T("menu.playback.previous"), u.player.Prev)
 	prevItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyLeft, Modifier: fyne.KeyModifierAlt}
-	nextItem := fyne.NewMenuItem("Next", u.player.Next)
+	nextItem := fyne.NewMenuItem(i18n.T("menu.playback.next"), u.player.Next)
 	nextItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyRight, Modifier: fyne.KeyModifierAlt}
 
 	// Playback menu: transport plus shuffle/repeat (state persists via prefs).
-	shuffleItem := fyne.NewMenuItem("Shuffle", u.toggleShuffle)
+	shuffleItem := fyne.NewMenuItem(i18n.T("menu.playback.shuffle"), u.toggleShuffle)
 	shuffleItem.Checked = u.player.Shuffle()
 	curRepeat := u.player.Repeat()
 	repeatItemFor := func(label string, m RepeatMode) *fyne.MenuItem {
@@ -206,15 +236,15 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		it.Checked = curRepeat == m
 		return it
 	}
-	repeatItem := fyne.NewMenuItem("Repeat", nil)
+	repeatItem := fyne.NewMenuItem(i18n.T("menu.playback.repeat"), nil)
 	repeatItem.ChildMenu = fyne.NewMenu("",
-		repeatItemFor("Off", RepeatOff),
-		repeatItemFor("Repeat All", RepeatAll),
-		repeatItemFor("Repeat One", RepeatOne),
+		repeatItemFor(i18n.T("menu.playback.repeat_off"), RepeatOff),
+		repeatItemFor(i18n.T("menu.playback.repeat_all"), RepeatAll),
+		repeatItemFor(i18n.T("menu.playback.repeat_one"), RepeatOne),
 	)
-	rgItem := fyne.NewMenuItem("ReplayGain (volume normalization)", u.toggleReplayGain)
+	rgItem := fyne.NewMenuItem(i18n.T("menu.playback.replaygain"), u.toggleReplayGain)
 	rgItem.Checked = a.Preferences().BoolWithFallback(prefReplayGain, false)
-	rgAlbumItem := fyne.NewMenuItem("ReplayGain: prefer album gain", u.toggleReplayGainAlbum)
+	rgAlbumItem := fyne.NewMenuItem(i18n.T("menu.playback.replaygain_album"), u.toggleReplayGainAlbum)
 	rgAlbumItem.Checked = a.Preferences().BoolWithFallback(prefRGAlbum, false)
 
 	curTrans := transitionMode(a.Preferences().IntWithFallback(prefTransition, int(transGap)))
@@ -223,36 +253,36 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		it.Checked = curTrans == m
 		return it
 	}
-	transitionItem := fyne.NewMenuItem("Track transition", nil)
+	transitionItem := fyne.NewMenuItem(i18n.T("menu.playback.transition"), nil)
 	transitionItem.ChildMenu = fyne.NewMenu("",
-		transItemFor("Gap (default)", transGap),
-		transItemFor("Gapless (experimental)", transGapless),
-		transItemFor("Crossfade (experimental)", transCrossfade),
+		transItemFor(i18n.T("menu.playback.transition_gap"), transGap),
+		transItemFor(i18n.T("menu.playback.transition_gapless"), transGapless),
+		transItemFor(i18n.T("menu.playback.transition_crossfade"), transCrossfade),
 	)
 
-	playbackMenu := fyne.NewMenu("Playback",
+	playbackMenu := fyne.NewMenu(i18n.T("menu.playback.label"),
 		playPauseItem,
 		prevItem,
 		nextItem,
-		fyne.NewMenuItem("Stop", u.player.Stop),
+		fyne.NewMenuItem(i18n.T("menu.playback.stop"), u.player.Stop),
 		fyne.NewMenuItemSeparator(),
 		shuffleItem,
 		repeatItem,
 		rgItem,
 		rgAlbumItem,
-		fyne.NewMenuItem("Equalizer…", u.showEqualizer),
+		fyne.NewMenuItem(i18n.T("menu.playback.equalizer"), u.showEqualizer),
 		transitionItem,
 		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Show Play Queue", u.showQueue),
+		fyne.NewMenuItem(i18n.T("menu.playback.show_queue"), u.showQueue),
 	)
 
 	// Playlists menu: static .m3u8 files plus dynamic ("smart") playlists. Saved
 	// smart playlists are listed inline so a click applies them.
 	playlistItems := []*fyne.MenuItem{
-		fyne.NewMenuItem("Open Playlist…", u.openPlaylist),
-		fyne.NewMenuItem("Save Playlist…", u.savePlaylist),
+		fyne.NewMenuItem(i18n.T("menu.playlists.open"), u.openPlaylist),
+		fyne.NewMenuItem(i18n.T("menu.playlists.save"), u.savePlaylist),
 		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("New Smart Playlist…", u.showNewSmartPlaylist),
+		fyne.NewMenuItem(i18n.T("menu.playlists.new_smart"), u.showNewSmartPlaylist),
 	}
 	if smarts, err := u.db.SmartPlaylists(); err == nil && len(smarts) > 0 {
 		playlistItems = append(playlistItems, fyne.NewMenuItemSeparator())
@@ -263,27 +293,27 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 			playlistItems = append(playlistItems, it)
 		}
 		playlistItems = append(playlistItems, fyne.NewMenuItemSeparator(),
-			fyne.NewMenuItem("Manage Smart Playlists…", u.manageSmartPlaylists))
+			fyne.NewMenuItem(i18n.T("menu.playlists.manage_smart"), u.manageSmartPlaylists))
 	}
-	playlistsMenu := fyne.NewMenu("Playlists", playlistItems...)
+	playlistsMenu := fyne.NewMenu(i18n.T("menu.playlists.label"), playlistItems...)
 
 	// Checkable toggles for the optional columns (state persists via prefs).
 	prefs := a.Preferences()
-	trackColItem := fyne.NewMenuItem("Show Track # Column", func() { u.toggleColumn(prefShowTrackCol) })
+	trackColItem := fyne.NewMenuItem(i18n.T("menu.view.col_track"), func() { u.toggleColumn(prefShowTrackCol) })
 	trackColItem.Checked = prefs.BoolWithFallback(prefShowTrackCol, false)
-	fileColItem := fyne.NewMenuItem("Show Filename Column", func() { u.toggleColumn(prefShowFilenameCol) })
+	fileColItem := fyne.NewMenuItem(i18n.T("menu.view.col_filename"), func() { u.toggleColumn(prefShowFilenameCol) })
 	fileColItem.Checked = prefs.BoolWithFallback(prefShowFilenameCol, false)
-	selColItem := fyne.NewMenuItem("Selection Checkboxes", func() { u.toggleColumn(prefShowSelectCol) })
+	selColItem := fyne.NewMenuItem(i18n.T("menu.view.col_select"), func() { u.toggleColumn(prefShowSelectCol) })
 	selColItem.Checked = prefs.BoolWithFallback(prefShowSelectCol, false)
-	durColItem := fyne.NewMenuItem("Show Length Column", func() { u.toggleColumn(prefShowDurationCol) })
+	durColItem := fyne.NewMenuItem(i18n.T("menu.view.col_length"), func() { u.toggleColumn(prefShowDurationCol) })
 	durColItem.Checked = prefs.BoolWithFallback(prefShowDurationCol, true)
-	fmtColItem := fyne.NewMenuItem("Show Format Column", func() { u.toggleColumn(prefShowFormatCol) })
+	fmtColItem := fyne.NewMenuItem(i18n.T("menu.view.col_format"), func() { u.toggleColumn(prefShowFormatCol) })
 	fmtColItem.Checked = prefs.BoolWithFallback(prefShowFormatCol, false)
-	brColItem := fyne.NewMenuItem("Show Bitrate Column", func() { u.toggleColumn(prefShowBitrateCol) })
+	brColItem := fyne.NewMenuItem(i18n.T("menu.view.col_bitrate"), func() { u.toggleColumn(prefShowBitrateCol) })
 	brColItem.Checked = prefs.BoolWithFallback(prefShowBitrateCol, false)
-	genreColItem := fyne.NewMenuItem("Show Genre Column", func() { u.toggleColumn(prefShowGenreCol) })
+	genreColItem := fyne.NewMenuItem(i18n.T("menu.view.col_genre"), func() { u.toggleColumn(prefShowGenreCol) })
 	genreColItem.Checked = prefs.BoolWithFallback(prefShowGenreCol, false)
-	colFilterItem := fyne.NewMenuItem("Show Column Filters", u.toggleColumnFilters)
+	colFilterItem := fyne.NewMenuItem(i18n.T("menu.view.col_filters"), u.toggleColumnFilters)
 	colFilterItem.Checked = prefs.BoolWithFallback(prefShowColFilters, false)
 
 	// "Count play after" submenu: how much of a track must play to count as a play.
@@ -293,23 +323,23 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		it.Checked = curPct == pct
 		return it
 	}
-	countAfterItem := fyne.NewMenuItem("Count play after", nil)
+	countAfterItem := fyne.NewMenuItem(i18n.T("menu.view.count_play_after"), nil)
 	countAfterItem.ChildMenu = fyne.NewMenu("",
 		pctItem("25%", 25),
 		pctItem("50%", 50),
 		pctItem("75%", 75),
 		pctItem("90%", 90),
-		pctItem("End of track (100%)", 100),
+		pctItem(i18n.T("menu.view.count_end"), 100),
 	)
 
-	prefItem := fyne.NewMenuItem("Preferences…", u.showPreferences)
-	prefItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyR, Modifier: fyne.KeyModifierAlt}
-
-	viewMenu := fyne.NewMenu("View",
-		prefItem,
+	// Preferences: macOS hoists the English-labelled item into the app menu; on
+	// darwin a translated copy also stays in the View menu (see macOSSpecialItems).
+	prefShortcut := &desktop.CustomShortcut{KeyName: fyne.KeyR, Modifier: fyne.KeyModifierAlt}
+	viewItems := macOSSpecialItems("Preferences…", i18n.T("menu.view.preferences"), u.showPreferences, prefShortcut)
+	viewItems = append(viewItems,
 		fyne.NewMenuItemSeparator(),
 		hideItem,
-		fyne.NewMenuItem("Show All Windows", u.showAllWindows),
+		fyne.NewMenuItem(i18n.T("menu.view.show_all"), u.showAllWindows),
 		fyne.NewMenuItemSeparator(),
 		trackColItem,
 		fileColItem,
@@ -321,22 +351,23 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		colFilterItem,
 		countAfterItem,
 		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Light Theme", func() { setLightTheme(a) }),
-		fyne.NewMenuItem("Dark Theme", func() { setDarkTheme(a) }),
-		fyne.NewMenuItem("System Theme", func() { setSystemTheme(a) }),
+		fyne.NewMenuItem(i18n.T("menu.view.theme_light"), func() { setLightTheme(a) }),
+		fyne.NewMenuItem(i18n.T("menu.view.theme_dark"), func() { setDarkTheme(a) }),
+		fyne.NewMenuItem(i18n.T("menu.view.theme_system"), func() { setSystemTheme(a) }),
 	)
+	viewMenu := fyne.NewMenu(i18n.T("menu.view.label"), viewItems...)
 
-	helpMenu := fyne.NewMenu("Help",
-		fyne.NewMenuItem("Help", func() { showHelp(a) }),
-		fyne.NewMenuItem("Check for Updates", func() {
-			// Manual check is never throttled (minDays 0) but shares the cache file.
-			msg, avail, remoteTag := updateChecker(updateRepoOwner, updateRepoName,
-				updateRepoName, "", updateCheckStatePath(), 0)
-			ahead := versionIsNewer(appVersion, remoteTag)
-			showUpdateDialog(a, msg, avail, ahead)
+	helpItems := []*fyne.MenuItem{
+		fyne.NewMenuItem(i18n.T("menu.help.help"), func() { showHelp(a) }),
+		fyne.NewMenuItem(i18n.T("menu.help.check_updates"), func() {
+			// Runs the network check off the UI thread (see checkForUpdatesManual);
+			// doing it inline here froze the window with a spinning cursor.
+			u.checkForUpdatesManual()
 		}),
-		fyne.NewMenuItem("About", func() { showAbout(a) }),
-	)
+	}
+	// About: same macOS app-menu hoisting as Preferences (no shortcut).
+	helpItems = append(helpItems, macOSSpecialItems("About", i18n.T("menu.help.about"), func() { showAbout(a) }, nil)...)
+	helpMenu := fyne.NewMenu(i18n.T("menu.help.label"), helpItems...)
 
 	return fyne.NewMainMenu(fileMenu, playbackMenu, playlistsMenu, viewMenu, helpMenu)
 }

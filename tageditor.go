@@ -18,6 +18,8 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	"mediaplayer/internal/i18n"
 )
 
 // numericEntry is a single-line entry that silently drops non-digit input, so
@@ -82,7 +84,7 @@ func (u *ui) editTags(row int) {
 	preview := canvas.NewImageFromResource(nil)
 	preview.FillMode = canvas.ImageFillContain
 	preview.SetMinSize(fyne.NewSize(140, 140))
-	noArt := widget.NewLabel("(no cover)")
+	noArt := widget.NewLabel(i18n.T("tageditor.no_cover"))
 	refreshPreview := func() {
 		if len(curArt) > 0 {
 			preview.Resource = fyne.NewStaticResource("cover", curArt)
@@ -96,7 +98,7 @@ func (u *ui) editTags(row int) {
 	}
 	refreshPreview()
 
-	changeArt := widget.NewButtonWithIcon("Change…", theme.FolderOpenIcon(), func() {
+	changeArt := widget.NewButtonWithIcon(i18n.T("tageditor.change_art"), theme.FolderOpenIcon(), func() {
 		fd := dialog.NewFileOpen(func(rc fyne.URIReadCloser, err error) {
 			if err != nil || rc == nil {
 				return
@@ -114,7 +116,7 @@ func (u *ui) editTags(row int) {
 		fd.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", ".jpeg", ".gif"}))
 		fd.Show()
 	})
-	removeArt := widget.NewButtonWithIcon("Remove", theme.DeleteIcon(), func() {
+	removeArt := widget.NewButtonWithIcon(i18n.T("common.remove"), theme.DeleteIcon(), func() {
 		curArt, curMIME = nil, ""
 		artDirty = true
 		refreshPreview()
@@ -123,15 +125,15 @@ func (u *ui) editTags(row int) {
 	artRow := container.NewBorder(nil, nil, container.NewGridWrap(fyne.NewSize(150, 150), preview), nil, artButtons)
 
 	form := widget.NewForm(
-		widget.NewFormItem("Title", title),
-		widget.NewFormItem("Artist", artist),
-		widget.NewFormItem("Album", album),
-		widget.NewFormItem("Album Artist", albumArtist),
-		widget.NewFormItem("Year", year),
-		widget.NewFormItem("Track #", track),
-		widget.NewFormItem("Genre", genre),
-		widget.NewFormItem("Comment", comment),
-		widget.NewFormItem("Cover", artRow),
+		widget.NewFormItem(i18n.T("tag.title"), title),
+		widget.NewFormItem(i18n.T("tag.artist"), artist),
+		widget.NewFormItem(i18n.T("tag.album"), album),
+		widget.NewFormItem(i18n.T("tag.album_artist"), albumArtist),
+		widget.NewFormItem(i18n.T("tag.year"), year),
+		widget.NewFormItem(i18n.T("tag.track"), track),
+		widget.NewFormItem(i18n.T("tag.genre"), genre),
+		widget.NewFormItem(i18n.T("tag.comment"), comment),
+		widget.NewFormItem(i18n.T("tag.cover"), artRow),
 	)
 
 	if !writable {
@@ -140,10 +142,10 @@ func (u *ui) editTags(row int) {
 		changeArt.Disable()
 		removeArt.Disable()
 		banner := widget.NewLabelWithStyle(
-			"Editing isn't supported for this file type yet — showing tags read-only.",
+			i18n.T("tageditor.readonly_note"),
 			fyne.TextAlignLeading, fyne.TextStyle{Italic: true})
 		content := container.NewBorder(banner, nil, nil, nil, container.NewVScroll(form))
-		d := dialog.NewCustom("Tags — "+tr.RelPath, "Close", content, u.win)
+		d := dialog.NewCustom(i18n.TC("tageditor.readonly_title", map[string]string{"file": tr.RelPath}), i18n.T("common.close"), content, u.win)
 		d.Resize(fyne.NewSize(560, 620))
 		d.Show()
 		return
@@ -155,12 +157,12 @@ func (u *ui) editTags(row int) {
 		"title": title, "artist": artist, "album": album,
 		"albumartist": albumArtist, "genre": genre, "year": year, "track": track,
 	}
-	fromName := widget.NewButtonWithIcon("Tags from filename…", theme.SearchIcon(), func() {
+	fromName := widget.NewButtonWithIcon(i18n.T("tageditor.from_filename"), theme.SearchIcon(), func() {
 		u.tagsFromFilename(path, entries)
 	})
 
 	content := container.NewBorder(container.NewHBox(fromName), nil, nil, nil, container.NewVScroll(form))
-	d := dialog.NewCustomConfirm("Edit tags — "+tr.RelPath, "Save", "Cancel", content, func(ok bool) {
+	d := dialog.NewCustomConfirm(i18n.TC("tageditor.edit_title", map[string]string{"file": tr.RelPath}), i18n.T("common.save"), i18n.T("common.cancel"), content, func(ok bool) {
 		if !ok {
 			return
 		}
@@ -189,10 +191,10 @@ func (u *ui) editTags(row int) {
 func (u *ui) saveTags(tr Track, edited trackTags, artDirty bool) {
 	if cur, ok := u.player.Current(); ok && cur.ID == tr.ID {
 		u.player.Stop()
-		u.status.SetText("Stopped playback to save tags")
+		u.status.SetText(i18n.T("status.stopped_save_tags"))
 	}
 	path := tr.AbsPath()
-	u.status.SetText("Saving tags…")
+	u.status.SetText(i18n.T("status.saving_tags"))
 	go func() {
 		err := writeTrackTags(path, edited)
 		fyne.Do(func() {
@@ -241,14 +243,37 @@ func (u *ui) applyEditedTags(trackID int64, edited trackTags, artDirty bool) {
 	}
 	u.table.Refresh()
 	u.refreshNowPlaying()
-	u.status.SetText("Tags saved")
+	u.status.SetText(i18n.T("status.tags_saved"))
 }
 
-// parseFieldOrder is the display/apply order for parsed filename fields.
+// parseFieldOrder is the display/apply order for parsed filename fields. The label
+// is the English fallback; the live label comes from tagFieldLabelKey via i18n.
 var parseFieldOrder = []struct{ key, label string }{
 	{"track", "Track #"}, {"title", "Title"}, {"artist", "Artist"},
 	{"album", "Album"}, {"albumartist", "Album Artist"},
 	{"year", "Year"}, {"genre", "Genre"},
+}
+
+// tagFieldLabelKey maps a parsed-field key to its tag.* i18n key (shared with the
+// editor's form labels). Returns "" for unknown keys (caller falls back to English).
+func tagFieldLabelKey(key string) string {
+	switch key {
+	case "track":
+		return "tag.track"
+	case "title":
+		return "tag.title"
+	case "artist":
+		return "tag.artist"
+	case "album":
+		return "tag.album"
+	case "albumartist":
+		return "tag.album_artist"
+	case "year":
+		return "tag.year"
+	case "genre":
+		return "tag.genre"
+	}
+	return ""
 }
 
 // tagsFromFilename opens the inverse-of-rename dialog: it parses the file's name into
@@ -257,7 +282,7 @@ var parseFieldOrder = []struct{ key, label string }{
 func (u *ui) tagsFromFilename(path string, entries map[string]*widget.Entry) {
 	stem := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 
-	leadChk := widget.NewCheck("Filename has a leading track number", nil)
+	leadChk := widget.NewCheck(i18n.T("tageditor.leading_track"), nil)
 	preview := widget.NewLabel("")
 	preview.Wrapping = fyne.TextWrapWord
 
@@ -266,13 +291,17 @@ func (u *ui) tagsFromFilename(path string, entries map[string]*widget.Entry) {
 	update := func() {
 		parsed, ok := parseName(patEntry.Text, stem, leadChk.Checked)
 		if !ok {
-			preview.SetText("(no match — adjust the pattern)")
+			preview.SetText(i18n.T("tageditor.no_match_preview"))
 			return
 		}
 		var b strings.Builder
 		for _, f := range parseFieldOrder {
 			if v, present := parsed[f.key]; present {
-				fmt.Fprintf(&b, "%s = %s\n", f.label, v)
+				label := f.label
+				if k := tagFieldLabelKey(f.key); k != "" {
+					label = i18n.T(k)
+				}
+				fmt.Fprintf(&b, "%s = %s\n", label, v)
 			}
 		}
 		preview.SetText(strings.TrimRight(b.String(), "\n"))
@@ -282,25 +311,25 @@ func (u *ui) tagsFromFilename(path string, entries map[string]*widget.Entry) {
 	update()
 
 	help := widget.NewLabelWithStyle(
-		"Source: "+filepath.Base(path)+"\nTokens: %track% %title% %artist% %album% "+
-			"%albumartist% %year% %genre%", fyne.TextAlignLeading, fyne.TextStyle{Italic: true})
+		i18n.TC("tageditor.source_tokens", map[string]string{"file": filepath.Base(path)}),
+		fyne.TextAlignLeading, fyne.TextStyle{Italic: true})
 	help.Wrapping = fyne.TextWrapWord
 
 	form := widget.NewForm(
-		widget.NewFormItem("Pattern", patEntry),
+		widget.NewFormItem(i18n.T("tageditor.pattern_label"), patEntry),
 		widget.NewFormItem("", presets),
 		widget.NewFormItem("", leadChk),
-		widget.NewFormItem("Will set", preview),
+		widget.NewFormItem(i18n.T("tageditor.will_set"), preview),
 	)
 	body := container.NewVBox(form, help)
-	d := dialog.NewCustomConfirm("Tags from filename", "Apply to fields", "Cancel", body, func(ok bool) {
+	d := dialog.NewCustomConfirm(i18n.T("tageditor.from_title"), i18n.T("tageditor.apply_fields"), i18n.T("common.cancel"), body, func(ok bool) {
 		if !ok {
 			return
 		}
 		parsed, matched := parseName(patEntry.Text, stem, leadChk.Checked)
 		if !matched {
-			dialog.ShowInformation("Tags from filename",
-				"That pattern doesn't match the filename — nothing changed.", u.win)
+			dialog.ShowInformation(i18n.T("tageditor.from_title"),
+				i18n.T("tageditor.no_match"), u.win)
 			return
 		}
 		u.app.Preferences().SetString(prefParsePattern, patEntry.Text)

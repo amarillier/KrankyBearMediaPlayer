@@ -13,6 +13,8 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	"mediaplayer/internal/i18n"
 )
 
 // queueWindow is the single Play Queue window (reused across opens, like Help).
@@ -41,7 +43,7 @@ func (u *ui) showQueue() {
 		return
 	}
 
-	queueWindow = u.app.NewWindow(appName + " - Play Queue")
+	queueWindow = u.app.NewWindow(appName + " - " + i18n.T("queue.win_title"))
 	queueWindow.SetIcon(resourceKrankyBearMediaPlayerPng)
 
 	u.queueList = widget.NewList(
@@ -63,38 +65,38 @@ func (u *ui) showQueue() {
 	u.queueList.OnSelected = func(id widget.ListItemID) { u.queueSel = id }
 	u.queueList.OnUnselected = func(widget.ListItemID) { u.queueSel = -1 }
 
-	playSelBtn := widget.NewButtonWithIcon("Play", theme.MediaPlayIcon(), func() {
+	playSelBtn := widget.NewButtonWithIcon(i18n.T("queue.play"), theme.MediaPlayIcon(), func() {
 		if u.queueSel >= 0 {
 			u.player.JumpTo(u.queueSel)
 		}
 	})
-	removeBtn := widget.NewButtonWithIcon("Remove", theme.DeleteIcon(), func() {
+	removeBtn := widget.NewButtonWithIcon(i18n.T("queue.remove"), theme.DeleteIcon(), func() {
 		if u.queueSel >= 0 {
 			sel := u.queueSel
 			u.player.RemoveAt(sel) // triggers refreshQueue via OnChange
 			u.selectQueueRow(sel)  // keep the cursor near where the row was
 		}
 	})
-	upBtn := widget.NewButtonWithIcon("Up", theme.MoveUpIcon(), func() {
+	upBtn := widget.NewButtonWithIcon(i18n.T("queue.up"), theme.MoveUpIcon(), func() {
 		if u.queueSel > 0 {
 			to := u.queueSel - 1
 			u.player.MoveAt(u.queueSel, to)
 			u.selectQueueRow(to)
 		}
 	})
-	downBtn := widget.NewButtonWithIcon("Down", theme.MoveDownIcon(), func() {
+	downBtn := widget.NewButtonWithIcon(i18n.T("queue.down"), theme.MoveDownIcon(), func() {
 		if u.queueSel >= 0 && u.queueSel < len(u.queueTracks)-1 {
 			to := u.queueSel + 1
 			u.player.MoveAt(u.queueSel, to)
 			u.selectQueueRow(to)
 		}
 	})
-	clearBtn := widget.NewButtonWithIcon("Clear All", theme.ContentClearIcon(), func() {
+	clearBtn := widget.NewButtonWithIcon(i18n.T("queue.clear_all"), theme.ContentClearIcon(), func() {
 		if len(u.queueTracks) == 0 {
 			return
 		}
-		dialog.ShowConfirm("Clear queue",
-			"Remove all tracks from the play queue and stop playback?",
+		dialog.ShowConfirm(i18n.T("queue.clear_title"),
+			i18n.T("queue.clear_confirm"),
 			func(ok bool) {
 				if ok {
 					u.player.ClearQueue()
@@ -105,7 +107,7 @@ func (u *ui) showQueue() {
 
 	controls := container.NewHBox(playSelBtn, removeBtn, upBtn, downBtn, clearBtn)
 	content := container.NewBorder(
-		widget.NewLabelWithStyle("Play Queue", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle(i18n.T("queue.win_title"), fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		controls, nil, nil, u.queueList,
 	)
 	queueWindow.SetContent(content)

@@ -1,0 +1,200 @@
+{{app_name}} - su gestor y reproductor de biblioteca musical
+
+PRIMEROS PASOS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Biblioteca → Añadir carpeta: elija una carpeta de música; se examina y se añade al catálogo.
+  Añada tantas carpetas / ubicaciones como desee.
+• Biblioteca → Gestionar carpetas: vea cada carpeta vigilada con su número de pistas; añada,
+  reubique (reapunte a una unidad movida), reexamine o quite una. Quitarla saca sus
+  pistas de la biblioteca pero nunca elimina archivos del disco.
+• Biblioteca → Reexaminar todo: vuelve a examinar las carpetas vigiladas para recoger archivos nuevos o modificados.
+• Su biblioteca es una pequeña base de datos SQLite. El título, artista, álbum, género, año,
+  número de pista y la carátula incrustada se leen de cada archivo.
+
+REPRODUCIR MÚSICA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Haga doble clic en cualquier pista para empezar a reproducir desde ahí por el resto de la lista.
+• Transporte (barra inferior): Anterior, Reproducir/Pausar, Detener, Siguiente.
+• Menú Reproducción: Aleatorio reproduce la cola en orden aleatorio; Repetir → Desactivado / Todo
+  (repite la cola) / Una (repite la pista actual). Ambos se recuerdan. Saltar
+  con Siguiente/Anterior siempre avanza, incluso con Repetir una.
+• Reproducción → ReplayGain: cuando está activado, las pistas etiquetadas con ReplayGain suenan a una
+  sonoridad constante (con limitación de picos para que las pistas amplificadas no saturen). Desactivado por defecto.
+  "Preferir ganancia de álbum" normaliza por la sonoridad del álbum (conservando el propio
+  equilibrio de volumen del álbum) cuando hay etiquetas de álbum, y si no recurre a la ganancia de pista.
+  Para etiquetar archivos usted mismo, márquelos y use Biblioteca → Analizar ReplayGain de lo seleccionado…
+  (o clic derecho → Analizar ReplayGain): la app mide la sonoridad (BS.1770 /
+  ReplayGain 2.0) y escribe las etiquetas ReplayGain de pista y álbum en MP3/FLAC.
+• Reproducción → Ecualizador…: un ecualizador gráfico de 10 bandas (31 Hz – 16 kHz, ±12 dB) que
+  modela el tono en directo. Marque Activar, arrastre los deslizadores de banda o elija un preajuste (Flat, Bass
+  Boost, Vocal, Rock, …). Guarde sus propios ajustes con "Guardar preajuste…" y quítelos
+  con "Eliminar preajuste". Restablecer (Flat) pone las bandas a cero; desactivarlo es transparente.
+• Reproducción → Transición entre pistas: Pausa (predeterminado), Sin pausa (las pistas se encadenan sin
+  silencio) o Fundido cruzado (la pista saliente se atenúa mientras entra la siguiente).
+  Sin pausa/Fundido cruzado son experimentales.
+• Cola de reproducción (Reproducción → Mostrar cola de reproducción): vea lo que está en cola en orden de reproducción, con
+  la pista actual marcada con ▶. Clic derecho en una pista → Añadir a la cola (o Biblioteca → Añadir
+  selección / Añadir todo lo mostrado a la cola) añade sin interrumpir lo que está sonando.
+  En la ventana de la cola: Reproducir la pista seleccionada, Quitarla, moverla Subir/Bajar, o
+  Borrar todo.
+• Pase el cursor sobre un botón de la barra de herramientas o de transporte para ver una descripción de lo que hace.
+• La barra de avance muestra el tiempo transcurrido / total — arrástrela para saltar dentro de una pista.
+• Dos controles de volumen están en la parte inferior derecha:
+  - "App" ajusta solo el nivel propio de este reproductor (se recuerda entre inicios).
+  - "Sis" controla el volumen maestro de salida de su equipo, con un interruptor de silencio al lado.
+    Se mantiene sincronizado con el nivel del sistema — incluidos los cambios que haga con
+    las teclas de volumen o el mezclador del sistema operativo — y mueve el volumen de toda la máquina, no
+    solo el de esta app.
+• "Bal" ajusta el balance estéreo izquierdo/derecho (se recuerda entre inicios). Tiene un
+  suave punto de detención en el centro, y el botón "C" a su lado vuelve al centro exacto.
+  Útil cuando los altavoces no están colocados de forma simétrica.
+• El indicador de fila seleccionada sigue a la pista que está en reproducción.
+
+VALORACIONES Y SEGUIMIENTO DE REPRODUCCIONES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Las valoraciones son manuales: asigne usted mismo una valoración de 1 a 5 estrellas. El número de reproducciones se sigue
+  por separado (en su propia columna) y NO se convierte en estrellas.
+• Haga clic en las estrellas de la columna Valoración de una pista para asignar una valoración; vuelva a hacer clic en la misma estrella
+  para borrarla (de vuelta a sin estrellas). Los botones "Valorar:" (abajo) y el
+  menú del clic derecho hacen lo mismo. Las cinco estrellas son clicables.
+• Ver → Contar reproducción tras: elija cuánto debe sonar una pista antes de que su número
+  de reproducciones aumente (25 / 50 / 75 / 90% o Fin de la pista). Saltar nunca cuenta.
+• Consejo: filtre por Reprod. (filtro de columna) para encontrar, por ejemplo, todo lo que ha reproducido 5
+  veces, y luego valore esas pistas como quiera.
+
+BUSCAR Y ORGANIZAR:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Cuadro de búsqueda (arriba): filtra por título, artista, álbum, género o nombre de archivo a medida que escribe.
+• Filtros de columna (Ver → Mostrar filtros por columna): una fila de cuadros por columna — escriba en
+  Título, Artista, Álbum, Género para coincidir con una subcadena; Año y Reprod. aceptan un patrón
+  (p. ej. Año 202[456] coincide con 2024-2026; Reprod. 5 = reproducida exactamente cinco veces, 0 =
+  nunca reproducida). Se combinan entre
+  sí y con la búsqueda/filtro Mostrar. Bórrelos con el botón ✕; ocultar la fila
+  también los borra.
+• Filtro "Mostrar" (arriba): Todas, Sin valorar, estrellas exactas, o N estrellas o más.
+• Haga clic en un encabezado de columna para ordenar; vuelva a hacer clic para invertir (la columna Carátula no ordena).
+• Menú Ver: opcionalmente muestre las columnas Duración, Formato, Tasa de bits, Género, N.º de pista y
+  Nombre de archivo (Duración está activa por defecto, el resto desactivado; las elecciones se recuerdan).
+  Duración y Tasa de bits se rellenan poco después del inicio/examen a medida que la app lee el
+  tiempo de reproducción de cada pista en segundo plano, así que pueden estar en blanco un momento.
+• Salte a la pista en reproducción: haga clic en su nombre en la barra inferior, o use el botón
+  "En reproducción" de la barra de herramientas (junto a Reexaminar). Útil tras desplazarse, buscar u
+  ordenar. (Solo localiza la pista — no inicia ni detiene la reproducción.)
+• Retoma donde lo dejó: la app recuerda su orden de clasificación y, al reiniciar,
+  selecciona y se desplaza hasta la pista que estaba reproduciendo por última vez (no la reproduce automáticamente).
+• Copie pistas a otro lugar: Ver → Casillas de selección añade una columna ✓; marque
+  filas (haga clic en el encabezado ✓ para alternar todas las mostradas), o Biblioteca → Seleccionar todo lo mostrado.
+  Luego Biblioteca → Copiar lo seleccionado a… le permite elegir Plana u Organizar en
+  carpetas Artista/Álbum, y después un destino — p. ej. filtre a 5 estrellas, marque todo,
+  copie a una unidad USB. Un diálogo de progreso muestra cada archivo y le permite Cancelar.
+  (Los nombres en conflicto reciben un sufijo " (2)"; no se sobrescribe nada.)
+• Haga clic derecho en una pista para Reproducir, valorar, Añadir carátula (archivo de imagen local o URL,
+  almacenada en la biblioteca), Mostrar en su gestor de archivos y Mostrar ruta completa (con un
+  botón Copiar).
+• Clic derecho Renombrar archivo… / Editar etiquetas… / Asignar valoración actúan normalmente solo sobre esa
+  pista. Pero si hace clic derecho en una pista que está marcada (✓), actúan sobre todo el
+  conjunto marcado — la etiqueta del menú indica cuál (p. ej. "Editar etiquetas de 5 marcadas…",
+  "Asignar valoración (5 marcadas)").
+• Renombrar archivo… (clic derecho) renombra el archivo del disco a partir de sus etiquetas usando un
+  patrón de tokens — %track% %title% %artist% %album% %albumartist% %year%
+  %genre% — p. ej. "%track% %title% - %artist%". Una vista previa en vivo muestra el nombre nuevo
+  antes de aplicar; la extensión siempre se conserva y el catálogo se actualiza en el sitio
+  (sin reexaminar). %track% se rellena con ceros a dos dígitos.
+• Editar etiquetas… (clic derecho) abre un editor para título, artista, álbum, artista del
+  álbum, año, n.º de pista, género, comentario y la imagen de carátula incrustada. Los cambios
+  se escriben de vuelta en el archivo para MP3 y FLAC; OGG y WAV se abren en solo lectura por
+  ahora. Etiquetas desde el nombre de archivo… (en ese editor) analiza el nombre del archivo en los campos
+  usando el mismo patrón de tokens, para que lo revise antes de guardar — nunca escribe
+  por su cuenta. Si edita la pista que se está reproduciendo, la reproducción se detiene primero
+  para poder guardar el archivo. El catálogo (y cualquier miniatura) se actualiza de inmediato.
+• Editar las etiquetas de varias a la vez: marque pistas (Casillas de selección / Seleccionar todo
+  lo mostrado), luego Biblioteca → Editar etiquetas de lo seleccionado… Puede combinar cuatro tipos de
+  cambio en una sola pasada: (1) Desde el nombre de archivo — establezca título/artista/n.º de pista/etc. en cada
+  pista analizando su nombre con un patrón de tokens (la forma masiva de Etiquetas desde el
+  nombre de archivo; los archivos que no coinciden quedan intactos); (2) Establecer campos — marque Artista,
+  Álbum, Artista del álbum, Género, Año o Comentario para darles un valor en toda
+  la selección (estos prevalecen sobre el patrón); (3) Buscar y reemplazar — cambie texto
+  dentro de un campo en toda la selección (p. ej. "feat."→"ft.", ignorando opcionalmente
+  mayúsculas); (4) Carátula — establezca una imagen como carátula para todas, o quite la carátula
+  de todas. Un diálogo de progreso muestra cada archivo con un botón Cancelar; OGG/WAV se
+  omiten.
+• Renombrar varias a la vez: marque pistas, luego Biblioteca → Renombrar lo seleccionado por
+  patrón… Una lista de vista previa muestra cada nombre antiguo → nuevo; aplicar los renombra todos (los nombres
+  en conflicto reciben un sufijo " (2)", no se sobrescribe nada) con un botón Cancelar.
+• Informe de la biblioteca (Biblioteca → Informe de la biblioteca…): resuma su colección agrupada por
+  Artista, Álbum o Género; jerárquicamente (Artista → Álbum, Álbum → Artista, Género →
+  Artista); o como un listado plano de pistas. Marque "Listar pistas" para expandir cada agrupación
+  y mostrar las pistas que contiene. Ordene por Nombre o Año con un conmutador ascendente/descendente,
+  alterne entre toda la biblioteca y la vista filtrada actual, y
+  Exportar CSV… para guardar el informe.
+
+LISTAS DE REPRODUCCIÓN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Listas estáticas (menú Listas de reproducción): Guardar lista de reproducción… escribe las pistas que está
+  viendo actualmente en un archivo .m3u8 portátil, con rutas relativas al archivo para que una
+  lista y su música viajen juntas (p. ej. en una memoria USB). Abrir lista de reproducción…
+  carga una y la reproduce; los archivos que sigan en su catálogo conservan sus estrellas/número de reproducciones.
+• Listas inteligentes (Listas de reproducción → Nueva lista inteligente…): guarde criterios de filtro — una
+  valoración, y opcionalmente Género / Artista / Álbum (parcial, sin distinguir mayúsculas — p. ej.
+  "Wickham" coincide con "Phil Wickham"), más una Búsqueda de texto libre — bajo un nombre. Elegirla
+  en el menú Listas de reproducción reaplica los criterios en vivo (la barra de estado muestra
+  ♫ <nombre>). Se actualizan automáticamente a medida que cambia su biblioteca. Gestionar listas
+  inteligentes… le permite editar los criterios de una lista guardada (el botón del lápiz, que
+  también puede renombrarla) o eliminar las que ya no quiera.
+
+VENTANAS Y BANDEJA DEL SISTEMA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Un icono + menú en la bandeja del sistema replica los controles: Mostrar/Ocultar todas las ventanas,
+  Reproducir/Pausar, Anterior, Siguiente, Detener, Salir.
+• Ocultar todas las ventanas esconde la app y pausa la reproducción; Mostrar todas la trae
+  de vuelta (pulse Reproducir para reanudar).
+• La ventana principal recuerda su tamaño entre inicios.
+
+BIBLIOTECA PORTÁTIL (mover entre máquinas o unidades):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Las ubicaciones de las pistas se almacenan de forma relativa a cada carpeta vigilada, así que si una unidad
+  portátil se monta como D:\ en un PC y E:\ en otro, simplemente use
+  Biblioteca → Reubicar carpeta para reapuntar la carpeta — cada pista bajo ella la sigue,
+  conservando su número de reproducciones y valoraciones.
+• La ubicación de la base de datos se puede establecer con la opción de línea de comandos -db, la variable
+  de entorno KBMP_DB, o Ver → Preferencias → Ubicación de la base de datos (reinicie para que surta
+  efecto); por defecto se sitúa junto a la app (cómodo en una memoria USB).
+
+PREFERENCIAS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Ver → Preferencias… (Alt+R) reúne los ajustes comunes en un solo lugar:
+  tema, idioma, el umbral "contar reproducción tras", el volumen de reproducción (recordado
+  entre inicios), si abrir el ecualizador al iniciar, las columnas opcionales,
+  y la ubicación de la base de datos. Los mismos conmutadores siguen en el menú Ver para cambios
+  rápidos puntuales.
+
+FUNCIONES INTELIGENTES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ Carátulas incrustadas mostradas como miniaturas en la tabla y en el área de reproducción actual.
+✨ Listas inteligentes que se reevalúan en vivo a medida que cambia su biblioteca.
+✨ Compatibilidad con temas: tema Claro, Oscuro o del Sistema (menú Ver).
+
+ATAJOS DE TECLADO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Alt+P — Reproducir / Pausar
+• Alt+→ — Pista siguiente   • Alt+← — Pista anterior
+• Alt+H — Ocultar todas las ventanas (y pausar). No hay atajo para volver a mostrar, por diseño —
+  use la bandeja del sistema o Ver → Mostrar todas las ventanas.
+• Alt+R — Preferencias
+• Cmd/Ctrl+Q — Salir   • Cmd/Ctrl+W — Cerrar ventana   • Cmd/Ctrl+M — Minimizar
+
+LIMITACIONES CONOCIDAS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Formatos de audio compatibles: MP3, FLAC, WAV, OGG (M4A/AAC/ALAC aún no compatibles).
+⚠️  La reproducción de videoclips está planificada pero aún no disponible.
+
+MÁS INFORMACIÓN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Para documentación, informes de errores o solicitudes de funciones:
+📦 GitHub: https://github.com/amarillier/KrankyBearMediaPlayer
+📄 Licencia: https://github.com/amarillier/KrankyBearMediaPlayer/blob/allanm/LICENSE
+📝 Notas de la versión: consulte "Ayuda → Buscar actualizaciones"
+
+SOFTWARE LIBRE - ¡Úselo en cualquier lugar, en cualquier momento, con cualquier propósito!
+Sin registro, sin seguimiento. El único uso de red es una discreta comprobación de actualizaciones -
+una vez al día al iniciar, más la comprobación manual "Buscar actualizaciones".

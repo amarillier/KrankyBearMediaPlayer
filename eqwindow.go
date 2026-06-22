@@ -12,6 +12,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+
+	"mediaplayer/internal/i18n"
 )
 
 var eqWindow fyne.Window
@@ -38,7 +40,7 @@ func (u *ui) showEqualizer() {
 	prefs := u.app.Preferences()
 	gains := gainsFromCSV(prefs.String(prefEQGains))
 
-	win := u.app.NewWindow(appName + " - Equalizer")
+	win := u.app.NewWindow(appName + " - " + i18n.T("eq.win_title"))
 	win.SetIcon(resourceKrankyBearMediaPlayerPng)
 	eqWindow = win
 
@@ -47,7 +49,7 @@ func (u *ui) showEqualizer() {
 	var presetSel *widget.Select
 	applyingPreset := false
 
-	enableChk := widget.NewCheck("Enable equalizer", nil)
+	enableChk := widget.NewCheck(i18n.T("eq.enable"), nil)
 	enableChk.SetChecked(prefs.BoolWithFallback(prefEQEnabled, false))
 
 	gather := func() [eqBandCount]float64 {
@@ -126,7 +128,7 @@ func (u *ui) showEqualizer() {
 		}
 		prefs.SetString(prefEQPreset, name)
 	})
-	presetSel.PlaceHolder = "Custom"
+	presetSel.PlaceHolder = i18n.T("eq.custom")
 	if p := prefs.String(prefEQPreset); p != "" {
 		presetSel.Selected = p // reflect last choice without re-applying
 	}
@@ -136,11 +138,11 @@ func (u *ui) showEqualizer() {
 		persist()
 	}
 
-	saveBtn := widget.NewButton("Save preset…", func() {
+	saveBtn := widget.NewButton(i18n.T("eq.save_preset"), func() {
 		entry := widget.NewEntry()
-		entry.SetPlaceHolder("Preset name")
-		d := dialog.NewForm("Save EQ preset", "Save", "Cancel",
-			[]*widget.FormItem{widget.NewFormItem("Name", entry)},
+		entry.SetPlaceHolder(i18n.T("eq.preset_name_ph"))
+		d := dialog.NewForm(i18n.T("eq.save_preset_title"), i18n.T("common.save"), i18n.T("common.cancel"),
+			[]*widget.FormItem{widget.NewFormItem(i18n.T("eq.name_label"), entry)},
 			func(ok bool) {
 				if !ok {
 					return
@@ -159,11 +161,11 @@ func (u *ui) showEqualizer() {
 		d.Resize(fyne.NewSize(420, 180))
 		d.Show()
 	})
-	delBtn := widget.NewButton("Delete preset", func() {
+	delBtn := widget.NewButton(i18n.T("eq.delete_preset"), func() {
 		name := presetSel.Selected
 		if _, builtin := presetGains(name); name == "" || builtin {
-			dialog.ShowInformation("Delete preset",
-				"Pick one of your saved custom presets to delete.", win)
+			dialog.ShowInformation(i18n.T("eq.delete_preset_title"),
+				i18n.T("eq.delete_preset_msg"), win)
 			return
 		}
 		cps := customPresets(prefs.String(prefEQCustom))
@@ -173,18 +175,18 @@ func (u *ui) showEqualizer() {
 		presetSel.ClearSelected()
 		presetSel.Refresh()
 	})
-	resetBtn := widget.NewButton("Reset (Flat)", func() {
+	resetBtn := widget.NewButton(i18n.T("eq.reset"), func() {
 		setGains([eqBandCount]float64{})
 		presetSel.SetSelected("Flat")
 	})
 
 	top := container.NewVBox(
 		enableChk,
-		container.NewBorder(nil, nil, widget.NewLabel("Preset:"),
+		container.NewBorder(nil, nil, widget.NewLabel(i18n.T("eq.preset_label")),
 			container.NewHBox(saveBtn, delBtn), presetSel),
 		widget.NewSeparator(),
 	)
-	bottom := container.NewBorder(nil, nil, resetBtn, widget.NewButton("Close", func() {
+	bottom := container.NewBorder(nil, nil, resetBtn, widget.NewButton(i18n.T("common.close"), func() {
 		win.Hide()
 		markWindowClosed(win)
 	}), nil)

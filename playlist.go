@@ -16,6 +16,8 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
+
+	"mediaplayer/internal/i18n"
 )
 
 // writePlaylistM3U writes tracks as an extended M3U. Each entry gets an #EXTINF
@@ -75,7 +77,7 @@ func parsePlaylistM3U(r io.Reader, baseDir string) []string {
 // workflow, mirroring Copy Selected.
 func (u *ui) savePlaylist() {
 	if len(u.tracks) == 0 {
-		dialog.ShowInformation("Save playlist", "No tracks are shown to save.", u.win)
+		dialog.ShowInformation(i18n.T("playlist.save_title"), i18n.T("playlist.none_to_save"), u.win)
 		return
 	}
 	tracks := append([]Track(nil), u.tracks...) // snapshot; the save runs in a callback
@@ -89,7 +91,7 @@ func (u *ui) savePlaylist() {
 			dialog.ShowError(err, u.win)
 			return
 		}
-		u.status.SetText(fmt.Sprintf("Saved %d track(s) to %s", len(tracks), filepath.Base(wc.URI().Path())))
+		u.status.SetText(i18n.TC("playlist.saved", map[string]string{"n": fmt.Sprintf("%d", len(tracks)), "file": filepath.Base(wc.URI().Path())}))
 	}, u.win)
 	save.SetFileName("playlist.m3u8")
 	save.SetFilter(storage.NewExtensionFileFilter([]string{".m3u8", ".m3u"}))
@@ -108,18 +110,18 @@ func (u *ui) openPlaylist() {
 		baseDir := filepath.Dir(rc.URI().Path())
 		paths := parsePlaylistM3U(rc, baseDir)
 		if len(paths) == 0 {
-			dialog.ShowInformation("Open playlist", "The playlist is empty or unreadable.", u.win)
+			dialog.ShowInformation(i18n.T("playlist.open_title"), i18n.T("playlist.empty_unreadable"), u.win)
 			return
 		}
 		tracks, missing := u.tracksForPaths(paths)
 		if len(tracks) == 0 {
-			dialog.ShowInformation("Open playlist", "None of the playlist's files could be found.", u.win)
+			dialog.ShowInformation(i18n.T("playlist.open_title"), i18n.T("playlist.none_found"), u.win)
 			return
 		}
 		u.player.PlayQueue(tracks, 0)
-		msg := fmt.Sprintf("Playing %d track(s) from %s", len(tracks), filepath.Base(rc.URI().Path()))
+		msg := i18n.TC("playlist.playing", map[string]string{"n": fmt.Sprintf("%d", len(tracks)), "file": filepath.Base(rc.URI().Path())})
 		if missing > 0 {
-			msg += fmt.Sprintf(" (%d file(s) not found, skipped)", missing)
+			msg += i18n.TC("playlist.playing_missing", map[string]string{"n": fmt.Sprintf("%d", missing)})
 		}
 		u.status.SetText(msg)
 	}, u.win)

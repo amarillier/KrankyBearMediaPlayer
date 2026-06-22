@@ -1,0 +1,219 @@
+{{app_name}} - je muziekbibliotheekbeheerder en -speler
+
+AAN DE SLAG:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Bibliotheek → Map toevoegen: kies een map met muziek; deze wordt in de catalogus
+  gescand. Voeg zoveel mappen / locaties toe als je wilt.
+• Bibliotheek → Mappen beheren: bekijk elke bewaakte map met het aantal nummers; voeg
+  een map toe, verplaats ze (richt op een verplaatste schijf), scan opnieuw, of
+  verwijder ze. Verwijderen haalt de nummers ervan uit de bibliotheek, maar verwijdert
+  nooit bestanden op de schijf.
+• Bibliotheek → Alles opnieuw scannen: scan bewaakte mappen opnieuw om nieuwe of
+  gewijzigde bestanden op te pikken.
+• Je bibliotheek is een kleine SQLite-database. Titel, artiest, album, genre, jaar,
+  nummer en ingesloten albumhoes worden uit elk bestand gelezen.
+
+MUZIEK AFSPELEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Dubbelklik op een nummer om vanaf daar door de rest van de lijst te spelen.
+• Transport (onderbalk): Vorige, Afspelen/Pauzeren, Stoppen, Volgende.
+• Menu Afspelen: Shuffle speelt de wachtrij in willekeurige volgorde; Herhalen → Uit /
+  Alles herhalen (de wachtrij in lus) / Eén herhalen (het huidige nummer in lus). Beide
+  worden onthouden. Overslaan met Volgende/Vorige gaat altijd door, zelfs met Eén
+  herhalen.
+• Afspelen → ReplayGain: indien aan, spelen nummers met een ReplayGain-tag op een
+  consistente luidheid (piekbegrensd zodat versterkte nummers niet clippen). Standaard
+  uit. "Albumversterking verkiezen" normaliseert op albumluidheid (waarbij de eigen
+  stille/luide balans van een album behouden blijft) als albumtags aanwezig zijn,
+  anders valt het terug op nummerversterking.
+  Om bestanden zelf te taggen, markeer ze en gebruik Bibliotheek → ReplayGain van
+  geselecteerde scannen… (of rechtsklik → ReplayGain scannen): de app meet de luidheid
+  (BS.1770 / ReplayGain 2.0) en schrijft ReplayGain-tags voor nummer + album in MP3/FLAC.
+• Afspelen → Equalizer…: een grafische 10-bands equalizer (31 Hz – 16 kHz, ±12 dB) die
+  de klank live vormgeeft. Vink Equalizer inschakelen aan, sleep de bandschuiven, of kies
+  een voorinstelling (Flat, Bass Boost, Vocal, Rock, …). Bewaar je eigen instellingen met
+  "Voorinstelling opslaan…" en verwijder ze met "Voorinstelling verwijderen". Herstellen
+  (Flat) zet de banden op nul; uitschakelen is transparant.
+• Afspelen → Overgang tussen nummers: Pauze (standaard), Naadloos (nummers sluiten
+  zonder stilte op elkaar aan), of Crossfade (het uitgaande nummer vervaagt terwijl het
+  volgende invloeit). Naadloos/Crossfade zijn experimenteel.
+• Afspeelwachtrij (Afspelen → Afspeelwachtrij tonen): zie wat er in afspeelvolgorde
+  klaarstaat, met het huidige nummer gemarkeerd met ▶. Rechtsklik op een nummer → Aan
+  wachtrij toevoegen (of Bibliotheek → Geselecteerde aan wachtrij toevoegen / Alles
+  getoonde aan wachtrij toevoegen) voegt toe zonder te onderbreken wat er speelt.
+  In het wachtrijvenster: speel het geselecteerde nummer af, verwijder het, verplaats
+  het Omhoog/Omlaag, of Alles wissen.
+• Houd de muis boven een werkbalk- of transportknop om een tooltip te zien die uitlegt
+  wat de knop doet.
+• De zoekbalk toont verstreken / totale tijd — sleep ze om binnen een nummer te springen.
+• Twee volumeregelaars staan rechtsonder:
+  - "App" past alleen het niveau van deze speler aan (onthouden tussen sessies).
+  - "Sys" stuurt het hoofduitvoervolume van je computer aan, met een dempknop ernaast.
+    Het blijft synchroon met het systeemniveau — inclusief wijzigingen die je maakt met
+    de volumetoetsen of de OS-mixer — en wijzigt het volume van de hele machine, niet
+    alleen deze app.
+• "Bal" stelt de linker/rechter stereobalans in (onthouden tussen sessies). Het heeft een
+  zachte centerklik, en de "C"-knop ernaast springt terug naar precies het midden.
+  Handig wanneer luidsprekers niet symmetrisch staan.
+• De geselecteerde-rij-indicator volgt het nummer dat nu speelt.
+
+WAARDERINGEN & AFSPEELREGISTRATIE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Waarderingen zijn handmatig: geef zelf een waardering van 1–5 sterren. Het aantal
+  afspeelbeurten wordt apart bijgehouden (eigen kolom) en wordt NIET omgezet in sterren.
+• Klik op de sterren in de kolom Waardering van een nummer om een waardering in te
+  stellen; klik nogmaals op dezelfde ster om ze te wissen (terug naar geen sterren). De
+  knoppen "Waarderen:" (onder) en het rechtsklikmenu doen hetzelfde. Alle vijf sterren
+  zijn aanklikbaar.
+• Weergave → Tel afspeelbeurt na: kies hoeveel van een nummer moet spelen voordat het
+  aantal afspeelbeurten stijgt (25 / 50 / 75 / 90% of Einde van nummer). Overslaan telt
+  nooit mee.
+• Tip: filter op Afgespeeld (kolomfilter) om bijvoorbeeld alles te vinden wat je 5 keer
+  hebt afgespeeld, en waardeer die nummers vervolgens naar wens.
+
+ZOEKEN & ORDENEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Zoekvak (boven): filtert op titel, artiest, album, genre of bestandsnaam terwijl je
+  typt.
+• Kolomfilters (Weergave → Kolomfilters tonen): een rij vakjes per kolom — typ in Titel,
+  Artiest, Album, Genre om op een deeltekst te matchen; Jaar en Afgespeeld accepteren een
+  patroon (bijv. Jaar 202[456] matcht 2024-2026; Afgespeeld 5 = precies vijf keer
+  afgespeeld, 0 = nooit afgespeeld). Ze worden gecombineerd met elkaar
+  en het zoek-/Tonen-filter. Wis ze met de knop ✕; de rij verbergen
+  wist ze ook.
+• Filter "Tonen" (boven): Alle, Zonder waardering, exacte sterren, of N-sterren-en-hoger.
+• Klik op een kolomkop om te sorteren; klik nogmaals om om te keren (de kolom Hoes sorteert
+  niet).
+• Menu Weergave: toon optioneel de kolommen Lengte, Formaat, Bitrate, Genre, Nummer # en
+  Bestandsnaam (Lengte staat standaard aan, de rest uit; keuzes worden onthouden).
+  Lengte en Bitrate worden kort na het opstarten/scannen ingevuld terwijl de app de
+  afspeeltijd van elk nummer op de achtergrond leest, dus ze kunnen even leeg zijn.
+• Spring naar het spelende nummer: klik op de naam ervan in de onderbalk, of gebruik de
+  werkbalkknop "Speelt nu" (naast Opnieuw scannen). Handig na scrollen, zoeken of
+  wegsorteren. (Het lokaliseert alleen het nummer — het start of stopt het afspelen niet.)
+• Pakt op waar je gebleven was: de app onthoudt je sorteervolgorde en selecteert en
+  scrollt bij het opnieuw starten naar het nummer dat je het laatst speelde (het speelt
+  niet automatisch af).
+• Nummers naar een andere plek kopiëren: Weergave → Selectievakjes voegt een kolom ✓ toe;
+  vink rijen aan (klik op de kop ✓ om alles getoonde om te schakelen), of Bibliotheek →
+  Alles getoonde selecteren. Vervolgens laat Bibliotheek → Geselecteerde kopiëren naar…
+  je kiezen tussen Plat of Indelen in Artiest/Album-mappen, en daarna een bestemming -
+  bijv. filter op 5 sterren, markeer alles, kopieer naar een USB-stick. Een
+  voortgangsvenster toont elk bestand en laat je Annuleren.
+  (Naambotsingen krijgen een " (2)"-achtervoegsel; er wordt niets overschreven.)
+• Rechtsklik op een nummer voor Afspelen, waardering, Albumhoes toevoegen (lokaal
+  afbeeldingsbestand of URL, opgeslagen in de bibliotheek), Tonen in je bestandsbeheer, en
+  Volledig pad tonen (met een knop Kopiëren).
+• Rechtsklik Bestand hernoemen… / Tags bewerken… / Waardering instellen werken normaal
+  alleen op dat ene nummer. Maar als je rechtsklikt op een nummer dat gemarkeerd is (✓),
+  werken ze in plaats daarvan op de hele gemarkeerde set — het menulabel geeft aan welke
+  (bijv. "Tags van 5 gemarkeerde bewerken…", "Waardering instellen (5 gemarkeerd)").
+• Bestand hernoemen… (rechtsklik) hernoemt het bestand op de schijf op basis van de tags
+  met behulp van een patroon van tokens — %track% %title% %artist% %album%
+  %albumartist% %year% %genre% — bijv. "%track% %title% - %artist%". Een live voorbeeld
+  toont de nieuwe naam voordat je toepast; de extensie blijft altijd behouden en de
+  catalogus wordt ter plaatse bijgewerkt (geen herscan). %track% wordt met nullen
+  aangevuld tot twee cijfers.
+• Tags bewerken… (rechtsklik) opent een editor voor titel, artiest, album, albumartiest,
+  jaar, nummer #, genre, opmerking en de ingesloten hoesafbeelding. Wijzigingen worden
+  teruggeschreven naar het bestand voor MP3 en FLAC; OGG en WAV openen voorlopig
+  alleen-lezen. Tags uit bestandsnaam… (in die editor) ontleedt de naam van het bestand in
+  de velden met hetzelfde tokenpatroon, zodat je het kunt nakijken vóór het opslaan — het
+  schrijft nooit op eigen houtje. Als je het nummer bewerkt dat momenteel speelt, stopt
+  het afspelen eerst zodat het bestand kan worden opgeslagen. De catalogus (en elke
+  miniatuur) wordt meteen bijgewerkt.
+• Tags van meerdere tegelijk bewerken: markeer nummers (Selectievakjes / Alles getoonde
+  selecteren), en dan Bibliotheek → Tags van geselecteerde bewerken… Je kunt vier soorten
+  wijziging in één keer combineren: (1) Uit bestandsnaam — stel titel/artiest/nummer
+  #/enz. in op elk nummer door de naam te ontleden met een tokenpatroon (de bulkvorm van
+  Tags uit bestandsnaam; bestanden die niet matchen blijven ongemoeid); (2) Velden
+  instellen — vink Artiest, Album, Albumartiest, Genre, Jaar of Opmerking aan om ze één
+  waarde te geven over de hele selectie (deze overschrijven het patroon); (3) Zoeken en
+  vervangen — wijzig tekst binnen één veld over de selectie (bijv. "feat."→"ft.",
+  optioneel met hoofdletters negeren); (4) Hoesafbeelding — stel één afbeelding in als
+  hoes voor alle, of verwijder de hoes van alle. Een voortgangsvenster toont elk bestand
+  met een knop Annuleren; OGG/WAV worden overgeslagen.
+• Meerdere tegelijk hernoemen: markeer nummers, en dan Bibliotheek → Geselecteerde
+  hernoemen volgens patroon… Een voorbeeldlijst toont elke oude → nieuwe naam; toepassen
+  hernoemt ze allemaal (naambotsingen krijgen een " (2)"-achtervoegsel, er wordt niets
+  overschreven) met een knop Annuleren.
+• Bibliotheekrapport (Bibliotheek → Bibliotheekrapport…): vat je collectie samen
+  gegroepeerd op Artiest, Album of Genre; hiërarchisch (Artiest → Album, Album → Artiest,
+  Genre → Artiest); of als een platte nummerlijst. Vink "Nummers weergeven" aan om elke
+  groepering uit te klappen en de nummers erin te tonen. Sorteer op Naam of Jaar met een
+  oplopend/aflopend-schakelaar, schakel tussen de hele bibliotheek en de huidige
+  gefilterde weergave, en CSV exporteren… om het rapport op te slaan.
+
+AFSPEELLIJSTEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Statische afspeellijsten (menu Afspeellijsten): Afspeellijst opslaan… schrijft de
+  nummers die je momenteel bekijkt naar een draagbaar .m3u8-bestand, met paden relatief
+  ten opzichte van het bestand zodat een afspeellijst en de muziek ervan samen reizen
+  (bijv. op een USB-stick). Afspeellijst openen… laadt er een en speelt ze af; bestanden
+  die nog in je catalogus staan, behouden hun sterren/afspeelbeurten.
+• Slimme afspeellijsten (Afspeellijsten → Nieuwe slimme afspeellijst…): sla
+  filtercriteria op — een waardering, en optioneel Genre / Artiest / Album (gedeeltelijk,
+  hoofdletterongevoelig — bijv. "Wickham" matcht "Phil Wickham"), plus vrije-tekst
+  Zoeken — onder een naam. Door ze te kiezen in het menu Afspeellijsten worden de criteria
+  live opnieuw toegepast (de statusbalk toont ♫ <naam>). Ze worden automatisch bijgewerkt
+  als je bibliotheek verandert. Slimme afspeellijsten beheren… laat je de criteria van een
+  opgeslagen afspeellijst bewerken (de potloodknop, waarmee je ze ook kunt hernoemen) of
+  diegene verwijderen die je niet meer wilt.
+
+VENSTERS & SYSTEEMVAK:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Een systeemvakpictogram + menu weerspiegelt de bediening: Alle vensters tonen/verbergen,
+  Afspelen/Pauzeren, Vorige, Volgende, Stoppen, Afsluiten.
+• Alle vensters verbergen bergt de app op en pauzeert het afspelen; Alle vensters tonen
+  brengt ze terug (druk op Afspelen om te hervatten).
+• Het hoofdvenster onthoudt zijn grootte tussen sessies.
+
+DRAAGBARE BIBLIOTHEEK (verplaatsen tussen machines of schijven):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Nummerlocaties worden relatief ten opzichte van elke bewaakte map opgeslagen, dus als
+  een draagbare schijf op de ene pc als D:\ wordt gekoppeld en op een andere als E:\,
+  gebruik dan gewoon Bibliotheek → Map verplaatsen om de map opnieuw te richten — elk
+  nummer eronder volgt, met behoud van afspeelbeurten en waarderingen.
+• De databaselocatie kan worden ingesteld met de -db-opdrachtregelvlag, de
+  KBMP_DB-omgevingsvariabele, of Weergave → Voorkeuren → Databaselocatie (start opnieuw op
+  om door te voeren); standaard staat ze naast de app (handig op een USB-stick).
+
+VOORKEUREN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Weergave → Voorkeuren… (Alt+R) brengt de algemene instellingen op één plek samen:
+  thema, taal, drempel "tel een afspeelbeurt na", afspeelvolume (onthouden tussen
+  sessies), of de equalizer bij het opstarten wordt geopend, de optionele kolommen, en de
+  databaselocatie. Dezelfde schakelaars blijven in het menu Weergave voor snelle
+  eenmalige wijzigingen.
+
+SLIMME FUNCTIES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ Ingesloten albumhoezen getoond als miniaturen in de tabel en het speelt-nu-gebied.
+✨ Slimme afspeellijsten die live opnieuw geëvalueerd worden als je bibliotheek verandert.
+✨ Thema-ondersteuning: Licht, Donker of Systeemthema (menu Weergave).
+
+SNELTOETSEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Alt+P — Afspelen / Pauzeren
+• Alt+→ — Volgende nummer   • Alt+← — Vorige nummer
+• Alt+H — Alle vensters verbergen (en pauzeren). Geen sneltoets om weer te tonen, met
+  opzet — gebruik het systeemvak of Weergave → Alle vensters tonen.
+• Alt+R — Voorkeuren
+• Cmd/Ctrl+Q — Afsluiten   • Cmd/Ctrl+W — Venster sluiten   • Cmd/Ctrl+M — Minimaliseren
+
+BEKENDE BEPERKINGEN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Ondersteunde audioformaten: MP3, FLAC, WAV, OGG (M4A/AAC/ALAC nog niet ondersteund).
+⚠️  Het afspelen van muziekvideo's is gepland, maar nog niet beschikbaar.
+
+MEER INFORMATIE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Voor documentatie, foutmeldingen of functieverzoeken:
+📦 GitHub: https://github.com/amarillier/KrankyBearMediaPlayer
+📄 Licentie: https://github.com/amarillier/KrankyBearMediaPlayer/blob/allanm/LICENSE
+📝 Release Notes: Bekijk "Help → Controleren op updates"
+
+GRATIS SOFTWARE - Overal, altijd, voor elk doel te gebruiken!
+Geen registratie, geen tracking. Het enige netwerkgebruik is een discrete
+updatecontrole - eenmaal per dag bij het opstarten, plus de handmatige "Controleren op
+updates".

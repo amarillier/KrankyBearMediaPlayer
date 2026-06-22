@@ -1,0 +1,200 @@
+{{app_name}} - o seu gestor e leitor de biblioteca de música
+
+PRIMEIROS PASSOS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Biblioteca → Adicionar pasta: escolha uma pasta de música; é analisada para o catálogo.
+  Adicione tantas pastas / localizações quantas quiser.
+• Biblioteca → Gerir pastas: veja todas as pastas vigiadas com a sua contagem de faixas; adicione,
+  realoje (reaponte para uma unidade movida), volte a analisar ou remova uma. Remover tira as suas
+  faixas da biblioteca, mas nunca elimina ficheiros no disco.
+• Biblioteca → Voltar a analisar tudo: volte a analisar as pastas vigiadas para detetar ficheiros novos ou alterados.
+• A sua biblioteca é uma pequena base de dados SQLite. O título, artista, álbum, género, ano,
+  número da faixa e a capa do álbum incorporada são lidos de cada ficheiro.
+
+REPRODUZIR MÚSICA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Faça duplo clique numa faixa para começar a reproduzir a partir daí pelo resto da lista.
+• Transporte (barra inferior): Anterior, Reproduzir/Pausar, Parar, Seguinte.
+• Menu Reprodução: Aleatório reproduz a fila por ordem aleatória; Repetir → Desligado / Tudo
+  (repetir a fila) / Uma (repetir a faixa atual). Ambos são memorizados. Saltar
+  com Seguinte/Anterior avança sempre, mesmo com Repetir uma.
+• Reprodução → ReplayGain: quando ativado, as faixas etiquetadas com ReplayGain tocam a uma
+  intensidade sonora consistente (com limite de pico para que as faixas amplificadas não distorçam). Desligado por predefinição.
+  "Preferir ganho de álbum" normaliza pela intensidade sonora do álbum (preservando o equilíbrio
+  próprio de calmo/alto de um álbum) quando há etiquetas de álbum, recorrendo, caso contrário, ao ganho de faixa.
+  Para etiquetar ficheiros você mesmo, marque-os e use Biblioteca → Analisar ReplayGain das selecionadas…
+  (ou clique com o botão direito → Analisar ReplayGain): a aplicação mede a intensidade sonora (BS.1770 /
+  ReplayGain 2.0) e escreve as etiquetas ReplayGain de faixa + álbum em MP3/FLAC.
+• Reprodução → Equalizador…: um equalizador gráfico de 10 bandas (31 Hz – 16 kHz, ±12 dB) que
+  molda o tom em tempo real. Marque Ativar, arraste os cursores das bandas ou escolha uma predefinição (Flat, Bass
+  Boost, Vocal, Rock, …). Guarde as suas próprias definições com "Guardar predefinição…" e remova-as
+  com "Eliminar predefinição". Repor (Flat) zera as bandas; desativar é transparente.
+• Reprodução → Transição entre faixas: Intervalo (predefinição), Sem intervalo (as faixas encostam-se sem
+  silêncio) ou Mistura cruzada (a faixa que sai esvanece-se à medida que a seguinte entra).
+  Sem intervalo/Mistura cruzada são experimentais.
+• Fila de reprodução (Reprodução → Mostrar fila de reprodução): veja o que está alinhado por ordem de reprodução, com
+  a faixa atual marcada com ▶. Clique com o botão direito numa faixa → Adicionar à fila (ou Biblioteca → Adicionar
+  selecionadas / Adicionar tudo o que é mostrado à fila) acrescenta sem interromper o que está a tocar.
+  Na janela da fila: Reproduza a faixa selecionada, Remova-a, mova-a para Cima/Baixo ou
+  Limpe tudo.
+• Passe o rato sobre um botão da barra de ferramentas ou de transporte para ver uma dica que explica o que faz.
+• A barra de progresso mostra o tempo decorrido / total — arraste-a para saltar dentro de uma faixa.
+• Dois controlos de volume ficam no canto inferior direito:
+  - "App" ajusta apenas o nível deste leitor (memorizado entre arranques).
+  - "Sis" controla o volume principal de saída do seu computador, com um botão de silenciar ao
+    lado. Mantém-se sincronizado com o nível do sistema — incluindo alterações que faça com
+    as teclas de volume ou o mixer do SO — e move o volume de toda a máquina, não
+    apenas o desta aplicação.
+• "Bal" define o balanço estéreo esquerda/direita (memorizado entre arranques). Tem um
+  ponto de encaixe suave ao centro, e o botão "C" ao lado faz voltar ao centro exato.
+  Útil quando as colunas não estão colocadas simetricamente.
+• O indicador da linha selecionada acompanha a faixa que está agora em reprodução.
+
+CLASSIFICAÇÕES E REGISTO DE REPRODUÇÕES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• As classificações são manuais: atribua você mesmo uma classificação de 1 a 5 estrelas. A contagem de reproduções é registada
+  separadamente (na sua própria coluna) e NÃO é transformada em estrelas.
+• Clique nas estrelas na coluna Classificação de uma faixa para definir uma classificação; clique na mesma estrela
+  novamente para a limpar (de volta a sem estrelas). Os botões "Classificar:" (em baixo) e o
+  menu do botão direito fazem o mesmo. Todas as cinco estrelas são clicáveis.
+• Ver → Contar reprodução após: escolha quanto de uma faixa tem de ser reproduzido antes de a sua contagem
+  de reproduções aumentar (25 / 50 / 75 / 90% ou Fim da faixa). Saltar nunca conta.
+• Dica: filtre por Reproduções (filtro de coluna) para encontrar, por exemplo, tudo o que reproduziu 5
+  vezes e, depois, classifique essas faixas como quiser.
+
+LOCALIZAR E ORGANIZAR:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Caixa de pesquisa (topo): filtra por título, artista, álbum, género ou nome de ficheiro à medida que escreve.
+• Filtros de coluna (Ver → Mostrar filtros de coluna): uma linha de caixas por coluna — escreva em
+  Título, Artista, Álbum, Género para corresponder a uma subcadeia; Ano e Reproduções aceitam um padrão
+  (ex.: Ano 202[456] corresponde a 2024-2026; Reproduções 5 = reproduzida exatamente cinco vezes, 0 =
+  nunca reproduzida). Combinam-se entre
+  si e com o filtro de pesquisa/Mostrar. Limpe-os com o botão ✕; ocultar a linha
+  também os limpa.
+• Filtro "Mostrar" (topo): Todas, Sem classificação, estrelas exatas ou N-estrelas-ou-mais.
+• Clique no cabeçalho de uma coluna para ordenar; clique novamente para inverter (a coluna Capa não ordena).
+• Menu Ver: opcionalmente mostre as colunas Duração, Formato, Taxa de bits, Género, Nº da faixa e
+  Nome de ficheiro (Duração está ativada por predefinição, as restantes desativadas; as escolhas são memorizadas).
+  Duração e Taxa de bits são preenchidas pouco depois do arranque/análise, à medida que a aplicação lê o tempo de
+  reprodução de cada faixa em segundo plano, pelo que podem ficar vazias por um momento.
+• Saltar para a faixa em reprodução: clique no seu nome na barra inferior, ou use o botão "A reproduzir"
+  da barra de ferramentas (ao lado de Voltar a analisar). Útil depois de deslocar, pesquisar ou
+  ordenar para longe. (Apenas localiza a faixa — não inicia nem para a reprodução.)
+• Retoma de onde parou: a aplicação memoriza a sua ordenação e, ao reabrir,
+  seleciona e desloca-se até à faixa que estava a reproduzir por último (não reproduz automaticamente).
+• Copiar faixas para outro local: Ver → Caixas de seleção adiciona uma coluna ✓; marque
+  linhas (clique no cabeçalho ✓ para alternar todas as mostradas) ou Biblioteca → Selecionar tudo o que é mostrado.
+  Depois, Biblioteca → Copiar selecionadas para… permite-lhe escolher Plana ou Organizar em
+  pastas Artista/Álbum e, em seguida, um destino - ex.: filtre por 5 estrelas, marque todas,
+  copie para uma pen USB. Uma janela de progresso mostra cada ficheiro e permite-lhe Cancelar.
+  (Os conflitos de nome recebem um sufixo " (2)"; nada é substituído.)
+• Clique com o botão direito numa faixa para Reproduzir, classificar, Adicionar capa do álbum (ficheiro de imagem local ou URL,
+  guardada na biblioteca), Mostrar no seu gestor de ficheiros e Mostrar caminho completo (com um
+  botão Copiar).
+• Renomear ficheiro… / Editar etiquetas… / Definir classificação (botão direito) atuam normalmente apenas nessa
+  faixa. Mas se clicar com o botão direito numa faixa marcada (✓), atuam sobre todo o
+  conjunto marcado — o rótulo do menu indica qual (ex.: "Editar etiquetas de 5 marcadas…",
+  "Definir classificação (5 marcadas)").
+• Renomear ficheiro… (botão direito) renomeia o ficheiro no disco a partir das suas etiquetas usando um
+  padrão de tokens — %track% %title% %artist% %album% %albumartist% %year%
+  %genre% — ex.: "%track% %title% - %artist%". Uma pré-visualização em tempo real mostra o novo nome
+  antes de aplicar; a extensão é sempre mantida e o catálogo é atualizado no local
+  (sem voltar a analisar). %track% é preenchido com zeros até dois dígitos.
+• Editar etiquetas… (botão direito) abre um editor para título, artista, álbum, artista do
+  álbum, ano, nº da faixa, género, comentário e a imagem de capa incorporada. As alterações
+  são escritas de volta no ficheiro para MP3 e FLAC; OGG e WAV abrem só de leitura por
+  agora. Etiquetas a partir do nome de ficheiro… (nesse editor) analisa o nome do ficheiro para os campos
+  usando o mesmo padrão de tokens, para que reveja antes de guardar — nunca escreve
+  por si só. Se editar a faixa que está a tocar, a reprodução para primeiro
+  para que o ficheiro possa ser guardado. O catálogo (e qualquer miniatura) é atualizado de imediato.
+• Editar etiquetas de várias de uma vez: marque faixas (Caixas de seleção / Selecionar tudo o que é
+  mostrado), depois Biblioteca → Editar etiquetas das selecionadas… Pode combinar quatro tipos de
+  alteração numa só passagem: (1) A partir do nome de ficheiro — defina título/artista/nº da faixa/etc. em cada
+  faixa analisando o seu nome com um padrão de tokens (a forma em lote de Etiquetas a partir do nome
+  de ficheiro; os ficheiros que não correspondem ficam intactos); (2) Definir campos — marque Artista,
+  Álbum, Artista do álbum, Género, Ano ou Comentário para lhes dar um único valor em toda
+  a seleção (estes sobrepõem-se ao padrão); (3) Localizar e substituir — altere texto
+  dentro de um campo em toda a seleção (ex.: "feat."→"ft.", opcionalmente ignorando
+  maiúsculas/minúsculas); (4) Capa do álbum — defina uma imagem como capa de todas, ou remova a capa
+  de todas. Uma janela de progresso mostra cada ficheiro com um botão Cancelar; OGG/WAV são
+  ignorados.
+• Renomear várias de uma vez: marque faixas, depois Biblioteca → Renomear selecionadas a partir de
+  padrão… Uma lista de pré-visualização mostra cada nome antigo → novo; aplicar renomeia todas (os conflitos
+  de nome recebem um sufixo " (2)", nada é substituído) com um botão Cancelar.
+• Relatório da biblioteca (Biblioteca → Relatório da biblioteca…): resuma a sua coleção agrupada por
+  Artista, Álbum ou Género; hierarquicamente (Artista → Álbum, Álbum → Artista, Género →
+  Artista); ou como uma listagem plana de faixas. Marque "Listar faixas" para expandir cada agrupamento
+  e mostrar as faixas dentro dele. Ordene por Nome ou Ano com um alternador crescente/decrescente,
+  alterne entre toda a biblioteca e a vista filtrada atual, e
+  Exporte CSV… para guardar o relatório.
+
+LISTAS DE REPRODUÇÃO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Listas de reprodução estáticas (menu Listas de reprodução): Guardar lista de reprodução… escreve as faixas que está
+  atualmente a ver num ficheiro .m3u8 portátil, com caminhos relativos ao ficheiro para que uma
+  lista de reprodução e a sua música viajem juntas (ex.: numa pen USB). Abrir lista de reprodução…
+  carrega uma e reproduz-na; os ficheiros ainda no seu catálogo mantêm as suas estrelas/contagens de reproduções.
+• Listas de reprodução inteligentes (Listas de reprodução → Nova lista de reprodução inteligente…): guarde critérios de filtro — uma
+  classificação e, opcionalmente, Género / Artista / Álbum (parcial, sem distinção de maiúsculas/minúsculas — ex.:
+  "Wickham" corresponde a "Phil Wickham"), além de uma Pesquisa de texto livre — sob um nome. Selecioná-la
+  no menu Listas de reprodução reaplica os critérios em tempo real (a barra de estado mostra
+  ♫ <nome>). Atualizam-se automaticamente à medida que a sua biblioteca muda. Gerir listas de reprodução
+  inteligentes… permite-lhe editar os critérios de uma lista de reprodução guardada (o botão de lápis, que
+  também a pode renomear) ou eliminar as que já não quer.
+
+JANELAS E BANDEJA DO SISTEMA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Um ícone + menu na bandeja do sistema espelha os controlos: Mostrar/Ocultar todas as janelas,
+  Reproduzir/Pausar, Anterior, Seguinte, Parar, Sair.
+• Ocultar todas as janelas recolhe a aplicação e pausa a reprodução; Mostrar todas trá-la
+  de volta (prima Reproduzir para retomar).
+• A janela principal memoriza o seu tamanho entre arranques.
+
+BIBLIOTECA PORTÁTIL (mover entre máquinas ou unidades):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• As localizações das faixas são guardadas de forma relativa a cada pasta vigiada, pelo que, se uma unidade
+  portátil for montada como D:\ num PC e E:\ noutro, basta usar
+  Biblioteca → Realojar pasta para reapontar a pasta — todas as faixas dentro dela acompanham,
+  mantendo as suas contagens de reproduções e classificações.
+• A localização da base de dados pode ser definida com a opção de linha de comandos -db, a variável de
+  ambiente KBMP_DB, ou Ver → Preferências → Localização da base de dados (reinicie para ter
+  efeito); por predefinição fica junto da aplicação (útil numa pen USB).
+
+PREFERÊNCIAS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Ver → Preferências… (Alt+R) reúne as definições comuns num só lugar:
+  tema, idioma, limiar de "contar reprodução após", volume de reprodução (memorizado
+  entre arranques), se abrir o equalizador no arranque, as colunas opcionais,
+  e a localização da base de dados. Os mesmos alternadores permanecem no menu Ver para alterações
+  rápidas e pontuais.
+
+FUNCIONALIDADES INTELIGENTES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ Capas de álbum incorporadas mostradas como miniaturas na tabela e na área de reprodução atual.
+✨ Listas de reprodução inteligentes que se reavaliam em tempo real à medida que a sua biblioteca muda.
+✨ Suporte de temas: tema Claro, Escuro ou do Sistema (menu Ver).
+
+ATALHOS DE TECLADO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Alt+P — Reproduzir / Pausar
+• Alt+→ — Faixa seguinte   • Alt+← — Faixa anterior
+• Alt+H — Ocultar todas as janelas (e pausar). Não há atalho para voltar a mostrar, por opção —
+  use a bandeja do sistema ou Ver → Mostrar todas as janelas.
+• Alt+R — Preferências
+• Cmd/Ctrl+Q — Sair   • Cmd/Ctrl+W — Fechar janela   • Cmd/Ctrl+M — Minimizar
+
+LIMITAÇÕES CONHECIDAS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Formatos de áudio suportados: MP3, FLAC, WAV, OGG (M4A/AAC/ALAC ainda não suportados).
+⚠️  A reprodução de videoclipes está planeada, mas ainda não está disponível.
+
+MAIS INFORMAÇÕES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Para documentação, relatórios de erros ou pedidos de funcionalidades:
+📦 GitHub: https://github.com/amarillier/KrankyBearMediaPlayer
+📄 Licença: https://github.com/amarillier/KrankyBearMediaPlayer/blob/allanm/LICENSE
+📝 Notas de lançamento: consulte "Ajuda → Procurar atualizações"
+
+SOFTWARE LIVRE - Use em qualquer lugar, a qualquer hora, para qualquer fim!
+Sem registo, sem rastreio. O único uso de rede é uma verificação discreta de atualizações -
+uma vez por dia no arranque, mais a verificação manual "Procurar atualizações".

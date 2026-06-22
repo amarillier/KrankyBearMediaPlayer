@@ -14,6 +14,8 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	"mediaplayer/internal/i18n"
 )
 
 // clearSmartCriteria drops any active smart-playlist constraints. Called when the
@@ -47,20 +49,20 @@ func (u *ui) showNewSmartPlaylist() { u.smartPlaylistForm(nil, nil) }
 // constraints.
 func (u *ui) smartPlaylistForm(edit *SmartPlaylist, onSaved func()) {
 	name := widget.NewEntry()
-	name.SetPlaceHolder("Playlist name")
+	name.SetPlaceHolder(i18n.T("smart.name_ph"))
 	ratingSel := widget.NewSelect(filterLabels(), nil)
 	genre := widget.NewEntry()
-	genre.SetPlaceHolder("any (partial ok)")
+	genre.SetPlaceHolder(i18n.T("smart.genre_ph"))
 	artist := widget.NewEntry()
-	artist.SetPlaceHolder("any (partial, e.g. Wickham)")
+	artist.SetPlaceHolder(i18n.T("smart.artist_ph"))
 	album := widget.NewEntry()
-	album.SetPlaceHolder("any (partial ok)")
+	album.SetPlaceHolder(i18n.T("smart.album_ph"))
 	search := widget.NewEntry()
-	search.SetPlaceHolder("any text in title/artist/album/genre/filename")
+	search.SetPlaceHolder(i18n.T("smart.search_ph"))
 
-	title := "New smart playlist"
+	title := i18n.T("smart.new_title")
 	if edit != nil {
-		title = "Edit smart playlist"
+		title = i18n.T("smart.edit_title")
 		name.SetText(edit.Name)
 		ratingSel.SetSelected(filterLabelFor(edit.Filter))
 		genre.SetText(edit.Genre)
@@ -72,26 +74,24 @@ func (u *ui) smartPlaylistForm(edit *SmartPlaylist, onSaved func()) {
 	}
 
 	form := widget.NewForm(
-		widget.NewFormItem("Name", name),
-		widget.NewFormItem("Rating", ratingSel),
-		widget.NewFormItem("Genre", genre),
-		widget.NewFormItem("Artist", artist),
-		widget.NewFormItem("Album", album),
-		widget.NewFormItem("Search", search),
+		widget.NewFormItem(i18n.T("smart.name_label"), name),
+		widget.NewFormItem(i18n.T("smart.rating_label"), ratingSel),
+		widget.NewFormItem(i18n.T("smart.genre_label"), genre),
+		widget.NewFormItem(i18n.T("smart.artist_label"), artist),
+		widget.NewFormItem(i18n.T("smart.album_label"), album),
+		widget.NewFormItem(i18n.T("smart.search_label"), search),
 	)
-	hint := widget.NewLabel("Leave a field blank for \"any\". Genre/Artist/Album match " +
-		"partially and ignore case (e.g. \"Wickham\" matches \"Phil Wickham\"). Criteria " +
-		"combine with AND and re-evaluate every time the playlist is applied.")
+	hint := widget.NewLabel(i18n.T("smart.hint"))
 	hint.Wrapping = fyne.TextWrapWord
 	content := container.NewVBox(form, hint)
 
-	d := dialog.NewCustomConfirm(title, "Save", "Cancel", content, func(ok bool) {
+	d := dialog.NewCustomConfirm(title, i18n.T("common.save"), i18n.T("common.cancel"), content, func(ok bool) {
 		if !ok {
 			return
 		}
 		nm := strings.TrimSpace(name.Text)
 		if nm == "" {
-			dialog.ShowInformation(title, "Please enter a name.", u.win)
+			dialog.ShowInformation(title, i18n.T("smart.enter_name"), u.win)
 			return
 		}
 		sp := SmartPlaylist{
@@ -135,7 +135,7 @@ func (u *ui) manageSmartPlaylists() {
 		return
 	}
 	if len(lists) == 0 {
-		dialog.ShowInformation("Smart playlists", "You haven't saved any smart playlists yet.", u.win)
+		dialog.ShowInformation(i18n.T("smart.manage_title"), i18n.T("smart.none_saved"), u.win)
 		return
 	}
 
@@ -150,7 +150,7 @@ func (u *ui) manageSmartPlaylists() {
 		}
 		box.RemoveAll()
 		if len(ls) == 0 {
-			box.Add(widget.NewLabel("No smart playlists."))
+			box.Add(widget.NewLabel(i18n.T("smart.none")))
 		}
 		for _, s := range ls {
 			s := s // capture
@@ -177,7 +177,7 @@ func (u *ui) manageSmartPlaylists() {
 	}
 	rebuild()
 
-	dlg = dialog.NewCustom("Smart playlists", "Close", container.NewVScroll(box), u.win)
+	dlg = dialog.NewCustom(i18n.T("smart.manage_title"), i18n.T("common.close"), container.NewVScroll(box), u.win)
 	dlg.Resize(fyne.NewSize(480, 360))
 	dlg.Show()
 }
@@ -189,19 +189,19 @@ func smartPlaylistSummary(s SmartPlaylist) string {
 		parts = append(parts, lbl)
 	}
 	if s.Genre != "" {
-		parts = append(parts, "genre~"+s.Genre)
+		parts = append(parts, i18n.T("smart.summary_genre")+"~"+s.Genre)
 	}
 	if s.Artist != "" {
-		parts = append(parts, "artist~"+s.Artist)
+		parts = append(parts, i18n.T("smart.summary_artist")+"~"+s.Artist)
 	}
 	if s.Album != "" {
-		parts = append(parts, "album~"+s.Album)
+		parts = append(parts, i18n.T("smart.summary_album")+"~"+s.Album)
 	}
 	if s.Search != "" {
-		parts = append(parts, "search~"+s.Search)
+		parts = append(parts, i18n.T("smart.summary_search")+"~"+s.Search)
 	}
 	if len(parts) == 0 {
-		return "all tracks"
+		return i18n.T("smart.summary_all")
 	}
 	return strings.Join(parts, ", ")
 }

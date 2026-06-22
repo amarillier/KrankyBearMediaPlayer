@@ -13,8 +13,8 @@
 // (DB.RelocateFolder), and every track under it follows automatically. This is
 // the fix for AIMP's habit of pinning absolute paths at discovery time.
 //
-// Effective rating = manual rating if set, otherwise an "auto" rating derived
-// from the play count (capped at 5). See rating.go.
+// Effective rating = the manual 1-5 star rating if set, otherwise 0. Play count
+// is tracked separately and is NOT turned into stars. See rating.go.
 package main
 
 import (
@@ -373,7 +373,7 @@ func (d *DB) Thumb(trackID int64) []byte {
 }
 
 // IncrementPlayCount bumps a track's play count by one (called when a track
-// finishes playing). Auto rating reflects the new count immediately.
+// finishes playing). Play count is tracked on its own; it does not affect stars.
 func (d *DB) IncrementPlayCount(trackID int64) error {
 	_, err := d.sql.Exec(`UPDATE tracks SET play_count=play_count+1 WHERE id=?`, trackID)
 	return err

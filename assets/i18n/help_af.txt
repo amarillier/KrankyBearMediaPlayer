@@ -1,0 +1,188 @@
+{{app_name}} - jou musiekbiblioteekbestuurder en -speler
+
+OM TE BEGIN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Biblioteek → Voeg gids by: kies 'n gids met musiek; dit word in die katalogus geskandeer.
+  Voeg soveel gidse / liggings by as wat jy wil.
+• Biblioteek → Bestuur gidse: sien elke dopgehoue gids met sy snittelling; voeg by,
+  verskuif (herwys na 'n verskuifde skyf), herskandeer, of verwyder een. Verwydering haal sy
+  snitte uit die biblioteek maar verwyder nooit lêers op skyf nie.
+• Biblioteek → Herskandeer alles: herskandeer dopgehoue gidse om nuwe of veranderde lêers op te tel.
+• Jou biblioteek is 'n klein SQLite-databasis. Titel, kunstenaar, album, genre, jaar,
+  snitnommer en ingebedde albumkuns word uit elke lêer gelees.
+
+MUSIEK SPEEL:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Dubbelklik enige snit om van daar af deur die res van die lys te speel.
+• Vervoerbalk (onderste balk): Vorige, Speel/Wag, Stop, Volgende.
+• Terugspeel-kieslys: Skommel speel die tou in 'n lukrake volgorde; Herhaal → Af / Herhaal alles
+  (herhaal die tou) / Herhaal een (herhaal die huidige snit). Albei word onthou. Om met
+  Volgende/Vorige oor te slaan beweeg altyd aan, selfs met Herhaal een.
+• Terugspeel → ReplayGain: wanneer aan, speel snitte wat met ReplayGain gemerk is teen 'n
+  konstante luidheid (piekbeperk sodat versterkte snitte nie knip nie). Af by verstek.
+  "ReplayGain: verkies albumversterking" normaliseer volgens albumluidheid (om 'n album se eie
+  sag/luid-balans te behou) wanneer albumetikette teenwoordig is, anders val dit terug op
+  snitversterking. Om lêers self te merk, merk hulle en gebruik Biblioteek → Skandeer ReplayGain
+  van gemerktes… (of regskliek → Skandeer ReplayGain): die app meet luidheid (BS.1770 /
+  ReplayGain 2.0) en skryf snit- + album-ReplayGain-etikette in MP3/FLAC.
+• Terugspeel → Effenaar…: 'n 10-band grafiese effenaar (31 Hz – 16 kHz, ±12 dB) wat toon
+  lewendig vorm. Merk Aktiveer, sleep die bandskuiwers, of kies 'n vooraf-instelling (Flat, Bass
+  Boost, Vocal, Rock, …). Stoor jou eie instellings met "Stoor vooraf-instelling…" en verwyder
+  hulle met "Verwyder vooraf-instelling". Herstel (Flat) stel die bande op nul; deaktivering is deursigtig.
+• Terugspeel → Oorgang tussen snitte: Gaping (verstek), Sonder gaping (snitte sluit aan sonder
+  stilte), of Oorvloei (die uitgaande snit verdwyn terwyl die volgende infaseer).
+  Sonder gaping/Oorvloei is eksperimenteel.
+• Speeltou (Terugspeel → Wys speeltou): sien wat in speelvolgorde wag, met die huidige snit
+  gemerk ▶. Regskliek 'n snit → Voeg by tou (of Biblioteek → Voeg gemerktes / Voeg almal wat wys
+  by tou) voeg by sonder om te onderbreek wat speel. In die touvenster: Speel die gekose snit,
+  Verwyder dit, skuif dit Op/Af, of Maak alles skoon.
+• Beweeg oor 'n nutsbalk- of vervoerknoppie om 'n wenk te sien wat verduidelik wat dit doen.
+• Die posisiebalk wys verstreke / totale tyd — sleep dit om binne 'n snit te spring.
+• Twee volumekontroles sit regs onder:
+  - "App" verstel net hierdie speler se eie vlak (onthou oor lanseringe heen).
+  - "Stelsel" dryf jou rekenaar se hoofuitsetvolume, met 'n dempskakelaar langsaan. Dit bly in
+    sinkronisasie met die stelselvlak — insluitend veranderinge wat jy met die volumesleutels of
+    die bedryfstelselmenger maak — en beweeg die hele masjien se volume, nie net hierdie app nie.
+• "Bal" stel die links/regs stereobalans (onthou oor lanseringe heen). Dit het 'n sagte
+  middelkeep, en die "C"-knoppie langsaan spring terug na dooie middel.
+  Handig wanneer luidsprekers nie simmetries geplaas is nie.
+• Die gekose-ry-aanwyser volg die snit wat nou speel.
+
+GRADERINGS & SPEELOPVOLGING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Graderings is handmatig: stel self 'n 1–5 ster-gradering. Speeltelling word afsonderlik
+  opgespoor (sy eie kolom) en word NIE in sterre omgeskakel nie.
+• Klik die sterre in 'n snit se Graderingskolom om 'n gradering in te stel; klik dieselfde ster
+  weer om dit uit te vee (terug na geen sterre nie). Die "Gradeer:"-knoppies (onder) en die
+  regskliek-kieslys doen dieselfde. Al vyf sterre is klikbaar.
+• Aansig → Tel speel ná: kies hoeveel van 'n snit moet speel voordat sy speeltelling styg
+  (25 / 50 / 75 / 90% of Einde van snit). Oorslaan tel nooit nie.
+• Wenk: filter volgens Spele (kolomfilter) om byvoorbeeld alles te vind wat jy 5 keer gespeel
+  het, en gradeer dan daardie snitte soos jy wil.
+
+VIND & ORGANISEER:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Soekkassie (bo): filter volgens titel, kunstenaar, album, genre of lêernaam terwyl jy tik.
+• Kolomfilters (Aansig → Wys kolomfilters): 'n ry blokkies per kolom — tik in Titel, Kunstenaar,
+  Album, Genre om by 'n substring te pas; Jaar en Spele aanvaar 'n patroon (bv. Jaar 202[456]
+  stem ooreen met 2024-2026; Spele 5 = presies vyf keer gespeel, 0 = nooit gespeel nie). Hulle
+  kombineer met mekaar en die soek-/Wys-filter. Vee hulle uit met die ✕-knoppie; om die ry te
+  versteek maak hulle ook skoon.
+• "Wys"-filter (bo): Alle snitte, Sonder gradering, presiese sterre, of N-sterre-en-meer.
+• Klik 'n kolomkop om te sorteer; klik weer om om te keer (die Omslag-kolom sorteer nie).
+• Aansig-kieslys: wys opsioneel die Lengte-, Formaat-, Bistempo-, Genre-, Snitnommer- en
+  Lêernaam-kolomme (Lengte is by verstek aan, die res af; keuses word onthou). Lengte en Bistempo
+  vul kort ná lansering/skandering in soos die app elke snit se speeltyd in die agtergrond lees,
+  so hulle mag vir 'n oomblik leeg wees.
+• Spring na die snit wat speel: klik sy naam in die onderste balk, of gebruik die nutsbalk se
+  "Speel tans"-knoppie (langs Herskandeer). Handig nadat jy weggerol, gesoek of weggesorteer het.
+  (Dit vind net die snit — dit begin of stop nie terugspeel nie.)
+• Tel op waar jy gelos het: die app onthou jou sorteervolgorde en, met herlansering, kies en rol
+  dit na die snit wat jy laas gespeel het (dit speel nie outomaties nie).
+• Kopieer snitte na 'n ander plek: Aansig → Merkblokkies voeg 'n ✓-kolom by; merk rye (klik die
+  ✓-kop om almal wat wys te wissel), of Biblioteek → Merk almal wat wys. Dan laat Biblioteek →
+  Kopieer gemerktes na… jou kies tussen Plat of Organiseer in Kunstenaar/Album-gidse, dan 'n
+  bestemming - bv. filter na 5 sterre, merk almal, kopieer na 'n USB-skyf. 'n Vorderingsdialoog
+  wys elke lêer en laat jou Kanselleer. (Naambotsings kry 'n " (2)"-agtervoegsel; niks word oorskryf nie.)
+• Regskliek 'n snit vir Speel, gradering, Voeg albumkuns by (plaaslike beeldlêer of URL, gestoor
+  in die biblioteek), Wys in jou lêerbestuurder, en Wys volle pad (met 'n Kopieer-knoppie).
+• Regskliek Hernoem lêer… / Wysig etikette… / Stel gradering werk normaalweg net op daardie een
+  snit. Maar as jy 'n snit regskliek wat gemerk (✓) is, werk hulle op die hele gemerkte stel —
+  die kieslysetiket sê watter een (bv. "Wysig etikette van 5 gemerktes…", "Stel gradering (5 gemerk)").
+• Hernoem lêer… (regskliek) hernoem die lêer op skyf vanaf sy etikette met 'n patroon van tekens
+  — %track% %title% %artist% %album% %albumartist% %year% %genre% — bv. "%track% %title% -
+  %artist%". 'n Lewendige voorskou wys die nuwe naam voordat jy toepas; die uitbreiding word altyd
+  behou en die katalogus dateer op sy plek op (geen herskandering nie). %track% word met nulle tot
+  twee syfers opgevul.
+• Wysig etikette… (regskliek) open 'n redigeerder vir titel, kunstenaar, album, albumkunstenaar,
+  jaar, snitnommer, genre, kommentaar, en die ingebedde omslagbeeld. Veranderinge word terug in
+  die lêer geskryf vir MP3 en FLAC; OGG en WAV open vir eers slegs-lees. Etikette vanaf lêernaam…
+  (in daardie redigeerder) ontleed die lêer se naam in die velde met dieselfde tekenpatroon, vir
+  jou om na te gaan voor jy stoor — dit skryf nooit op sy eie nie. As jy die snit redigeer wat tans
+  speel, stop terugspeel eers sodat die lêer gestoor kan word. Die katalogus (en enige duimnael)
+  dateer dadelik op.
+• Wysig etikette van 'n klomp op 'n slag: merk snitte (Merkblokkies / Merk almal wat wys), dan
+  Biblioteek → Wysig etikette van gemerktes… Jy kan vier soorte veranderinge in een pas kombineer:
+  (1) Vanaf lêernaam — stel titel/kunstenaar/snitnommer/ens. op elke snit deur sy naam met 'n
+  tekenpatroon te ontleed (die grootmaat-vorm van Etikette vanaf lêernaam; lêers wat nie pas nie
+  word uitgelaat); (2) Stel velde — merk Kunstenaar, Album, Albumkunstenaar, Genre, Jaar of
+  Kommentaar om hulle een waarde oor die hele seleksie te gee (dié oorheers die patroon); (3) Vind
+  & vervang — verander teks binne een veld oor die seleksie (bv. "feat."→"ft.", opsioneel met
+  hooflettters geïgnoreer); (4) Omslagkuns — stel een beeld as die omslag vir almal, of verwyder
+  die omslag van almal. 'n Vorderingsdialoog wys elke lêer met 'n Kanselleer-knoppie; OGG/WAV word oorgeslaan.
+• Hernoem 'n klomp op 'n slag: merk snitte, dan Biblioteek → Hernoem gemerktes volgens patroon…
+  'n Voorskoulys wys elke ou → nuwe naam; toepas hernoem hulle almal (naambotsings kry 'n
+  " (2)"-agtervoegsel, niks word oorskryf nie) met 'n Kanselleer-knoppie.
+• Biblioteekverslag (Biblioteek → Biblioteekverslag…): som jou versameling op, gegroepeer volgens
+  Kunstenaar, Album of Genre; hiërargies (Kunstenaar → Album, Album → Kunstenaar, Genre →
+  Kunstenaar); of as 'n plat snitlys. Merk "Lys snitte" om elke groepering uit te brei en die
+  snitte daarin te wys. Sorteer volgens Naam of Jaar met 'n stygende/dalende wissel, skakel tussen
+  die hele biblioteek en die huidige gefilterde aansig, en Voer CSV uit… om die verslag te stoor.
+
+SPEELLYSTE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Statiese speellyste (Speellyste-kieslys): Stoor speellys… skryf die snitte wat jy tans bekyk na
+  'n draagbare .m3u8-lêer, met paaie relatief tot die lêer sodat 'n speellys en sy musiek saam
+  reis (bv. op 'n USB-stokkie). Open speellys… laai een en speel dit; lêers wat nog in jou
+  katalogus is behou hul sterre/speeltellings.
+• Slim speellyste (Speellyste → Nuwe slim speellys…): stoor filterkriteria — 'n gradering, en
+  opsionele Genre / Kunstenaar / Album (gedeeltelik, hooflettters geïgnoreer — bv. "Wickham" stem
+  ooreen met "Phil Wickham"), plus vryteks-Soek — onder 'n naam. Om dit uit die Speellyste-kieslys
+  te kies pas die kriteria lewendig toe (die statusbalk wys ♫ <naam>). Hulle dateer outomaties op
+  soos jou biblioteek verander. Bestuur slim speellyste… laat jou 'n gestoorde speellys se kriteria
+  redigeer (die potloodknoppie, wat dit ook kan hernoem) of dié wat jy nie meer wil hê uitvee.
+
+VENSTERS & STELSELBALK:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• 'n Stelselbalk-ikoon + kieslys weerspieël die kontroles: Wys/Versteek alle vensters,
+  Speel/Wag, Vorige, Volgende, Stop, Sluit af.
+• Versteek alle vensters bêre die app weg en wag terugspeel; Wys alle vensters bring dit terug
+  (druk Speel om te hervat).
+• Die hoofvenster onthou sy grootte tussen lanseringe.
+
+DRAAGBARE BIBLIOTEEK (skuif tussen masjiene of skywe):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Snitliggings word relatief tot elke dopgehoue gids gestoor, so as 'n draagbare skyf as D:\ op
+  een rekenaar en E:\ op 'n ander heg, gebruik net Biblioteek → Verskuif gids om die gids te
+  herwys — elke snit daaronder volg, en behou sy speeltellings en graderings.
+• Die databasisligging kan met die -db opdraglyn-vlag, die KBMP_DB omgewingsveranderlike, of
+  Aansig → Voorkeure → Databasisligging gestel word (herbegin om te werk); by verstek sit dit
+  langs die app (handig op 'n USB-stokkie).
+
+VOORKEURE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Aansig → Voorkeure… (Alt+R) versamel die algemene instellings op een plek: tema, taal,
+  "tel speel ná"-drempel, terugspeelvolume (onthou oor lanseringe heen), of die effenaar met
+  begin moet open, die opsionele kolomme, en die databasisligging. Dieselfde wisselaars bly op die
+  Aansig-kieslys vir vinnige eenmalige veranderinge.
+
+SLIM FUNKSIES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ Ingebedde albumkuns gewys as duimnaels in die tabel en die speel-tans-area.
+✨ Slim speellyste wat lewendig herevalueer soos jou biblioteek verander.
+✨ Tema-ondersteuning: Lig-, Donker-, of Stelsel-tema (Aansig-kieslys).
+
+SNELTOETSE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Alt+P — Speel / Wag
+• Alt+→ — Volgende snit   • Alt+← — Vorige snit
+• Alt+H — Versteek alle vensters (en wag). Geen sneltoets om weer te wys nie, met opset —
+  gebruik die stelselbalk of Aansig → Wys alle vensters.
+• Alt+R — Voorkeure
+• Cmd/Ctrl+Q — Sluit af   • Cmd/Ctrl+W — Sluit venster   • Cmd/Ctrl+M — Minimeer
+
+BEKENDE BEPERKINGS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Ondersteunde oudioformate: MP3, FLAC, WAV, OGG (M4A/AAC/ALAC word nog nie ondersteun nie).
+⚠️  Musiekvideo-terugspeel is beplan maar nog nie beskikbaar nie.
+
+MEER INLIGTING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Vir dokumentasie, foutverslae, of funksieversoeke:
+📦 GitHub: https://github.com/amarillier/KrankyBearMediaPlayer
+📄 Lisensie: https://github.com/amarillier/KrankyBearMediaPlayer/blob/allanm/LICENSE
+📝 Vrystellingsnotas: Sien "Hulp → Kyk vir opdaterings"
+
+VRYE SAGTEWARE - Gebruik enige plek, enige tyd, vir enige doel!
+Geen registrasie, geen opsporing nie. Die enigste netwerkgebruik is 'n diskrete opdateringskontrole -
+een keer per dag met lansering, plus die handmatige "Kyk vir opdaterings".

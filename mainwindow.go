@@ -29,7 +29,46 @@ import (
 
 	fynetooltip "github.com/dweymouth/fyne-tooltip"
 	ttwidget "github.com/dweymouth/fyne-tooltip/widget"
+
+	"mediaplayer/internal/i18n"
 )
+
+// colTitleKey maps a column id to its i18n catalog key for the header label.
+// Headers are translated at render time (the allColumns var initialises before
+// i18n.Init, so the catalog can't be read at package-init).
+func colTitleKey(id int) string {
+	switch id {
+	case colSelect:
+		return "cols.select"
+	case colArt:
+		return "cols.art"
+	case colTrack:
+		return "cols.track"
+	case colTitle:
+		return "cols.title"
+	case colArtist:
+		return "cols.artist"
+	case colAlbum:
+		return "cols.album"
+	case colGenre:
+		return "cols.genre"
+	case colYear:
+		return "cols.year"
+	case colPlays:
+		return "cols.plays"
+	case colRating:
+		return "cols.rating"
+	case colDuration:
+		return "cols.length"
+	case colFormat:
+		return "cols.format"
+	case colBitrate:
+		return "cols.bitrate"
+	case colFilename:
+		return "cols.filename"
+	}
+	return ""
+}
 
 // Logical column ids. These are stable identities used for rendering, sorting
 // and toggling - distinct from a column's *physical* position in the table,
@@ -139,7 +178,7 @@ const (
 )
 
 // prefPlayCountPct is the percentage of a track that must play before it counts
-// as a play (and bumps the auto rating). 100 = only at natural end.
+// as a play (and bumps the play count). 100 = only at natural end.
 const prefPlayCountPct = "playCountPercent"
 const defaultPlayCountPct = 50
 
@@ -150,7 +189,7 @@ const prefReplayGain = "replayGain"   // bool: apply per-track ReplayGain
 const prefRGAlbum = "replayGainAlbum" // bool: prefer album gain over track gain
 const prefTransition = "transition"   // int: 0 gap, 1 gapless, 2 crossfade
 const prefVolume = "volume"           // float 0..1 linear gain
-const prefBalance = "balance"         // float -1..+1 stereo balance (0 = centred)
+const prefBalance = "balance"         // float -1..+1 stereo balance (0 = centered)
 
 // prefRenamePattern / prefParsePattern are the last-used filename patterns for the
 // rename-from-tags and tags-from-filename tools (rename.go, tageditor.go).
@@ -340,9 +379,9 @@ func buildMainWindow(a fyne.App, win fyne.Window, db *DB, player *Player) *ui {
 	return u
 }
 
-// onPlayCounted bumps the displayed play count (and thus the auto star rating)
-// for a track the moment it's credited, without a full reload. Runs on the UI
-// thread. The DB increment itself is done by the player.
+// onPlayCounted bumps the displayed play count for a track the moment it's
+// credited, without a full reload. Runs on the UI thread. The DB increment
+// itself is done by the player.
 func (u *ui) onPlayCounted(id int64) {
 	for i := range u.tracks {
 		if u.tracks[i].ID == id {
@@ -483,15 +522,15 @@ func fmtDuration(d time.Duration) string {
 
 // buildToolbar builds the top bar: add/rescan folders + rating filter.
 func (u *ui) buildToolbar() fyne.CanvasObject {
-	addBtn := ttwidget.NewButtonWithIcon("Add Folder", theme.FolderOpenIcon(), u.addFolder)
-	addBtn.SetToolTip("Add a folder to the library and scan it")
-	rescanBtn := ttwidget.NewButtonWithIcon("Rescan", theme.ViewRefreshIcon(), u.rescanAll)
-	rescanBtn.SetToolTip("Rescan watched folders for new, changed or removed files")
+	addBtn := ttwidget.NewButtonWithIcon(i18n.T("toolbar.add_folder"), theme.FolderOpenIcon(), u.addFolder)
+	addBtn.SetToolTip(i18n.T("toolbar.add_folder_tip"))
+	rescanBtn := ttwidget.NewButtonWithIcon(i18n.T("toolbar.rescan"), theme.ViewRefreshIcon(), u.rescanAll)
+	rescanBtn.SetToolTip(i18n.T("toolbar.rescan_tip"))
 	// "Now Playing" jumps the list to the current track. A music-note icon (not a
 	// play triangle) and a label make clear it locates the track, doesn't play it.
-	jumpBtn := ttwidget.NewButtonWithIcon("Now Playing", theme.MediaMusicIcon(), u.jumpToCurrent)
+	jumpBtn := ttwidget.NewButtonWithIcon(i18n.T("toolbar.now_playing"), theme.MediaMusicIcon(), u.jumpToCurrent)
 	jumpBtn.Importance = widget.LowImportance
-	jumpBtn.SetToolTip("Scroll to and select the track that's playing (doesn't start playback)")
+	jumpBtn.SetToolTip(i18n.T("toolbar.now_playing_tip"))
 
 	filterSel := widget.NewSelect(filterLabels(), nil)
 	// Set the default selection before wiring the callback so we don't trigger
@@ -504,11 +543,11 @@ func (u *ui) buildToolbar() fyne.CanvasObject {
 	}
 
 	left := container.NewHBox(addBtn, rescanBtn, jumpBtn, widget.NewSeparator(),
-		widget.NewLabel("Show:"), filterSel)
+		widget.NewLabel(i18n.T("toolbar.show")), filterSel)
 
 	// Search across title/artist/album/genre/filename (handled in SQL).
 	search := widget.NewEntry()
-	search.SetPlaceHolder("Search title, artist, album, genre, filename…")
+	search.SetPlaceHolder(i18n.T("toolbar.search_placeholder"))
 	search.OnChanged = func(s string) {
 		u.search = s
 		u.clearSmartCriteria() // typing a search leaves any smart playlist
@@ -517,7 +556,7 @@ func (u *ui) buildToolbar() fyne.CanvasObject {
 	clearSearch := ttwidget.NewButtonWithIcon("", theme.ContentClearIcon(), func() {
 		search.SetText("") // fires OnChanged -> reload
 	})
-	clearSearch.SetToolTip("Clear the search box")
+	clearSearch.SetToolTip(i18n.T("toolbar.clear_search_tip"))
 
 	// Search box expands to fill the width between the controls and the button.
 	searchRow := container.NewBorder(nil, nil, left, clearSearch, search)
@@ -542,21 +581,21 @@ func (u *ui) buildColumnFilters() fyne.CanvasObject {
 		}
 		return e
 	}
-	tE := mk("Title", func(s string) { u.fTitle = s })
-	aE := mk("Artist", func(s string) { u.fArtist = s })
-	alE := mk("Album", func(s string) { u.fAlbum = s })
-	gE := mk("Genre", func(s string) { u.fGenre = s })
-	yE := mk("Year e.g. 202[456]", func(s string) { u.fYear = s })
-	pE := mk("Plays e.g. 5", func(s string) { u.fPlays = s })
+	tE := mk(i18n.T("filter.title"), func(s string) { u.fTitle = s })
+	aE := mk(i18n.T("filter.artist"), func(s string) { u.fArtist = s })
+	alE := mk(i18n.T("filter.album"), func(s string) { u.fAlbum = s })
+	gE := mk(i18n.T("filter.genre"), func(s string) { u.fGenre = s })
+	yE := mk(i18n.T("filter.year"), func(s string) { u.fYear = s })
+	pE := mk(i18n.T("filter.plays"), func(s string) { u.fPlays = s })
 	u.colFilterBox = []*widget.Entry{tE, aE, alE, gE, yE, pE}
 
 	clear := ttwidget.NewButtonWithIcon("", theme.ContentClearIcon(), u.clearColumnFilters)
-	clear.SetToolTip("Clear all column filters")
+	clear.SetToolTip(i18n.T("filter.clear_tip"))
 	wrap := func(w float32, e *widget.Entry) fyne.CanvasObject {
 		return container.NewGridWrap(fyne.NewSize(w, e.MinSize().Height), e)
 	}
 	row := container.NewHBox(
-		widget.NewLabel("Filter:"),
+		widget.NewLabel(i18n.T("filter.label")),
 		wrap(150, tE), wrap(150, aE), wrap(150, alE), wrap(120, gE), wrap(140, yE), wrap(110, pE),
 		clear,
 	)
@@ -604,16 +643,16 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 
 	u.nowPlaying = newTappableLabel(u.jumpToCurrent) // click the track name to jump to it
 	u.nowPlaying.Wrapping = fyne.TextTruncate
-	u.nowPlaying.SetText("Nothing playing")
+	u.nowPlaying.SetText(i18n.T("transport.nothing_playing"))
 
 	prev := ttwidget.NewButtonWithIcon("", theme.MediaSkipPreviousIcon(), u.player.Prev)
-	prev.SetToolTip("Previous track (Alt+←)")
+	prev.SetToolTip(i18n.T("transport.prev_tip"))
 	u.playPause = ttwidget.NewButtonWithIcon("", theme.MediaPlayIcon(), u.onPlayPause)
-	u.playPause.SetToolTip("Play / Pause (Alt+P)")
+	u.playPause.SetToolTip(i18n.T("transport.play_tip"))
 	stop := ttwidget.NewButtonWithIcon("", theme.MediaStopIcon(), u.player.Stop)
-	stop.SetToolTip("Stop")
+	stop.SetToolTip(i18n.T("transport.stop_tip"))
 	next := ttwidget.NewButtonWithIcon("", theme.MediaSkipNextIcon(), u.player.Next)
-	next.SetToolTip("Next track (Alt+→)")
+	next.SetToolTip(i18n.T("transport.next_tip"))
 	transport := container.NewHBox(prev, u.playPause, stop, next)
 
 	u.status = widget.NewLabel("")
@@ -640,7 +679,7 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 		u.app.Preferences().SetFloat(prefVolume, v) // remember across launches
 	}
 	volBox := container.NewBorder(nil, nil,
-		container.NewHBox(widget.NewLabel("App"), widget.NewIcon(theme.VolumeUpIcon())), nil,
+		container.NewHBox(widget.NewLabel(i18n.T("transport.vol_app")), widget.NewIcon(theme.VolumeUpIcon())), nil,
 		container.NewGridWrap(fyne.NewSize(100, 28), u.volSlider))
 
 	balBox := u.buildBalance()
@@ -663,11 +702,11 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 }
 
 // balCentreSnap is the soft "detent" half-width: a balance setting within this of
-// centre snaps to dead-centre, so the user can land on 0 without fiddling.
+// center snaps to dead-center, so the user can land on 0 without fiddling.
 const balCentreSnap = 0.06
 
-// buildBalance builds the stereo balance control: an L..R slider centred at 0 with
-// a soft centre detent, plus a button that snaps it back to centre. It drives
+// buildBalance builds the stereo balance control: an L..R slider centered at 0 with
+// a soft center detent, plus a button that snaps it back to center. It drives
 // player.SetBalance live and persists the position (balance.go / player.go).
 func (u *ui) buildBalance() fyne.CanvasObject {
 	u.balSlider = widget.NewSlider(-1, 1)
@@ -675,16 +714,16 @@ func (u *ui) buildBalance() fyne.CanvasObject {
 	u.balSlider.Value = u.player.Balance()
 	u.balSlider.OnChanged = func(v float64) {
 		if v > -balCentreSnap && v < balCentreSnap {
-			v = 0 // soft centre detent
+			v = 0 // soft center detent
 		}
 		u.player.SetBalance(v)
 		u.app.Preferences().SetFloat(prefBalance, v)
 	}
 	centreBtn := ttwidget.NewButton("C", func() { u.balSlider.SetValue(0) })
 	centreBtn.Importance = widget.LowImportance
-	centreBtn.SetToolTip("Centre the balance (L / R)")
+	centreBtn.SetToolTip(i18n.T("transport.bal_centre_tip"))
 	return container.NewBorder(nil, nil,
-		widget.NewLabel("Bal"), centreBtn,
+		widget.NewLabel(i18n.T("transport.bal")), centreBtn,
 		container.NewGridWrap(fyne.NewSize(100, 28), u.balSlider))
 }
 
@@ -722,9 +761,9 @@ func (u *ui) buildSystemVolume() fyne.CanvasObject {
 		u.setSystemMuted(!u.sysMuted)
 	})
 	u.sysMuteBtn.Importance = widget.LowImportance
-	u.sysMuteBtn.SetToolTip("Mute / unmute the computer's output (system volume)")
+	u.sysMuteBtn.SetToolTip(i18n.T("transport.sys_mute_tip"))
 
-	return container.NewBorder(nil, nil, widget.NewLabel("Sys"), u.sysMuteBtn,
+	return container.NewBorder(nil, nil, widget.NewLabel(i18n.T("transport.vol_sys")), u.sysMuteBtn,
 		container.NewGridWrap(fyne.NewSize(100, 28), u.sysVolSlider))
 }
 
@@ -805,10 +844,10 @@ func (u *ui) applyMuteIcon(muted bool) {
 
 // buildRatingBar builds the manual star-rating setter for the selected track.
 func (u *ui) buildRatingBar() fyne.CanvasObject {
-	btns := container.NewHBox(widget.NewLabel("Rate:"))
+	btns := container.NewHBox(widget.NewLabel(i18n.T("transport.rate")))
 	for n := 1; n <= 5; n++ {
 		star := n
-		btns.Add(widget.NewButton(fmt.Sprintf("%d★", star), func() {
+		btns.Add(widget.NewButton(i18n.TC("transport.rate_star", map[string]string{"n": fmt.Sprintf("%d", star)}), func() {
 			u.rateSelected(star)
 		}))
 	}
@@ -929,6 +968,11 @@ func (u *ui) buildTable() *widget.Table {
 		if id.Row == -1 && id.Col >= 0 && id.Col < len(u.visibleCols) {
 			c := u.visibleCols[id.Col]
 			title := c.title
+			if key := colTitleKey(c.id); key != "" {
+				if s := i18n.T(key); s != key {
+					title = s
+				}
+			}
 			// Primary sort: large arrow; secondary (shift-click): small arrow.
 			switch {
 			case u.sortCol == c.id:
@@ -1056,7 +1100,7 @@ func (c *cellWidget) Tapped(e *fyne.PointEvent) {
 			star = 5
 		}
 		tr := c.ui.tracks[c.id.Row]
-		// Re-clicking an existing manual rating clears it back to auto/unrated.
+		// Re-clicking an existing manual rating clears it back to unrated.
 		if tr.Rating.Valid && int(tr.Rating.Int64) == star {
 			star = 0
 		}
@@ -1282,18 +1326,13 @@ func (u *ui) clearSelection() {
 	u.refreshStatus()
 }
 
-const (
-	copyLayoutFlat      = "Flat (all files in one folder)"
-	copyLayoutOrganized = "Organize into Artist/Album folders"
-)
-
 // copySelectedTo asks for a layout (flat vs Artist/Album) then a destination
-// folder, and copies the marked tracks' files there.
+// folder, and copies the marked tracks' files there. The layout option strings are
+// localized at runtime (so they can't be package-level consts; the equality test
+// below compares against the same translated value).
 func (u *ui) copySelectedTo() {
 	if len(u.marked) == 0 {
-		dialog.ShowInformation("Copy selected",
-			"No tracks are marked. Turn on View → Selection checkboxes and tick some "+
-				"tracks (or Library → Select all shown), then try again.", u.win)
+		dialog.ShowInformation(i18n.T("copy.title"), i18n.T("copy.none_marked"), u.win)
 		return
 	}
 	entries := make([]markEntry, 0, len(u.marked))
@@ -1301,17 +1340,19 @@ func (u *ui) copySelectedTo() {
 		entries = append(entries, e)
 	}
 
-	layout := widget.NewRadioGroup([]string{copyLayoutFlat, copyLayoutOrganized}, nil)
-	layout.SetSelected(copyLayoutFlat)
+	layoutFlat := i18n.T("copy.layout_flat")
+	layoutOrganized := i18n.T("copy.layout_organized")
+	layout := widget.NewRadioGroup([]string{layoutFlat, layoutOrganized}, nil)
+	layout.SetSelected(layoutFlat)
 	body := container.NewVBox(
-		widget.NewLabel(fmt.Sprintf("Copy %d track(s). Choose a layout, then a destination folder.", len(entries))),
+		widget.NewLabel(i18n.TC("copy.prompt", map[string]string{"n": fmt.Sprintf("%d", len(entries))})),
 		layout,
 	)
-	dialog.ShowCustomConfirm("Copy selected", "Choose folder…", "Cancel", body, func(ok bool) {
+	dialog.ShowCustomConfirm(i18n.T("copy.title"), i18n.T("copy.choose_folder"), i18n.T("common.cancel"), body, func(ok bool) {
 		if !ok {
 			return
 		}
-		organize := layout.Selected == copyLayoutOrganized
+		organize := layout.Selected == layoutOrganized
 		dialog.ShowFolderOpen(func(list fyne.ListableURI, err error) {
 			if err != nil || list == nil {
 				return
@@ -1328,14 +1369,14 @@ func (u *ui) copySelectedTo() {
 func (u *ui) copyEntriesTo(entries []markEntry, destDir string, organize bool) {
 	total := len(entries)
 
-	statusLbl := widget.NewLabel(fmt.Sprintf("Copying %d file(s)…", total))
+	statusLbl := widget.NewLabel(i18n.TC("copy.copying_n", map[string]string{"n": fmt.Sprintf("%d", total)}))
 	statusLbl.Truncation = fyne.TextTruncateEllipsis
 	prog := widget.NewProgressBar()
 	prog.Max = float64(total)
 	var canceled atomic.Bool
-	cancelBtn := widget.NewButton("Cancel", func() { canceled.Store(true) })
+	cancelBtn := widget.NewButton(i18n.T("common.cancel"), func() { canceled.Store(true) })
 	cancelBtn.Importance = widget.DangerImportance
-	d := dialog.NewCustomWithoutButtons("Copying files", container.NewVBox(
+	d := dialog.NewCustomWithoutButtons(i18n.T("copy.copying_title"), container.NewVBox(
 		statusLbl, prog, container.NewCenter(cancelBtn),
 	), u.win)
 	d.Resize(fyne.NewSize(420, 150))
@@ -1348,7 +1389,11 @@ func (u *ui) copyEntriesTo(entries []markEntry, destDir string, organize bool) {
 				break
 			}
 			n, name := i+1, filepath.Base(e.path)
-			fyne.Do(func() { statusLbl.SetText(fmt.Sprintf("Copying %d of %d: %s", n, total, name)) })
+			fyne.Do(func() {
+				statusLbl.SetText(i18n.TC("copy.copying_progress", map[string]string{
+					"n": fmt.Sprintf("%d", n), "total": fmt.Sprintf("%d", total), "name": name,
+				}))
+			})
 			target := destDir
 			if organize {
 				target = filepath.Join(destDir,
@@ -1372,14 +1417,14 @@ func (u *ui) copyEntriesTo(entries []markEntry, destDir string, organize bool) {
 		wasCanceled := canceled.Load()
 		fyne.Do(func() {
 			d.Hide()
-			summary := fmt.Sprintf("Copied %d file(s) to %s", copied, destDir)
+			summary := i18n.TC("copy.done", map[string]string{"n": fmt.Sprintf("%d", copied), "dest": destDir})
 			if failed > 0 {
-				summary += fmt.Sprintf("; %d failed (see log)", failed)
+				summary += i18n.TC("copy.failed", map[string]string{"n": fmt.Sprintf("%d", failed)})
 			}
-			title := "Copy complete"
+			title := i18n.T("copy.complete")
 			if wasCanceled {
-				title = "Copy cancelled"
-				summary = "Cancelled before finishing. " + summary
+				title = i18n.T("copy.cancelled")
+				summary = i18n.T("copy.cancelled_prefix") + summary
 			}
 			u.status.SetText(summary)
 			dialog.ShowInformation(title, summary, u.win)
@@ -1393,17 +1438,17 @@ func (u *ui) enqueueRow(row int) {
 		return
 	}
 	u.player.Enqueue([]Track{u.tracks[row]})
-	u.status.SetText("Added to queue: " + queueRowText(u.tracks[row]))
+	u.status.SetText(i18n.TC("queue.added_one", map[string]string{"track": queueRowText(u.tracks[row])}))
 }
 
 // enqueueShown appends every track in the current (filtered) view to the queue.
 func (u *ui) enqueueShown() {
 	if len(u.tracks) == 0 {
-		dialog.ShowInformation("Add to queue", "No tracks are shown.", u.win)
+		dialog.ShowInformation(i18n.T("queue.title"), i18n.T("queue.none_shown"), u.win)
 		return
 	}
 	u.player.Enqueue(u.tracks)
-	u.status.SetText(fmt.Sprintf("Added %d track(s) to the queue", len(u.tracks)))
+	u.status.SetText(i18n.TC("queue.added_n", map[string]string{"n": fmt.Sprintf("%d", len(u.tracks))}))
 }
 
 // enqueueSelected appends the marked tracks that are in the current view to the
@@ -1411,9 +1456,7 @@ func (u *ui) enqueueShown() {
 // hidden by the current search/filter are reported but skipped.
 func (u *ui) enqueueSelected() {
 	if len(u.marked) == 0 {
-		dialog.ShowInformation("Add to queue",
-			"No tracks are marked. Turn on View → Selection checkboxes and tick some "+
-				"tracks (or Library → Select All Shown), then try again.", u.win)
+		dialog.ShowInformation(i18n.T("queue.title"), i18n.T("queue.none_marked"), u.win)
 		return
 	}
 	var sel []Track
@@ -1423,14 +1466,13 @@ func (u *ui) enqueueSelected() {
 		}
 	}
 	if len(sel) == 0 {
-		dialog.ShowInformation("Add to queue",
-			"None of the marked tracks are in the current view. Clear the search/filter and try again.", u.win)
+		dialog.ShowInformation(i18n.T("queue.title"), i18n.T("queue.none_marked_in_view"), u.win)
 		return
 	}
 	u.player.Enqueue(sel)
-	msg := fmt.Sprintf("Added %d marked track(s) to the queue", len(sel))
+	msg := i18n.TC("queue.added_marked", map[string]string{"n": fmt.Sprintf("%d", len(sel))})
 	if miss := len(u.marked) - len(sel); miss > 0 {
-		msg += fmt.Sprintf(" (%d not in current view)", miss)
+		msg += i18n.TC("queue.added_marked_miss", map[string]string{"n": fmt.Sprintf("%d", miss)})
 	}
 	u.status.SetText(msg)
 }
@@ -1501,7 +1543,7 @@ func (u *ui) setRowRating(row, rating int) {
 		return
 	}
 	if rating <= 0 {
-		u.tracks[row].Rating = sql.NullInt64{} // cleared -> falls back to auto rating
+		u.tracks[row].Rating = sql.NullInt64{} // cleared -> unrated (no stars)
 	} else {
 		u.tracks[row].Rating = sql.NullInt64{Int64: int64(rating), Valid: true}
 	}
@@ -1529,7 +1571,7 @@ func (u *ui) setMarkedRating(rating int) {
 		}
 	}
 	u.table.Refresh()
-	u.status.SetText(fmt.Sprintf("Rated %d marked track(s)", len(u.marked)))
+	u.status.SetText(i18n.TC("status.rated_marked", map[string]string{"n": fmt.Sprintf("%d", len(u.marked))}))
 }
 
 // showRowMenu pops up the right-click row menu. Play and rating are live. Edit
@@ -1561,46 +1603,49 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 		return fyne.NewMenuItem(fmt.Sprintf("%s  (%d)", starString(n), n),
 			func() { setRating(n) })
 	}
-	ratingLabel := "Set rating"
+	ratingLabel := i18n.T("ctx.set_rating")
 	if rowMarked {
-		ratingLabel = fmt.Sprintf("Set rating (%d marked)", nMarked)
+		ratingLabel = i18n.TC("ctx.set_rating_marked", map[string]string{"n": fmt.Sprintf("%d", nMarked)})
 	}
 	ratingItem := fyne.NewMenuItem(ratingLabel, nil)
 	ratingItem.ChildMenu = fyne.NewMenu("",
 		star(5), star(4), star(3), star(2), star(1),
 		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Clear rating", func() { setRating(0) }),
+		fyne.NewMenuItem(i18n.T("ctx.clear_rating"), func() { setRating(0) }),
 	)
 
 	// Album art is stored in the catalog (shown everywhere), not embedded into
 	// the audio file. Source: a local image or an explicit URL - no online search.
-	artItem := fyne.NewMenuItem("Add album art", nil)
+	artItem := fyne.NewMenuItem(i18n.T("ctx.add_art"), nil)
 	artItem.ChildMenu = fyne.NewMenu("",
-		fyne.NewMenuItem("From image file…", func() { u.addArtFromFile(r) }),
-		fyne.NewMenuItem("From URL…", func() { u.addArtFromURL(r) }),
+		fyne.NewMenuItem(i18n.T("ctx.art_from_file"), func() { u.addArtFromFile(r) }),
+		fyne.NewMenuItem(i18n.T("ctx.art_from_url"), func() { u.addArtFromURL(r) }),
 	)
 
-	renameLabel, editLabel, scanLabel := "Rename file…", "Edit tags…", "Scan ReplayGain"
+	renameLabel := i18n.T("ctx.rename_file")
+	editLabel := i18n.T("ctx.edit_tags")
+	scanLabel := i18n.T("ctx.scan_rg")
 	renameFn := func() { u.renameFromTags(r) }
 	editFn := func() { u.editTags(r) }
 	scanFn := func() { u.scanReplayGainOf([]Track{u.tracks[r]}) }
 	if rowMarked {
-		renameLabel = fmt.Sprintf("Rename %d marked from pattern…", nMarked)
-		editLabel = fmt.Sprintf("Edit tags of %d marked…", nMarked)
-		scanLabel = fmt.Sprintf("Scan ReplayGain (%d marked)", nMarked)
+		marked := map[string]string{"n": fmt.Sprintf("%d", nMarked)}
+		renameLabel = i18n.TC("ctx.rename_marked", marked)
+		editLabel = i18n.TC("ctx.edit_tags_marked", marked)
+		scanLabel = i18n.TC("ctx.scan_rg_marked", marked)
 		renameFn = u.renameSelectedFromTags
 		editFn = u.editTagsOfSelected
 		scanFn = func() { u.scanReplayGainOf(u.markedTracksForScan()) }
 	}
 
 	menu := fyne.NewMenu("",
-		fyne.NewMenuItem("Play", func() { u.player.PlayQueue(u.tracks, r) }),
-		fyne.NewMenuItem("Add to Queue", func() { u.enqueueRow(r) }),
+		fyne.NewMenuItem(i18n.T("ctx.play"), func() { u.player.PlayQueue(u.tracks, r) }),
+		fyne.NewMenuItem(i18n.T("ctx.add_to_queue"), func() { u.enqueueRow(r) }),
 		ratingItem,
 		artItem,
 		fyne.NewMenuItemSeparator(),
-		fyne.NewMenuItem("Show in "+fileManagerName(), func() { u.revealRow(r) }),
-		fyne.NewMenuItem("Show full path…", func() { u.showFullPath(r) }),
+		fyne.NewMenuItem(i18n.TC("ctx.show_in", map[string]string{"manager": fileManagerName()}), func() { u.revealRow(r) }),
+		fyne.NewMenuItem(i18n.T("ctx.show_full_path"), func() { u.showFullPath(r) }),
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem(renameLabel, renameFn),
 		fyne.NewMenuItem(editLabel, editFn),
@@ -1657,11 +1702,11 @@ func (u *ui) showFullPath(row int) {
 	box := widget.NewMultiLineEntry()
 	box.SetText(path)
 	box.Wrapping = fyne.TextWrapBreak
-	copyBtn := widget.NewButtonWithIcon("Copy", theme.ContentCopyIcon(), func() {
+	copyBtn := widget.NewButtonWithIcon(i18n.T("path.copy"), theme.ContentCopyIcon(), func() {
 		u.win.Clipboard().SetContent(path)
 	})
 	content := container.NewBorder(nil, copyBtn, nil, nil, box)
-	d := dialog.NewCustom("Full path", "Close", content, u.win)
+	d := dialog.NewCustom(i18n.T("path.title"), i18n.T("common.close"), content, u.win)
 	d.Resize(fyne.NewSize(560, 200))
 	d.Show()
 }
@@ -1714,9 +1759,9 @@ func (u *ui) addArtFromURL(row int) {
 	}
 	id := u.tracks[row].ID
 	entry := widget.NewEntry()
-	entry.SetPlaceHolder("https://example.com/cover.jpg")
-	d := dialog.NewForm("Add album art from URL", "Fetch", "Cancel",
-		[]*widget.FormItem{widget.NewFormItem("Image URL", entry)},
+	entry.SetPlaceHolder(i18n.T("art.url_placeholder"))
+	d := dialog.NewForm(i18n.T("art.url_title"), i18n.T("art.url_fetch"), i18n.T("common.cancel"),
+		[]*widget.FormItem{widget.NewFormItem(i18n.T("art.url_label"), entry)},
 		func(ok bool) {
 			url := strings.TrimSpace(entry.Text)
 			if !ok || url == "" {
@@ -1758,7 +1803,7 @@ func (u *ui) applyArt(trackID int64, data []byte) {
 	}
 	u.table.Refresh()
 	u.refreshNowPlaying()
-	u.status.SetText("Album art updated")
+	u.status.SetText(i18n.T("art.updated"))
 }
 
 // fetchImage downloads image bytes from url with a timeout and a size cap.
@@ -1817,15 +1862,15 @@ func (u *ui) reload() {
 }
 
 func (u *ui) refreshStatus() {
-	s := fmt.Sprintf("%d tracks", len(u.tracks))
+	s := i18n.TC("status.tracks", map[string]string{"n": fmt.Sprintf("%d", len(u.tracks))})
 	if u.smartName != "" {
-		s = "♫ " + u.smartName + "  |  " + s
+		s = i18n.TC("status.smart_prefix", map[string]string{"name": u.smartName}) + s
 	}
 	if len(u.marked) > 0 {
-		s += fmt.Sprintf("  |  %d marked for copy", len(u.marked))
+		s += i18n.TC("status.marked_for_copy", map[string]string{"n": fmt.Sprintf("%d", len(u.marked))})
 	}
 	if u.selected >= 0 && u.selected < len(u.tracks) {
-		s += "  |  selected: " + u.tracks[u.selected].Title
+		s += i18n.TC("status.selected", map[string]string{"title": u.tracks[u.selected].Title})
 	}
 	u.status.SetText(s)
 }
@@ -1835,14 +1880,14 @@ func (u *ui) refreshNowPlaying() {
 	u.refreshQueue() // keep the Play Queue window in sync when it's open
 	tr, ok := u.player.Current()
 	if !ok {
-		u.nowPlaying.SetText("Nothing playing")
+		u.nowPlaying.SetText(i18n.T("transport.nothing_playing"))
 		u.nowArt.Resource = resourceKrankyBearMediaPlayerPng
 		u.nowArt.Refresh()
 		u.playPause.SetIcon(theme.MediaPlayIcon())
 		u.nowPlayingID = 0 // next track that plays will move the indicator
 		return
 	}
-	u.nowPlaying.SetText(fmt.Sprintf("%s — %s", tr.Title, tr.Artist))
+	u.nowPlaying.SetText(i18n.TC("transport.now_playing_fmt", map[string]string{"title": tr.Title, "artist": tr.Artist}))
 	if res := u.thumb(tr); res != nil {
 		u.nowArt.Resource = res
 	} else {
@@ -1884,7 +1929,7 @@ func (u *ui) selectTrack(id int64) {
 func (u *ui) jumpToCurrent() {
 	cur, ok := u.player.Current()
 	if !ok {
-		u.status.SetText("Nothing is playing")
+		u.status.SetText(i18n.T("status.nothing_playing"))
 		return
 	}
 	for i := range u.tracks {
@@ -1894,7 +1939,7 @@ func (u *ui) jumpToCurrent() {
 			return
 		}
 	}
-	u.status.SetText("The playing track isn't in the current view")
+	u.status.SetText(i18n.T("status.not_in_view"))
 }
 
 // scrollRowIntoView positions the table so row i sits about one row below the
@@ -1937,7 +1982,7 @@ func (u *ui) onPlayPause() {
 // rateSelected sets (1..5) or clears (0) the manual rating of the selected row.
 func (u *ui) rateSelected(rating int) {
 	if u.selected < 0 || u.selected >= len(u.tracks) {
-		dialog.ShowInformation("No selection", "Select a track first.", u.win)
+		dialog.ShowInformation(i18n.T("relocate.no_selection_title"), i18n.T("relocate.select_first"), u.win)
 		return
 	}
 	// Update in place (same as the in-row stars) - not via reload(), which rebuilds
@@ -1972,7 +2017,7 @@ func (u *ui) relocateFolder() {
 		return
 	}
 	if len(folders) == 0 {
-		dialog.ShowInformation("No folders", "Add a folder first.", u.win)
+		dialog.ShowInformation(i18n.T("folders.none_title"), i18n.T("folders.add_first"), u.win)
 		return
 	}
 	names := make([]string, len(folders))
@@ -1981,8 +2026,8 @@ func (u *ui) relocateFolder() {
 	}
 	sel := widget.NewSelect(names, nil)
 	sel.SetSelectedIndex(0)
-	body := container.NewVBox(widget.NewLabel("Folder to relocate:"), sel)
-	dialog.ShowCustomConfirm("Relocate folder", "Choose new root…", "Cancel", body,
+	body := container.NewVBox(widget.NewLabel(i18n.T("relocate.folder_label")), sel)
+	dialog.ShowCustomConfirm(i18n.T("relocate.title"), i18n.T("relocate.choose_root"), i18n.T("common.cancel"), body,
 		func(ok bool) {
 			if !ok || sel.SelectedIndex() < 0 {
 				return
@@ -1997,7 +2042,7 @@ func (u *ui) relocateFolder() {
 					return
 				}
 				u.reload()
-				u.status.SetText("Relocated to: " + list.Path())
+				u.status.SetText(i18n.TC("status.relocated", map[string]string{"path": list.Path()}))
 			}, u.win)
 		}, u.win)
 }
@@ -2010,7 +2055,7 @@ func (u *ui) rescanAll() {
 		return
 	}
 	if len(folders) == 0 {
-		dialog.ShowInformation("No folders", "Add a folder first.", u.win)
+		dialog.ShowInformation(i18n.T("folders.none_title"), i18n.T("folders.add_first"), u.win)
 		return
 	}
 	u.scanFolders(folders)
@@ -2024,7 +2069,7 @@ func (u *ui) scanFolders(folders []Folder, onDone ...func()) {
 		var total ScanResult
 		for _, f := range folders {
 			res, err := u.db.ScanFolder(f, func(p string) {
-				fyne.Do(func() { u.status.SetText("Scanning: " + p) })
+				fyne.Do(func() { u.status.SetText(i18n.TC("status.scanning", map[string]string{"path": p})) })
 			})
 			if err != nil {
 				log.Printf("scan %q: %v", f.Path, err)
@@ -2035,8 +2080,11 @@ func (u *ui) scanFolders(folders []Folder, onDone ...func()) {
 		}
 		fyne.Do(func() {
 			u.reload()
-			u.status.SetText(fmt.Sprintf("Scan complete: %d files, %d catalogued, %d errors",
-				total.Found, total.Updated, total.Errors))
+			u.status.SetText(i18n.TC("status.scan_complete", map[string]string{
+				"files":      fmt.Sprintf("%d", total.Found),
+				"catalogued": fmt.Sprintf("%d", total.Updated),
+				"errors":     fmt.Sprintf("%d", total.Errors),
+			}))
 			u.startDurationEnricher() // compute lengths for any newly catalogued files
 			for _, fn := range onDone {
 				fn()

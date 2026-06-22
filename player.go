@@ -65,7 +65,7 @@ type Player struct {
 	eqEnabled  bool                    // graphic equalizer on/off (eq.go)
 	eqGains    [eqBandCount]float64    // per-band gain (dB)
 	eqCur      *eqStreamer             // the current stream's EQ stage, for live updates
-	balance    float64                 // stereo balance -1 (full left) .. 0 (centre) .. +1 (full right)
+	balance    float64                 // stereo balance -1 (full left) .. 0 (center) .. +1 (full right)
 	balCur     *balanceStreamer        // the current stream's balance stage, for live updates
 	// Track transition (player_transition.go): gapless / crossfade. gen rises each
 	// time a new stream becomes current, so a superseded track's end-callback is
@@ -653,7 +653,7 @@ func (p *Player) SetEQ(enabled bool, gains [eqBandCount]float64) {
 	speaker.Unlock()
 }
 
-// SetBalance sets the stereo balance (-1 full left .. 0 centre .. +1 full right)
+// SetBalance sets the stereo balance (-1 full left .. 0 center .. +1 full right)
 // and applies it live to the current stream (under speaker.Lock, like SetEQ).
 func (p *Player) SetBalance(pos float64) {
 	if pos < -1 {
@@ -673,7 +673,7 @@ func (p *Player) SetBalance(pos float64) {
 	speaker.Unlock()
 }
 
-// Balance returns the current stereo balance (-1..+1; 0 = centred).
+// Balance returns the current stereo balance (-1..+1; 0 = centered).
 func (p *Player) Balance() float64 {
 	p.mu.Lock()
 	defer p.mu.Unlock()

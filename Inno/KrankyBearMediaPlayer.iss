@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "KrankyBearMediaPlayer"
-#define MyAppVersion "0.9.0"
+#define MyAppVersion "1.0.0"
 #define MyAppPublisher "Allan Marillier, 2025-"
 #define MyAppURL "https://github.com/amarillier/KrankyBearMediaPlayer"
 #define MyAppExeName "KrankyBearMediaPlayer.exe"
@@ -52,7 +52,11 @@ Name: "startup"; Description: "Automatically start on login (or enable later via
 [Files]
 Source: "..\bin\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\assets\images\KrankyBearBeret.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+; The installed app reads only assets\i18n from disk (locale packs). Its images are
+; go:embed-ed into the binary (see bundled.go / easter.go), and the sounds folder is
+; unused (carried over from the template - playback is from the user's library only).
+; So exclude eggs, images and sounds - they'd just ship redundantly in the installer.
+Source: "..\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "eggs,eggs\*,images,images\*,sounds,sounds\*"
 Source: "..\ReleaseNotes.txt"; DestDir: "{app}"; Flags: isreadme
 
 [Registry]

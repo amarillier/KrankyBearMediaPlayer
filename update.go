@@ -12,9 +12,29 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+
+	"mediaplayer/internal/i18n"
 )
 
 var updateWindow fyne.Window
+
+// checkForUpdatesManual runs the user-triggered "Check for Updates" off the UI
+// goroutine (the GitHub query is a blocking network call — running it inline in the
+// menu callback froze the window with a spinning cursor for its duration). The status
+// bar shows progress; the result dialog is marshalled back with fyne.Do. minDays 0 =
+// never throttled (manual), but it shares the cache file with the launch check.
+func (u *ui) checkForUpdatesManual() {
+	u.status.SetText(i18n.T("status.checking_updates"))
+	go func() {
+		msg, avail, remoteTag := updateChecker(updateRepoOwner, updateRepoName,
+			updateRepoName, "", updateCheckStatePath(), 0)
+		ahead := versionIsNewer(appVersion, remoteTag)
+		fyne.Do(func() {
+			u.status.SetText("")
+			showUpdateDialog(u.app, msg, avail, ahead)
+		})
+	}()
+}
 
 // showUpdateDialog shows the update-check result. When ahead is true (the local
 // build is newer than the latest published release) it shows the HardHat bear -

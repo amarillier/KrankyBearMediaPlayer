@@ -22,12 +22,12 @@ func runBalance(in [][2]float64, pos float64) [][2]float64 {
 	return out
 }
 
-// TestBalanceGainsLaw checks the centre/full-left/full-right gain mapping and clamping.
+// TestBalanceGainsLaw checks the center/full-left/full-right gain mapping and clamping.
 func TestBalanceGainsLaw(t *testing.T) {
 	cases := []struct {
 		pos, l, r float64
 	}{
-		{0, 1, 1},      // centre: unity both
+		{0, 1, 1},      // center: unity both
 		{-1, 1, 0},     // full left: right silenced
 		{1, 0, 1},      // full right: left silenced
 		{-0.5, 1, 0.5}, // half left: right at half, left unity
@@ -43,12 +43,12 @@ func TestBalanceGainsLaw(t *testing.T) {
 	}
 }
 
-// TestBalanceCentrePassthrough verifies centre balance leaves samples untouched.
+// TestBalanceCentrePassthrough verifies center balance leaves samples untouched.
 func TestBalanceCentrePassthrough(t *testing.T) {
 	in := [][2]float64{{0.1, 0.2}, {-0.3, 0.4}, {0.5, -0.6}}
 	out := runBalance(in, 0)
 	if !reflect.DeepEqual(in, out) {
-		t.Errorf("centre balance altered samples: %v -> %v", in, out)
+		t.Errorf("center balance altered samples: %v -> %v", in, out)
 	}
 }
 

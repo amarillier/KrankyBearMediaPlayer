@@ -1,0 +1,200 @@
+{{app_name}} - menedżer i odtwarzacz Twojej biblioteki muzycznej
+
+PIERWSZE KROKI:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Biblioteka → Dodaj folder: wybierz folder z muzyką; zostanie przeskanowany do katalogu.
+  Dodaj tyle folderów / lokalizacji, ile chcesz.
+• Biblioteka → Zarządzaj folderami: zobacz każdy obserwowany folder z liczbą jego utworów; dodaj,
+  przenieś (przekieruj na przeniesiony dysk), przeskanuj ponownie lub usuń folder. Usunięcie wyjmuje jego
+  utwory z biblioteki, ale nigdy nie usuwa plików z dysku.
+• Biblioteka → Skanuj ponownie wszystko: przeskanuj ponownie obserwowane foldery, aby wychwycić nowe lub zmienione pliki.
+• Twoja biblioteka to mała baza danych SQLite. Tytuł, wykonawca, album, gatunek, rok,
+  numer ścieżki oraz osadzona okładka albumu są odczytywane z każdego pliku.
+
+ODTWARZANIE MUZYKI:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Kliknij dwukrotnie dowolny utwór, aby rozpocząć odtwarzanie od niego przez resztę listy.
+• Pasek transportu (dolny pasek): Poprzedni, Odtwórz/Wstrzymaj, Zatrzymaj, Następny.
+• Menu Odtwarzanie: Losowo odtwarza kolejkę w losowej kolejności; Powtarzaj → Wyłączone / Wszystko
+  (zapętl kolejkę) / Jeden (zapętl bieżący utwór). Oba ustawienia są zapamiętywane. Przeskakiwanie
+  za pomocą Następny/Poprzedni zawsze przechodzi dalej, nawet przy ustawieniu Powtarzaj jeden.
+• Odtwarzanie → ReplayGain: gdy włączone, utwory oznaczone znacznikiem ReplayGain odtwarzane są ze
+  spójną głośnością (z ograniczeniem szczytów, aby wzmocnione utwory nie zniekształcały). Domyślnie wyłączone.
+  "Preferuj wzmocnienie albumu" normalizuje według głośności albumu (zachowując własny
+  balans cichych/głośnych fragmentów albumu), gdy obecne są znaczniki albumu, w przeciwnym razie używa wzmocnienia utworu.
+  Aby samodzielnie oznaczyć pliki, zaznacz je i użyj Biblioteka → Skanuj ReplayGain zaznaczonych…
+  (lub kliknij prawym przyciskiem → Skanuj ReplayGain): aplikacja mierzy głośność (BS.1770 /
+  ReplayGain 2.0) i zapisuje znaczniki ReplayGain utworu + albumu do MP3/FLAC.
+• Odtwarzanie → Korektor…: 10-pasmowy korektor graficzny (31 Hz – 16 kHz, ±12 dB), który
+  kształtuje barwę na żywo. Zaznacz Włącz, przeciągaj suwaki pasm lub wybierz ustawienie (Flat, Bass
+  Boost, Vocal, Rock, …). Zapisz własne ustawienia za pomocą "Zapisz ustawienie…" i usuwaj je
+  za pomocą "Usuń ustawienie". Resetuj (Flat) zeruje pasma; wyłączenie jest przezroczyste.
+• Odtwarzanie → Przejście między utworami: Przerwa (domyślnie), Bez przerwy (utwory stykają się bez
+  ciszy) lub Przenikanie (kończący się utwór wycisza się, gdy następny się rozjaśnia).
+  Bez przerwy/Przenikanie są eksperymentalne.
+• Kolejka odtwarzania (Odtwarzanie → Pokaż kolejkę odtwarzania): zobacz, co jest ustawione w kolejności odtwarzania, z
+  bieżącym utworem oznaczonym ▶. Kliknij utwór prawym przyciskiem → Dodaj do kolejki (lub Biblioteka → Dodaj
+  zaznaczone / Dodaj wszystkie widoczne do kolejki) dołącza bez przerywania tego, co jest odtwarzane.
+  W oknie kolejki: Odtwórz zaznaczony utwór, Usuń go, przesuń W górę/W dół lub
+  Wyczyść wszystko.
+• Najedź na przycisk paska narzędzi lub transportu, aby zobaczyć podpowiedź wyjaśniającą jego działanie.
+• Pasek przewijania pokazuje czas, który upłynął / całkowity — przeciągnij go, aby przeskoczyć w obrębie utworu.
+• Dwa elementy sterujące głośnością znajdują się w prawym dolnym rogu:
+  - "App" reguluje tylko poziom samego odtwarzacza (zapamiętywany między uruchomieniami).
+  - "Sys" steruje głównym wyjściem głośności komputera, z przełącznikiem wyciszenia obok
+    niego. Pozostaje zsynchronizowany z poziomem systemowym — w tym ze zmianami wprowadzanymi za pomocą
+    klawiszy głośności lub miksera systemu operacyjnego — i zmienia głośność całej maszyny, a nie
+    tylko tej aplikacji.
+• "Bal" ustawia balans stereo lewy/prawy (zapamiętywany między uruchomieniami). Ma
+  miękki zatrzask środkowy, a przycisk "C" obok niego przyciąga z powrotem do dokładnego środka.
+  Przydatne, gdy głośniki nie są rozmieszczone symetrycznie.
+• Wskaźnik zaznaczonego wiersza podąża za obecnie odtwarzanym utworem.
+
+OCENY I ŚLEDZENIE ODTWORZEŃ:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Oceny są ręczne: samodzielnie ustaw ocenę od 1 do 5 gwiazdek. Liczba odtworzeń jest śledzona
+  oddzielnie (we własnej kolumnie) i NIE jest zamieniana na gwiazdki.
+• Kliknij gwiazdki w kolumnie Ocena utworu, aby ustawić ocenę; kliknij tę samą gwiazdkę
+  ponownie, aby ją wyczyścić (z powrotem do braku gwiazdek). Przyciski "Oceń:" (na dole) oraz
+  menu prawego przycisku robią to samo. Wszystkie pięć gwiazdek można kliknąć.
+• Widok → Licz odtworzenie po: wybierz, jaka część utworu musi zostać odtworzona, zanim jego
+  liczba odtworzeń wzrośnie (25 / 50 / 75 / 90% lub Koniec utworu). Przeskoczenie nigdy się nie liczy.
+• Wskazówka: filtruj według Odtworzeń (filtr kolumny), aby znaleźć np. wszystko, co odtworzono 5
+  razy, a następnie oceń te utwory tak, jak chcesz.
+
+WYSZUKIWANIE I PORZĄDKOWANIE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Pole wyszukiwania (na górze): filtruje według tytułu, wykonawcy, albumu, gatunku lub nazwy pliku podczas pisania.
+• Filtry kolumn (Widok → Pokaż filtry kolumn): wiersz pól dla poszczególnych kolumn — wpisz w
+  Tytuł, Wykonawca, Album, Gatunek, aby dopasować podciąg; Rok i Odtworzenia przyjmują wzorzec
+  (np. Rok 202[456] pasuje do 2024-2026; Odtworzenia 5 = odtworzono dokładnie pięć razy, 0 =
+  nigdy nie odtworzono). Łączą się ze sobą
+  oraz z filtrem wyszukiwania/Pokaż. Wyczyść je przyciskiem ✕; ukrycie wiersza
+  również je czyści.
+• Filtr "Pokaż" (na górze): Wszystkie, Bez oceny, dokładna liczba gwiazdek lub N gwiazdek i więcej.
+• Kliknij nagłówek kolumny, aby sortować; kliknij ponownie, aby odwrócić (kolumna Okładka nie sortuje).
+• Menu Widok: opcjonalnie pokaż kolumny Długość, Format, Przepływność, Gatunek, Nr ścieżki i
+  Nazwa pliku (Długość jest domyślnie włączona, reszta wyłączona; wybory są zapamiętywane).
+  Długość i Przepływność wypełniają się wkrótce po uruchomieniu/skanowaniu, gdy aplikacja odczytuje czas
+  odtwarzania każdego utworu w tle, więc mogą przez chwilę być puste.
+• Przeskocz do odtwarzanego utworu: kliknij jego nazwę na dolnym pasku lub użyj przycisku paska narzędzi
+  "Teraz odtwarzane" (obok Skanuj ponownie). Przydatne po przewinięciu, wyszukaniu lub
+  posortowaniu. (Tylko lokalizuje utwór — nie rozpoczyna ani nie zatrzymuje odtwarzania.)
+• Wznawia tam, gdzie skończyłeś: aplikacja zapamiętuje kolejność sortowania i przy ponownym uruchomieniu
+  zaznacza i przewija do ostatnio odtwarzanego utworu (nie odtwarza automatycznie).
+• Kopiowanie utworów w inne miejsce: Widok → Pola wyboru zaznaczenia dodaje kolumnę ✓; zaznacz
+  wiersze (kliknij nagłówek ✓, aby przełączyć wszystkie widoczne) lub Biblioteka → Zaznacz wszystkie widoczne.
+  Następnie Biblioteka → Kopiuj zaznaczone do… pozwala wybrać Płaski lub Uporządkuj w
+  folderach Wykonawca/Album, a potem miejsce docelowe — np. filtruj do 5 gwiazdek, zaznacz wszystkie,
+  skopiuj na dysk USB. Okno postępu pokazuje każdy plik i pozwala Anulować.
+  (Konflikty nazw otrzymują przyrostek " (2)"; nic nie jest nadpisywane.)
+• Kliknij utwór prawym przyciskiem, aby uzyskać Odtwórz, ocenę, Dodaj okładkę albumu (lokalny plik obrazu lub URL,
+  przechowywany w bibliotece), Pokaż w menedżerze plików oraz Pokaż pełną ścieżkę (z
+  przyciskiem Kopiuj).
+• Zmień nazwę pliku… / Edytuj znaczniki… / Ustaw ocenę z prawego przycisku zwykle działają tylko na tym
+  utworze. Ale jeśli klikniesz prawym przyciskiem utwór, który jest zaznaczony (✓), działają na całym
+  zaznaczonym zestawie — etykieta menu mówi, na którym (np. "Edytuj znaczniki 5 zaznaczonych…",
+  "Ustaw ocenę (5 zaznaczonych)").
+• Zmień nazwę pliku… (prawy przycisk) zmienia nazwę pliku na dysku na podstawie jego znaczników, używając
+  wzorca tokenów — %track% %title% %artist% %album% %albumartist% %year%
+  %genre% — np. "%track% %title% - %artist%". Podgląd na żywo pokazuje nową nazwę
+  przed jej zastosowaniem; rozszerzenie jest zawsze zachowywane, a katalog aktualizuje się w miejscu
+  (bez ponownego skanowania). %track% jest uzupełniany zerami do dwóch cyfr.
+• Edytuj znaczniki… (prawy przycisk) otwiera edytor dla tytułu, wykonawcy, albumu, wykonawcy
+  albumu, roku, nr ścieżki, gatunku, komentarza oraz osadzonej okładki. Zmiany
+  są zapisywane z powrotem do pliku dla MP3 i FLAC; OGG i WAV otwierają się na razie tylko do
+  odczytu. Znaczniki z nazwy pliku… (w tym edytorze) analizuje nazwę pliku na pola
+  przy użyciu tego samego wzorca tokenów, abyś mógł je przejrzeć przed zapisaniem — nigdy nie zapisuje
+  samodzielnie. Jeśli edytujesz obecnie odtwarzany utwór, odtwarzanie najpierw się zatrzymuje,
+  aby plik mógł zostać zapisany. Katalog (i wszelkie miniatury) aktualizują się natychmiast.
+• Edytuj znaczniki kilku naraz: zaznacz utwory (Pola wyboru zaznaczenia / Zaznacz wszystkie
+  widoczne), następnie Biblioteka → Edytuj znaczniki zaznaczonych… Możesz połączyć cztery rodzaje
+  zmian w jednym przebiegu: (1) Z nazwy pliku — ustaw tytuł/wykonawcę/nr ścieżki/itd. dla każdego
+  utworu, analizując jego nazwę wzorcem tokenów (zbiorcza forma Znaczników z
+  nazwy pliku; pliki, które nie pasują, pozostają nietknięte); (2) Ustaw pola — zaznacz Wykonawca,
+  Album, Wykonawca albumu, Gatunek, Rok lub Komentarz, aby nadać im jedną wartość w całym
+  zaznaczeniu (te zastępują wzorzec); (3) Znajdź i zamień — zmień tekst
+  w jednym polu w całym zaznaczeniu (np. "feat."→"ft.", opcjonalnie ignorując
+  wielkość liter); (4) Okładka — ustaw jeden obraz jako okładkę dla wszystkich lub usuń okładkę
+  ze wszystkich. Okno postępu pokazuje każdy plik z przyciskiem Anuluj; OGG/WAV są
+  pomijane.
+• Zmień nazwy kilku naraz: zaznacz utwory, następnie Biblioteka → Zmień nazwy zaznaczonych według
+  wzorca… Lista podglądu pokazuje każdą starą → nową nazwę; zastosowanie zmienia je wszystkie (konflikty
+  nazw otrzymują przyrostek " (2)", nic nie jest nadpisywane) z przyciskiem Anuluj.
+• Raport biblioteki (Biblioteka → Raport biblioteki…): podsumuj swoją kolekcję pogrupowaną według
+  Wykonawcy, Albumu lub Gatunku; hierarchicznie (Wykonawca → Album, Album → Wykonawca, Gatunek →
+  Wykonawca); lub jako płaską listę utworów. Zaznacz "Wypisz utwory", aby rozwinąć każde grupowanie
+  i pokazać utwory w jego obrębie. Sortuj według Nazwy lub Roku z przełącznikiem rosnąco/malejąco,
+  przełączaj między całą biblioteką a bieżącym filtrowanym widokiem oraz
+  Eksportuj CSV…, aby zapisać raport.
+
+LISTY ODTWARZANIA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Statyczne listy odtwarzania (menu Listy odtwarzania): Zapisz listę odtwarzania… zapisuje aktualnie
+  oglądane utwory do przenośnego pliku .m3u8 ze ścieżkami względnymi do pliku, więc
+  lista i jej muzyka podróżują razem (np. na pendrivie). Otwórz listę odtwarzania…
+  wczytuje jedną i ją odtwarza; pliki nadal w Twoim katalogu zachowują gwiazdki/liczby odtworzeń.
+• Inteligentne listy odtwarzania (Listy odtwarzania → Nowa inteligentna lista…): zapisz kryteria filtra —
+  ocenę oraz opcjonalnie Gatunek / Wykonawca / Album (częściowo, bez rozróżniania wielkości liter — np.
+  "Wickham" pasuje do "Phil Wickham"), plus tekstowe Szukaj — pod nazwą. Wybranie
+  jej z menu Listy odtwarzania ponownie stosuje kryteria na żywo (pasek stanu pokazuje
+  ♫ <nazwa>). Aktualizują się automatycznie wraz ze zmianami biblioteki. Zarządzaj inteligentnymi
+  listami… pozwala edytować kryteria zapisanej listy (przycisk ołówka, który
+  może ją również zmienić nazwę) lub usunąć te, których już nie chcesz.
+
+OKNA I ZASOBNIK SYSTEMOWY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Ikona w zasobniku systemowym + menu odzwierciedlają elementy sterujące: Pokaż/Ukryj wszystkie okna,
+  Odtwórz/Wstrzymaj, Poprzedni, Następny, Zatrzymaj, Zakończ.
+• Ukryj wszystkie okna chowa aplikację i wstrzymuje odtwarzanie; Pokaż wszystkie przywraca ją
+  z powrotem (naciśnij Odtwórz, aby wznowić).
+• Główne okno zapamiętuje swój rozmiar między uruchomieniami.
+
+PRZENOŚNA BIBLIOTEKA (przenoszenie między maszynami lub dyskami):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Lokalizacje utworów są przechowywane względem każdego obserwowanego folderu, więc jeśli przenośny
+  dysk montuje się jako D:\ na jednym komputerze i E:\ na innym, po prostu użyj
+  Biblioteka → Przenieś folder, aby przekierować folder — każdy utwór pod nim podąża,
+  zachowując swoje liczby odtworzeń i oceny.
+• Lokalizację bazy danych można ustawić flagą wiersza poleceń -db, zmienną środowiskową
+  KBMP_DB lub Widok → Preferencje → Lokalizacja bazy danych (uruchom ponownie, aby
+  zadziałało); domyślnie znajduje się obok aplikacji (przydatne na pendrivie).
+
+PREFERENCJE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Widok → Preferencje… (Alt+R) zbiera typowe ustawienia w jednym miejscu:
+  motyw, język, próg "licz odtworzenie po", głośność odtwarzania (zapamiętywaną
+  między uruchomieniami), to, czy otwierać korektor przy uruchomieniu, opcjonalne kolumny
+  oraz lokalizację bazy danych. Te same przełączniki pozostają w menu Widok do szybkich
+  jednorazowych zmian.
+
+INTELIGENTNE FUNKCJE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ Osadzona okładka albumu wyświetlana jako miniatury w tabeli i obszarze teraz odtwarzane.
+✨ Inteligentne listy odtwarzania, które są ponownie oceniane na żywo wraz ze zmianami biblioteki.
+✨ Obsługa motywów: motyw Jasny, Ciemny lub Systemowy (menu Widok).
+
+SKRÓTY KLAWIATUROWE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Alt+P — Odtwórz / Wstrzymaj
+• Alt+→ — Następny utwór   • Alt+← — Poprzedni utwór
+• Alt+H — Ukryj wszystkie okna (i wstrzymaj). Brak skrótu do ponownego pokazania, celowo —
+  użyj zasobnika systemowego lub Widok → Pokaż wszystkie okna.
+• Alt+R — Preferencje
+• Cmd/Ctrl+Q — Zakończ   • Cmd/Ctrl+W — Zamknij okno   • Cmd/Ctrl+M — Minimalizuj
+
+ZNANE OGRANICZENIA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Obsługiwane formaty audio: MP3, FLAC, WAV, OGG (M4A/AAC/ALAC nie są jeszcze obsługiwane).
+⚠️  Odtwarzanie teledysków jest planowane, ale jeszcze niedostępne.
+
+WIĘCEJ INFORMACJI:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Dokumentacja, zgłoszenia błędów lub propozycje funkcji:
+📦 GitHub: https://github.com/amarillier/KrankyBearMediaPlayer
+📄 Licencja: https://github.com/amarillier/KrankyBearMediaPlayer/blob/allanm/LICENSE
+📝 Informacje o wydaniu: Sprawdź "Pomoc → Sprawdź aktualizacje"
+
+WOLNE OPROGRAMOWANIE - Używaj wszędzie, zawsze, w dowolnym celu!
+Bez rejestracji, bez śledzenia. Jedyne użycie sieci to dyskretne sprawdzanie aktualizacji -
+raz dziennie przy uruchomieniu, plus ręczne "Sprawdź aktualizacje".

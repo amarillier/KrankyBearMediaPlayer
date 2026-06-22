@@ -7,6 +7,8 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+
+	"mediaplayer/internal/i18n"
 )
 
 var aboutWindow fyne.Window
@@ -33,7 +35,7 @@ func showAbout(a fyne.App) {
 		return
 	}
 
-	aboutWindow = a.NewWindow(appName + " - About")
+	aboutWindow = a.NewWindow(i18n.TC("about.win_title", map[string]string{"app_name": appName}))
 	aboutWindow.SetIcon(resourceKrankyBearMediaPlayerPng)
 
 	// App icon - adjust size as needed
@@ -43,27 +45,27 @@ func showAbout(a fyne.App) {
 
 	// Title and version info
 	title := widget.NewLabelWithStyle(appName, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
-	version := widget.NewLabel("Version: " + appVersion)
+	version := widget.NewLabel(i18n.TC("about.version", map[string]string{"v": appVersion}))
 	version.Alignment = fyne.TextAlignCenter
 
-	// Description - customize for your app
-	description := widget.NewLabel("A comprehensive music library manager & player")
+	// Description: loaded from about_<locale>.txt (falls back to embedded English).
+	description := widget.NewLabel(i18n.AboutBody(appName, appVersion, appCopyright))
 	description.Alignment = fyne.TextAlignCenter
 	description.Wrapping = fyne.TextWrapWord
 
 	// Copyright and author
 	copyright := widget.NewLabel(appCopyright)
 	copyright.Alignment = fyne.TextAlignCenter
-	author := widget.NewLabel("By " + appAuthor)
+	author := widget.NewLabel(i18n.TC("about.by", map[string]string{"author": appAuthor}))
 	author.Alignment = fyne.TextAlignCenter
 
 	// Links - update URLs for your project
 	licenseURL, _ := url.Parse("https://github.com/amarillier/KrankyBearMediaPlayer/blob/allanm/LICENSE")
-	licenseLink := widget.NewHyperlink("License Information", licenseURL)
+	licenseLink := widget.NewHyperlink(i18n.T("about.license_link"), licenseURL)
 	licenseLink.Alignment = fyne.TextAlignCenter
 
 	githubURL, _ := url.Parse("https://github.com/amarillier/KrankyBearMediaPlayer")
-	githubLink := widget.NewHyperlink("GitHub Repository", githubURL)
+	githubLink := widget.NewHyperlink(i18n.T("about.github_link"), githubURL)
 	githubLink.Alignment = fyne.TextAlignCenter
 
 	// Layout

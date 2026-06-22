@@ -1,5 +1,1 @@
-{{app_name}}
-
-Version {{version}}
-
-{{copyright}}
+A whole-hog music stash wrangler an' player

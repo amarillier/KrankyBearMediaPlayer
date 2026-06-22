@@ -31,6 +31,8 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	"mediaplayer/internal/i18n"
 )
 
 // Cover-art modes for a batch patch.
@@ -75,8 +77,29 @@ func (p tagPatch) any() bool {
 		p.setArtist || p.setAlbum || p.setAlbumArtist || p.setGenre || p.setComment || p.setYear
 }
 
-// frFields are the fields find-and-replace can target, in dialog order.
+// frFields are the fields find-and-replace can target, in dialog order. These are
+// stable English keys matched in patch.applyTo's switch; the dialog shows translated
+// labels (see frFieldI18nKey) mapped back to these.
 var frFields = []string{"Title", "Artist", "Album", "Album Artist", "Genre", "Comment"}
+
+// frFieldI18nKey maps an frFields entry to its tag.* i18n key.
+func frFieldI18nKey(field string) string {
+	switch field {
+	case "Title":
+		return "tag.title"
+	case "Artist":
+		return "tag.artist"
+	case "Album":
+		return "tag.album"
+	case "Album Artist":
+		return "tag.album_artist"
+	case "Genre":
+		return "tag.genre"
+	case "Comment":
+		return "tag.comment"
+	}
+	return ""
+}
 
 // replaceIn applies the patch's find/replace to s (case-sensitive or insensitive).
 func (p tagPatch) replaceIn(s string) string {
@@ -161,9 +184,7 @@ func (p tagPatch) applyTo(tt *trackTags, path string) {
 // editTagsOfSelected opens the batch tag editor for the marked tracks.
 func (u *ui) editTagsOfSelected() {
 	if len(u.marked) == 0 {
-		dialog.ShowInformation("Edit tags of selected",
-			"No tracks are marked. Turn on View → Selection checkboxes and tick some "+
-				"tracks (or Library → Select All Shown), then try again.", u.win)
+		dialog.ShowInformation(i18n.T("batch.title"), i18n.T("queue.none_marked"), u.win)
 		return
 	}
 	targets := make([]batchTarget, 0, len(u.marked))
@@ -172,8 +193,8 @@ func (u *ui) editTagsOfSelected() {
 	}
 
 	// --- Section 1: from filename (per-file pattern) ---
-	patUse := widget.NewCheck("Set tags from each file's name", nil)
-	leadChk := widget.NewCheck("Filename has a leading track number", nil)
+	patUse := widget.NewCheck(i18n.T("batch.from_filename_use"), nil)
+	leadChk := widget.NewCheck(i18n.T("batch.leading_track"), nil)
 	patEntry, presets := u.patternPicker(prefParsePattern, renamePresets[1], func() {})
 	patEntry.Disable()
 	presets.Disable()
@@ -190,8 +211,7 @@ func (u *ui) editTagsOfSelected() {
 		}
 	}
 	patHelp := widget.NewLabelWithStyle(
-		"Tokens: %track% %title% %artist% %album% %albumartist% %year% %genre%. "+
-			"Files whose name doesn't match are left unchanged.",
+		i18n.T("batch.tokens_note"),
 		fyne.TextAlignLeading, fyne.TextStyle{Italic: true})
 	patHelp.Wrapping = fyne.TextWrapWord
 	patternSection := container.NewVBox(patUse, patEntry, presets, leadChk, patHelp)
@@ -209,7 +229,7 @@ func (u *ui) editTagsOfSelected() {
 	checks := map[*widget.Entry]*widget.Check{}
 	addField := func(label string, e *widget.Entry) {
 		e.Disable()
-		chk := widget.NewCheck("Change", func(on bool) {
+		chk := widget.NewCheck(i18n.T("batch.change"), func(on bool) {
 			if on {
 				e.Enable()
 			} else {
@@ -219,12 +239,12 @@ func (u *ui) editTagsOfSelected() {
 		checks[e] = chk
 		fixedForm.Append(label, container.NewBorder(nil, nil, chk, nil, e))
 	}
-	addField("Artist", artist)
-	addField("Album", album)
-	addField("Album Artist", albumArtist)
-	addField("Genre", genre)
-	addField("Year", year)
-	addField("Comment", comment)
+	addField(i18n.T("tag.artist"), artist)
+	addField(i18n.T("tag.album"), album)
+	addField(i18n.T("tag.album_artist"), albumArtist)
+	addField(i18n.T("tag.genre"), genre)
+	addField(i18n.T("tag.year"), year)
+	addField(i18n.T("tag.comment"), comment)
 
 	// --- Section 3: cover art for all ---
 	artMode := artLeave
@@ -234,7 +254,7 @@ func (u *ui) editTagsOfSelected() {
 	preview.FillMode = canvas.ImageFillContain
 	preview.SetMinSize(fyne.NewSize(96, 96))
 	preview.Hide()
-	chooseBtn := widget.NewButtonWithIcon("Choose image…", theme.FolderOpenIcon(), nil)
+	chooseBtn := widget.NewButtonWithIcon(i18n.T("batch.choose_image"), theme.FolderOpenIcon(), nil)
 	chooseBtn.Disable()
 	chooseBtn.OnTapped = func() {
 		fd := dialog.NewFileOpen(func(rc fyne.URIReadCloser, err error) {
@@ -255,14 +275,17 @@ func (u *ui) editTagsOfSelected() {
 		fd.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", ".jpeg", ".gif"}))
 		fd.Show()
 	}
+	artLeaveLbl := i18n.T("batch.art_leave")
+	artSetLbl := i18n.T("batch.art_set")
+	artRemoveLbl := i18n.T("batch.art_remove")
 	artRadio := widget.NewRadioGroup(
-		[]string{"Leave covers as-is", "Set one image for all", "Remove cover from all"},
+		[]string{artLeaveLbl, artSetLbl, artRemoveLbl},
 		func(s string) {
 			switch s {
-			case "Set one image for all":
+			case artSetLbl:
 				artMode = artSet
 				chooseBtn.Enable()
-			case "Remove cover from all":
+			case artRemoveLbl:
 				artMode = artClear
 				chooseBtn.Disable()
 			default:
@@ -270,21 +293,30 @@ func (u *ui) editTagsOfSelected() {
 				chooseBtn.Disable()
 			}
 		})
-	artRadio.SetSelected("Leave covers as-is")
+	artRadio.SetSelected(artLeaveLbl)
 	coverSection := container.NewVBox(
 		artRadio,
 		container.NewBorder(nil, nil, container.NewGridWrap(fyne.NewSize(100, 100), preview), nil, chooseBtn),
 	)
 
 	// --- Section 4: find & replace within one field ---
-	frUse := widget.NewCheck("Find & replace in a field", nil)
-	frField := widget.NewSelect(frFields, nil)
+	frUse := widget.NewCheck(i18n.T("batch.fr_use"), nil)
+	// frFields are stable English keys (used in applyTo's switch); the Select shows
+	// translated labels mapped back to those keys.
+	frFieldKeyByLabel := map[string]string{}
+	frLabels := make([]string, len(frFields))
+	for i, k := range frFields {
+		lbl := i18n.T(frFieldI18nKey(k))
+		frLabels[i] = lbl
+		frFieldKeyByLabel[lbl] = k
+	}
+	frField := widget.NewSelect(frLabels, nil)
 	frField.SetSelectedIndex(0)
 	frFind := widget.NewEntry()
-	frFind.SetPlaceHolder("Find…")
+	frFind.SetPlaceHolder(i18n.T("batch.fr_find"))
 	frReplace := widget.NewEntry()
-	frReplace.SetPlaceHolder("Replace with…")
-	frCI := widget.NewCheck("Ignore case", nil)
+	frReplace.SetPlaceHolder(i18n.T("batch.fr_replace"))
+	frCI := widget.NewCheck(i18n.T("batch.fr_ci"), nil)
 	frField.Disable()
 	frFind.Disable()
 	frReplace.Disable()
@@ -300,31 +332,30 @@ func (u *ui) editTagsOfSelected() {
 	}
 	frSection := container.NewVBox(
 		frUse,
-		container.NewBorder(nil, nil, widget.NewLabel("Field"), nil, frField),
+		container.NewBorder(nil, nil, widget.NewLabel(i18n.T("batch.field")), nil, frField),
 		frFind, frReplace, frCI,
 	)
 
 	sep := widget.NewSeparator
-	note := widget.NewLabel(fmt.Sprintf(
-		"Apply to %d marked track(s). MP3 and FLAC only — other formats are skipped.", len(targets)))
+	note := widget.NewLabel(i18n.TC("batch.apply_note", map[string]string{"n": fmt.Sprintf("%d", len(targets))}))
 	note.Wrapping = fyne.TextWrapWord
 
 	body := container.NewVScroll(container.NewVBox(
 		note,
-		widget.NewLabelWithStyle("From filename", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle(i18n.T("batch.sec_from_filename"), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		patternSection,
 		sep(),
-		widget.NewLabelWithStyle("Set fields (same value for all)", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle(i18n.T("batch.sec_set_fields"), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		fixedForm,
 		sep(),
-		widget.NewLabelWithStyle("Find & replace", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle(i18n.T("batch.sec_find_replace"), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		frSection,
 		sep(),
-		widget.NewLabelWithStyle("Cover art", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle(i18n.T("batch.sec_cover"), fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		coverSection,
 	))
 
-	d := dialog.NewCustomConfirm("Edit tags of selected", "Apply", "Cancel", body, func(ok bool) {
+	d := dialog.NewCustomConfirm(i18n.T("batch.title"), i18n.T("common.apply"), i18n.T("common.cancel"), body, func(ok bool) {
 		if !ok {
 			return
 		}
@@ -344,7 +375,7 @@ func (u *ui) editTagsOfSelected() {
 			pattern:        strings.TrimSpace(patEntry.Text),
 			leadingTrack:   leadChk.Checked,
 			frUse:          frUse.Checked,
-			frField:        frField.Selected,
+			frField:        frFieldKeyByLabel[frField.Selected],
 			frFind:         frFind.Text,
 			frReplace:      frReplace.Text,
 			frCI:           frCI.Checked,
@@ -355,24 +386,20 @@ func (u *ui) editTagsOfSelected() {
 		patch.year, _ = strconv.Atoi(year.Text)
 
 		if patch.frUse && patch.frFind == "" {
-			dialog.ShowInformation("Edit tags of selected",
-				"Enter the text to find, or untick \"Find & replace in a field\".", u.win)
+			dialog.ShowInformation(i18n.T("batch.title"), i18n.T("batch.need_find"), u.win)
 			return
 		}
 
 		if patch.usePattern && patch.pattern == "" {
-			dialog.ShowInformation("Edit tags of selected",
-				"Enter a pattern, or untick \"Set tags from each file's name\".", u.win)
+			dialog.ShowInformation(i18n.T("batch.title"), i18n.T("batch.need_pattern"), u.win)
 			return
 		}
 		if patch.artMode == artSet && len(patch.art) == 0 {
-			dialog.ShowInformation("Edit tags of selected",
-				"Choose an image for the cover, or pick a different cover option.", u.win)
+			dialog.ShowInformation(i18n.T("batch.title"), i18n.T("batch.need_image"), u.win)
 			return
 		}
 		if !patch.any() {
-			dialog.ShowInformation("Edit tags of selected",
-				"Pick at least one change: a filename pattern, a ticked field, or a cover option.", u.win)
+			dialog.ShowInformation(i18n.T("batch.title"), i18n.T("batch.need_change"), u.win)
 			return
 		}
 		if patch.usePattern {
@@ -396,21 +423,21 @@ func (u *ui) applyTagPatch(targets []batchTarget, patch tagPatch) {
 		for _, t := range targets {
 			if t.id == cur.ID {
 				u.player.Stop()
-				u.status.SetText("Stopped playback to update tags")
+				u.status.SetText(i18n.T("status.stopped_update_tags"))
 				break
 			}
 		}
 	}
 
 	total := len(targets)
-	statusLbl := widget.NewLabel(fmt.Sprintf("Updating %d file(s)…", total))
+	statusLbl := widget.NewLabel(i18n.TC("batch.updating_n", map[string]string{"n": fmt.Sprintf("%d", total)}))
 	statusLbl.Truncation = fyne.TextTruncateEllipsis
 	prog := widget.NewProgressBar()
 	prog.Max = float64(total)
 	var canceled atomic.Bool
-	cancelBtn := widget.NewButton("Cancel", func() { canceled.Store(true) })
+	cancelBtn := widget.NewButton(i18n.T("common.cancel"), func() { canceled.Store(true) })
 	cancelBtn.Importance = widget.DangerImportance
-	d := dialog.NewCustomWithoutButtons("Updating tags", container.NewVBox(
+	d := dialog.NewCustomWithoutButtons(i18n.T("batch.updating_title"), container.NewVBox(
 		statusLbl, prog, container.NewCenter(cancelBtn),
 	), u.win)
 	d.Resize(fyne.NewSize(420, 150))
@@ -423,7 +450,11 @@ func (u *ui) applyTagPatch(targets []batchTarget, patch tagPatch) {
 				break
 			}
 			n, name := i+1, filepath.Base(t.path)
-			fyne.Do(func() { statusLbl.SetText(fmt.Sprintf("Updating %d of %d: %s", n, total, name)) })
+			fyne.Do(func() {
+				statusLbl.SetText(i18n.TC("batch.updating_progress", map[string]string{
+					"n": fmt.Sprintf("%d", n), "total": fmt.Sprintf("%d", total), "name": name,
+				}))
+			})
 
 			if !tagsWritable(t.path) {
 				skipped++
@@ -493,17 +524,17 @@ func (u *ui) applyTagPatch(targets []batchTarget, patch tagPatch) {
 			d.Hide()
 			u.table.Refresh()
 			u.refreshNowPlaying()
-			summary := fmt.Sprintf("Updated tags on %d file(s)", updated)
+			summary := i18n.TC("batch.updated", map[string]string{"n": fmt.Sprintf("%d", updated)})
 			if skipped > 0 {
-				summary += fmt.Sprintf("; %d skipped (OGG/WAV not writable)", skipped)
+				summary += i18n.TC("common.skipped_unwritable", map[string]string{"n": fmt.Sprintf("%d", skipped)})
 			}
 			if failed > 0 {
-				summary += fmt.Sprintf("; %d failed (see log)", failed)
+				summary += i18n.TC("common.failed_log", map[string]string{"n": fmt.Sprintf("%d", failed)})
 			}
-			title := "Tags updated"
+			title := i18n.T("batch.complete")
 			if wasCanceled {
-				title = "Tag update cancelled"
-				summary = "Cancelled before finishing. " + summary
+				title = i18n.T("batch.cancelled")
+				summary = i18n.T("common.cancelled_prefix") + summary
 			}
 			u.status.SetText(summary)
 			dialog.ShowInformation(title, summary, u.win)

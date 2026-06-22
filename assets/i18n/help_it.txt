@@ -1,0 +1,200 @@
+{{app_name}} - il tuo gestore e lettore di librerie musicali
+
+PER INIZIARE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Libreria → Aggiungi cartella: scegli una cartella di musica; viene scansionata nel catalogo.
+  Aggiungi tutte le cartelle / posizioni che vuoi.
+• Libreria → Gestisci cartelle: vedi ogni cartella monitorata con il suo numero di brani; aggiungi,
+  ricolloca (ripunta su un'unità spostata), riscansiona o rimuovi una cartella. Rimuoverla toglie i suoi
+  brani dalla libreria ma non elimina mai i file su disco.
+• Libreria → Riscansiona tutto: riscansiona le cartelle monitorate per rilevare file nuovi o modificati.
+• La tua libreria è un piccolo database SQLite. Titolo, artista, album, genere, anno,
+  numero di brano e la copertina album incorporata vengono letti da ciascun file.
+
+RIPRODURRE MUSICA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Fai doppio clic su un brano per iniziare la riproduzione da lì attraverso il resto dell'elenco.
+• Comandi di trasporto (barra inferiore): Precedente, Riproduci/Pausa, Ferma, Successivo.
+• Menu Riproduzione: Casuale riproduce la coda in ordine casuale; Ripeti → Disattivata / Tutto
+  (ripeti la coda) / Uno (ripeti il brano corrente). Entrambi vengono memorizzati. Saltare
+  con Successivo/Precedente avanza sempre, anche con Ripeti uno.
+• Riproduzione → ReplayGain: quando è attivo, i brani con tag ReplayGain vengono riprodotti a un
+  volume costante (limitato sui picchi affinché i brani amplificati non saturino). Disattivato per impostazione predefinita.
+  "Preferisci il guadagno dell'album" normalizza in base al volume dell'album (preservando il
+  bilanciamento piano/forte dell'album) quando sono presenti i tag dell'album, altrimenti usa il guadagno del brano.
+  Per applicare i tag tu stesso, contrassegna i brani e usa Libreria → Analizza ReplayGain dei selezionati…
+  (oppure clic destro → Analizza ReplayGain): l'app misura il volume (BS.1770 /
+  ReplayGain 2.0) e scrive i tag ReplayGain di brano + album in MP3/FLAC.
+• Riproduzione → Equalizzatore…: un equalizzatore grafico a 10 bande (31 Hz – 16 kHz, ±12 dB) che
+  modella il timbro in tempo reale. Spunta Abilita, trascina i cursori delle bande o scegli un preset (Flat, Bass
+  Boost, Vocal, Rock, …). Salva le tue impostazioni con "Salva preset…" e rimuovile
+  con "Elimina preset". Reimposta (Flat) azzera le bande; disabilitarlo è trasparente.
+• Riproduzione → Transizione tra brani: Pausa (predefinita), Senza pausa (i brani si susseguono senza
+  silenzio) o Dissolvenza incrociata (il brano in uscita sfuma mentre il successivo entra).
+  Senza pausa/Dissolvenza incrociata sono sperimentali.
+• Coda di riproduzione (Riproduzione → Mostra coda di riproduzione): vedi cosa è in fila nell'ordine di riproduzione, con
+  il brano corrente contrassegnato ▶. Clic destro su un brano → Aggiungi alla coda (oppure Libreria → Aggiungi
+  selezionati / Aggiungi tutti i mostrati alla coda) accoda senza interrompere ciò che è in riproduzione.
+  Nella finestra della coda: Riproduci il brano selezionato, Rimuovilo, spostalo Su/Giù o
+  Cancella tutto.
+• Passa il mouse su un pulsante della barra strumenti o di trasporto per vedere un suggerimento che ne spiega la funzione.
+• La barra di avanzamento mostra il tempo trascorso / totale — trascinala per saltare all'interno di un brano.
+• Due controlli del volume si trovano in basso a destra:
+  - "App" regola solo il livello di questo lettore (memorizzato tra gli avvii).
+  - "Sis" controlla il volume principale del computer, con un interruttore di silenziamento accanto
+    ad esso. Resta sincronizzato con il livello di sistema — incluse le modifiche che fai con
+    i tasti del volume o il mixer del sistema operativo — e regola il volume dell'intera macchina, non
+    solo di questa app.
+• "Bal" imposta il bilanciamento stereo sinistro/destro (memorizzato tra gli avvii). Ha un
+  leggero fermo al centro e il pulsante "C" accanto ad esso lo riporta esattamente al centro.
+  Utile quando gli altoparlanti non sono posizionati simmetricamente.
+• L'indicatore della riga selezionata segue il brano attualmente in riproduzione.
+
+VALUTAZIONI E CONTEGGIO RIPRODUZIONI:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Le valutazioni sono manuali: imposta tu stesso una valutazione da 1 a 5 stelle. Il conteggio delle riproduzioni viene tracciato
+  separatamente (nella propria colonna) e NON viene trasformato in stelle.
+• Clicca le stelle nella colonna Valutazione di un brano per impostare una valutazione; clicca di nuovo la stessa stella
+  per cancellarla (di nuovo nessuna stella). I pulsanti "Valuta:" (in basso) e il
+  menu del clic destro fanno lo stesso. Tutte e cinque le stelle sono cliccabili.
+• Visualizza → Conta riproduzione dopo: scegli quanta parte di un brano deve essere riprodotta prima che il suo conteggio
+  delle riproduzioni aumenti (25 / 50 / 75 / 90% o Fine del brano). Saltare non conta mai.
+• Suggerimento: filtra per Riproduzioni (filtro di colonna) per trovare, ad esempio, tutto ciò che hai riprodotto 5
+  volte, poi valuta quei brani come preferisci.
+
+TROVARE E ORGANIZZARE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Casella di ricerca (in alto): filtra per titolo, artista, album, genere o nome file mentre digiti.
+• Filtri per colonna (Visualizza → Mostra filtri per colonna): una riga di caselle per colonna — digita in
+  Titolo, Artista, Album, Genere per trovare una sottostringa; Anno e Riproduzioni accettano un modello
+  (es. Anno 202[456] corrisponde a 2024-2026; Riproduzioni 5 = riprodotto esattamente cinque volte, 0 =
+  mai riprodotto). Si combinano tra
+  loro e con la ricerca/il filtro Mostra. Cancellali con il pulsante ✕; nascondere la riga
+  li cancella anche.
+• Filtro "Mostra" (in alto): Tutti, Senza valutazione, stelle esatte o N stelle e oltre.
+• Clicca l'intestazione di una colonna per ordinare; clicca di nuovo per invertire (la colonna Copertina non si ordina).
+• Menu Visualizza: mostra facoltativamente le colonne Durata, Formato, Bitrate, Genere, N. brano e
+  Nome file (Durata è attiva per impostazione predefinita, le altre disattivate; le scelte vengono memorizzate).
+  Durata e Bitrate si popolano poco dopo l'avvio/la scansione mentre l'app legge il tempo di
+  riproduzione di ciascun brano in background, quindi potrebbero essere vuoti per un momento.
+• Salta al brano in riproduzione: clicca il suo nome nella barra inferiore o usa il pulsante della barra strumenti
+  "In riproduzione" (accanto a Riscansiona). Utile dopo aver scorso, cercato o
+  ordinato altrove. (Localizza solo il brano — non avvia né ferma la riproduzione.)
+• Riprende da dove avevi lasciato: l'app ricorda il tuo ordinamento e, al riavvio,
+  seleziona e scorre fino al brano che stavi riproducendo per ultimo (non avvia automaticamente la riproduzione).
+• Copia brani in un'altra posizione: Visualizza → Caselle di selezione aggiunge una colonna ✓; spunta
+  le righe (clicca l'intestazione ✓ per attivare/disattivare tutti i mostrati) o Libreria → Seleziona tutti i mostrati.
+  Poi Libreria → Copia selezionati in… ti permette di scegliere Piatto o Organizza in cartelle
+  Artista/Album, poi una destinazione - es. filtra per 5 stelle, contrassegna tutti,
+  copia su un'unità USB. Una finestra di avanzamento mostra ciascun file e permette di Annullare.
+  (I conflitti di nome ricevono un suffisso " (2)"; nulla viene sovrascritto.)
+• Clic destro su un brano per Riproduci, valutazione, Aggiungi copertina album (file immagine locale o URL,
+  memorizzata nella libreria), Mostra nel tuo gestore file e Mostra percorso completo (con un
+  pulsante Copia).
+• Clic destro su Rinomina file… / Modifica tag… / Imposta valutazione agiscono normalmente solo su quel
+  brano. Ma se fai clic destro su un brano contrassegnato (✓), agiscono sull'intero
+  insieme contrassegnato — l'etichetta del menu indica quale (es. "Modifica tag di 5 contrassegnati…",
+  "Imposta valutazione (5 contrassegnati)").
+• Rinomina file… (clic destro) rinomina il file su disco a partire dai suoi tag usando un
+  modello di token — %track% %title% %artist% %album% %albumartist% %year%
+  %genre% — es. "%track% %title% - %artist%". Un'anteprima in tempo reale mostra il nuovo nome
+  prima di applicarlo; l'estensione viene sempre mantenuta e il catalogo si aggiorna sul posto
+  (nessuna riscansione). %track% viene riempito con zeri a due cifre.
+• Modifica tag… (clic destro) apre un editor per titolo, artista, album, artista
+  album, anno, n. brano, genere, commento e l'immagine di copertina incorporata. Le modifiche
+  vengono riscritte nel file per MP3 e FLAC; OGG e WAV si aprono in sola lettura per
+  ora. Tag dal nome file… (in quell'editor) analizza il nome del file nei campi
+  usando lo stesso modello di token, per la tua revisione prima di salvare — non scrive mai
+  da solo. Se modifichi il brano attualmente in riproduzione, la riproduzione si ferma prima
+  affinché il file possa essere salvato. Il catalogo (e ogni miniatura) si aggiorna subito.
+• Modifica i tag di più brani in una volta: contrassegna i brani (Caselle di selezione / Seleziona tutti i
+  mostrati), poi Libreria → Modifica tag dei selezionati… Puoi combinare quattro tipi di
+  modifica in un'unica passata: (1) Dal nome file — imposta titolo/artista/n. brano/ecc. su ciascun
+  brano analizzandone il nome con un modello di token (la forma di massa di Tag dal
+  nome file; i file che non corrispondono restano invariati); (2) Imposta campi — spunta Artista,
+  Album, Artista album, Genere, Anno o Commento per dare loro un unico valore sull'intera
+  selezione (questi prevalgono sul modello); (3) Trova e sostituisci — cambia il testo
+  all'interno di un campo sulla selezione (es. "feat."→"ft.", ignorando facoltativamente
+  le maiuscole); (4) Copertina — imposta un'unica immagine come copertina per tutti, o rimuovi la copertina
+  da tutti. Una finestra di avanzamento mostra ciascun file con un pulsante Annulla; OGG/WAV vengono
+  saltati.
+• Rinomina più brani in una volta: contrassegna i brani, poi Libreria → Rinomina selezionati da
+  modello… Un elenco di anteprima mostra ciascun nome vecchio → nuovo; applica per rinominarli tutti (i conflitti
+  di nome ricevono un suffisso " (2)", nulla viene sovrascritto) con un pulsante Annulla.
+• Resoconto libreria (Libreria → Resoconto libreria…): riepiloga la tua collezione raggruppata per
+  Artista, Album o Genere; gerarchicamente (Artista → Album, Album → Artista, Genere →
+  Artista); o come elenco piatto di brani. Spunta "Elenca brani" per espandere ciascun raggruppamento
+  e mostrare i brani al suo interno. Ordina per Nome o Anno con un interruttore crescente/decrescente,
+  alterna tra l'intera libreria e la vista filtrata corrente, ed
+  Esporta CSV… per salvare il resoconto.
+
+PLAYLIST:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Playlist statiche (menu Playlist): Salva playlist… scrive i brani che stai
+  attualmente visualizzando in un file .m3u8 portatile, con percorsi relativi al file affinché una
+  playlist e la sua musica viaggino insieme (es. su una chiavetta USB). Apri playlist…
+  ne carica una e la riproduce; i file ancora nel tuo catalogo mantengono le loro stelle/conteggi di riproduzione.
+• Playlist intelligenti (Playlist → Nuova playlist intelligente…): salva criteri di filtro — una
+  valutazione e, facoltativamente, Genere / Artista / Album (parziale, senza distinzione di maiuscole — es.
+  "Wickham" corrisponde a "Phil Wickham"), più una Ricerca a testo libero — sotto un nome. Selezionarla
+  dal menu Playlist riapplica i criteri in tempo reale (la barra di stato mostra
+  ♫ <nome>). Si aggiornano automaticamente al cambiare della tua libreria. Gestisci playlist
+  intelligenti… ti permette di modificare i criteri di una playlist salvata (il pulsante a matita, che
+  può anche rinominarla) o eliminare quelle che non vuoi più.
+
+FINESTRE E AREA DI NOTIFICA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Un'icona + menu nell'area di notifica rispecchia i controlli: Mostra/Nascondi tutte le finestre,
+  Riproduci/Pausa, Precedente, Successivo, Ferma, Esci.
+• Nascondi tutte le finestre mette via l'app e mette in pausa la riproduzione; Mostra tutte la riporta
+  indietro (premi Riproduci per riprendere).
+• La finestra principale ricorda le sue dimensioni tra gli avvii.
+
+LIBRERIA PORTATILE (spostamento tra macchine o unità):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Le posizioni dei brani sono memorizzate in modo relativo a ciascuna cartella monitorata, quindi se un'unità
+  portatile viene montata come D:\ su un PC ed E:\ su un altro, usa semplicemente
+  Libreria → Ricolloca cartella per ripuntare la cartella — ogni brano al suo interno segue,
+  mantenendo i suoi conteggi di riproduzione e le valutazioni.
+• La posizione del database può essere impostata con il flag da riga di comando -db, la variabile
+  d'ambiente KBMP_DB, oppure Visualizza → Preferenze → Posizione del database (riavviare per avere
+  effetto); per impostazione predefinita si trova accanto all'app (utile su una chiavetta USB).
+
+PREFERENZE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Visualizza → Preferenze… (Alt+R) raccoglie le impostazioni comuni in un unico posto:
+  tema, lingua, soglia "conta una riproduzione dopo", volume di riproduzione (memorizzato
+  tra gli avvii), se aprire l'equalizzatore all'avvio, le colonne facoltative,
+  e la posizione del database. Gli stessi interruttori restano nel menu Visualizza per rapide
+  modifiche occasionali.
+
+FUNZIONI INTELLIGENTI:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ Copertina album incorporata mostrata come miniatura nella tabella e nell'area di riproduzione corrente.
+✨ Playlist intelligenti che si rivalutano in tempo reale al cambiare della tua libreria.
+✨ Supporto per i temi: tema Chiaro, Scuro o di Sistema (menu Visualizza).
+
+SCORCIATOIE DA TASTIERA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Alt+P — Riproduci / Pausa
+• Alt+→ — Brano successivo   • Alt+← — Brano precedente
+• Alt+H — Nascondi tutte le finestre (e metti in pausa). Nessuna scorciatoia per rimostrarle, per scelta —
+  usa l'area di notifica o Visualizza → Mostra tutte le finestre.
+• Alt+R — Preferenze
+• Cmd/Ctrl+Q — Esci   • Cmd/Ctrl+W — Chiudi finestra   • Cmd/Ctrl+M — Riduci a icona
+
+LIMITAZIONI NOTE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Formati audio supportati: MP3, FLAC, WAV, OGG (M4A/AAC/ALAC non ancora supportati).
+⚠️  La riproduzione di video musicali è pianificata ma non ancora disponibile.
+
+ALTRE INFORMAZIONI:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Per documentazione, segnalazioni di bug o richieste di funzionalità:
+📦 GitHub: https://github.com/amarillier/KrankyBearMediaPlayer
+📄 Licenza: https://github.com/amarillier/KrankyBearMediaPlayer/blob/allanm/LICENSE
+📝 Note di rilascio: controlla "Guida → Controlla aggiornamenti"
+
+SOFTWARE LIBERO - Usalo ovunque, in qualsiasi momento, per qualsiasi scopo!
+Nessuna registrazione, nessun tracciamento. L'unico uso della rete è un discreto controllo aggiornamenti -
+una volta al giorno all'avvio, più il "Controlla aggiornamenti" manuale.
