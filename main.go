@@ -41,7 +41,7 @@ func main() {
 
 	a := app.NewWithID("com.github.amarillier.KrankyBearMediaPlayer")
 	a.SetIcon(holidayAppIcon()) // holiday-themed bear on holidays, default otherwise
-	setupI18n(a, *langFlag) // load message catalog + resolve UI language before building any UI
+	setupI18n(a, *langFlag)     // load message catalog + resolve UI language before building any UI
 	loadTheme(a)
 
 	dbPath := *dbFlag
@@ -121,6 +121,16 @@ func setupSystemTray(a fyne.App, u *ui) {
 		fyne.NewMenuItem(i18n.T("tray.stop"), u.player.Stop),
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem(i18n.T("tray.preferences"), func() { fyne.Do(u.showPreferences) }),
+		fyne.NewMenuItemSeparator(),
+		// Themes + About/Check for Updates/Help mirror the main menu for fast access
+		// (reuse the menu.* keys so no extra translations are needed).
+		fyne.NewMenuItem(i18n.T("menu.view.theme_dark"), func() { fyne.Do(func() { setDarkTheme(a) }) }),
+		fyne.NewMenuItem(i18n.T("menu.view.theme_light"), func() { fyne.Do(func() { setLightTheme(a) }) }),
+		fyne.NewMenuItem(i18n.T("menu.view.theme_system"), func() { fyne.Do(func() { setSystemTheme(a) }) }),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem(i18n.T("menu.help.about"), func() { fyne.Do(func() { showAbout(a) }) }),
+		fyne.NewMenuItem(i18n.T("menu.help.check_updates"), func() { u.checkForUpdatesManual() }), // handles its own threading
+		fyne.NewMenuItem(i18n.T("menu.help.help"), func() { fyne.Do(func() { showHelp(a) }) }),
 
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem(i18n.T("tray.quit"), func() { fyne.Do(u.quit) }), // tray runs off the main goroutine
