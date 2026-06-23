@@ -142,7 +142,10 @@ ZOEKEN & ORDENEN:
   Genre → Artiest); of als een platte nummerlijst. Vink "Nummers weergeven" aan om elke
   groepering uit te klappen en de nummers erin te tonen. Sorteer op Naam of Jaar met een
   oplopend/aflopend-schakelaar, schakel tussen de hele bibliotheek en de huidige
-  gefilterde weergave, en CSV exporteren… om het rapport op te slaan.
+  gefilterde weergave, en CSV exporteren… om het rapport op te slaan. Kies
+  "Duplicaten" om dubbele nummers te vinden, vergeleken op Artiest + Titel, Artiest +
+  Titel + Album of Bestandsnaam; elke set toont elke kopie met het volledige pad en
+  het aantal afspeelbeurten, zodat je kunt beslissen welke je behoudt.
 
 AFSPEELLIJSTEN:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

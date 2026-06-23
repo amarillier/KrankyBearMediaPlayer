@@ -295,7 +295,12 @@
     "mode_all_tracks": "Alle Titel",
     "mode_artist_album": "Interpret → Album",
     "mode_album_artist": "Album → Interpret",
-    "mode_genre_artist": "Genre → Interpret"
+    "mode_genre_artist": "Genre → Interpret",
+    "mode_duplicates": "Duplikate",
+    "match_by": "Abgleich nach:",
+    "match_artist_title": "Interpret + Titel",
+    "match_artist_title_album": "Interpret + Titel + Album",
+    "match_filename": "Dateiname"
   },
   "smart": {
     "name_ph": "Name der Wiedergabeliste",

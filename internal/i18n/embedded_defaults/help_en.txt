@@ -126,7 +126,9 @@ FINDING & ORGANISING:
   Artist); or as a flat track listing. Tick "List tracks" to expand each grouping
   and show the tracks within it. Sort by Name or Year with an ascending/descending
   toggle, switch between the whole library and the current filtered view, and
-  Export CSV… to save the report.
+  Export CSV… to save the report. Choose "Duplicates" to find duplicate tracks,
+  matched by Artist + Title, Artist + Title + Album, or Filename; each set lists every
+  copy with its full path and play count so you can decide which to keep.
 
 PLAYLISTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

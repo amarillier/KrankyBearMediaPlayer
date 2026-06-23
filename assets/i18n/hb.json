@@ -292,7 +292,12 @@
     "mode_all_tracks": "All Songs",
     "mode_artist_album": "Who Sung It → Record",
     "mode_album_artist": "Record → Who Sung It",
-    "mode_genre_artist": "Kind → Who Sung It"
+    "mode_genre_artist": "Kind → Who Sung It",
+    "mode_duplicates": "Double-Ups",
+    "match_by": "Go By:",
+    "match_artist_title": "Who Sung It + Song Name",
+    "match_artist_title_album": "Who Sung It + Song Name + Record",
+    "match_filename": "File Name"
   },
   "smart": {
     "name_ph": "List name",

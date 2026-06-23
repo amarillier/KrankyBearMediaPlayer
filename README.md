@@ -77,7 +77,7 @@ To start a brand-new app from this template, use `rename-app.sh "New App Name" "
 
 ## Roadmap
 
-Internationalisation (i18n) has been added, possible additional languages; additional supported playback formats potentially - .m4a is the most likely priority; "copy to device" sync for Android is parked; sync to Apple unlikely since Apple uses locked proprietary music database format and reverse engineering is possible but could be complex. See `ReleaseNotes.txt` for the version history and `docs/FUTURE.md` for
+Internationalisation (i18n) has been added, possible additional languages; additional playback formats (e.g. .m4a/AAC/ALAC) are unlikely — no mature pure-Go decoder exists, and the alternatives (CGo via ffmpeg/faad2, or bundling ffmpeg) would break the portable, dependency-free single-binary design; "copy to device" sync for Android is parked; sync to Apple unlikely since Apple uses locked proprietary music database format and reverse engineering is possible but could be complex. See `ReleaseNotes.txt` for the version history and `docs/FUTURE.md` for
 proposals.
 
 ## Supported audio formats
@@ -97,3 +97,18 @@ Allan Marillier
 - Built with [Fyne](https://fyne.io/) — an easy-to-use GUI toolkit for Go.
 - Audio playback via [gopxl/beep](https://github.com/gopxl/beep); tag/album-art
   reading via [dhowden/tag](https://github.com/dhowden/tag).
+- Claude
+
+## Screenshots
+
+![App Screenshot](screenshots/01-media-player.png)
+![App Screenshot](screenshots/02-media-player.png)
+![App Screenshot](screenshots/03-media-player.png)
+![App Screenshot](screenshots/04-media-player.png)
+![App Screenshot](screenshots/05-media-player.png)
+![App Screenshot](screenshots/06-media-player.png)
+![App Screenshot](screenshots/07-media-player.png)
+![App Screenshot](screenshots/08-media-player.png)
+![App Screenshot](screenshots/09-media-player.png)
+![App Screenshot](screenshots/10-media-player.png)
+

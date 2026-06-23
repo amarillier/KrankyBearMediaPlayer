@@ -292,7 +292,12 @@
     "mode_all_tracks": "すべてのトラック",
     "mode_artist_album": "アーティスト → アルバム",
     "mode_album_artist": "アルバム → アーティスト",
-    "mode_genre_artist": "ジャンル → アーティスト"
+    "mode_genre_artist": "ジャンル → アーティスト",
+    "mode_duplicates": "重複",
+    "match_by": "一致条件:",
+    "match_artist_title": "アーティスト + タイトル",
+    "match_artist_title_album": "アーティスト + タイトル + アルバム",
+    "match_filename": "ファイル名"
   },
   "smart": {
     "name_ph": "プレイリスト名",

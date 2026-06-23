@@ -296,7 +296,12 @@
     "mode_all_tracks": "Tutti i brani",
     "mode_artist_album": "Artista → Album",
     "mode_album_artist": "Album → Artista",
-    "mode_genre_artist": "Genere → Artista"
+    "mode_genre_artist": "Genere → Artista",
+    "mode_duplicates": "Duplicati",
+    "match_by": "Confronta per:",
+    "match_artist_title": "Artista + Titolo",
+    "match_artist_title_album": "Artista + Titolo + Album",
+    "match_filename": "Nome file"
   },
   "smart": {
     "name_ph": "Nome della playlist",

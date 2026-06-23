@@ -292,7 +292,12 @@
     "mode_all_tracks": "Wszystkie utwory",
     "mode_artist_album": "Wykonawca → Album",
     "mode_album_artist": "Album → Wykonawca",
-    "mode_genre_artist": "Gatunek → Wykonawca"
+    "mode_genre_artist": "Gatunek → Wykonawca",
+    "mode_duplicates": "Duplikaty",
+    "match_by": "Dopasuj wg:",
+    "match_artist_title": "Wykonawca + Tytuł",
+    "match_artist_title_album": "Wykonawca + Tytuł + Album",
+    "match_filename": "Nazwa pliku"
   },
   "smart": {
     "name_ph": "Nazwa listy odtwarzania",

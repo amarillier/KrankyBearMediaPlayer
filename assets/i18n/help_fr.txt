@@ -126,7 +126,10 @@ RECHERCHER ET ORGANISER :
   Artiste) ; ou sous forme de liste de pistes à plat. Cochez « Lister les pistes » pour déplier chaque groupe
   et montrer les pistes qu'il contient. Triez par Nom ou Année avec un basculement croissant/décroissant,
   passez de toute la bibliothèque à l'affichage filtré actuel, et
-  Exporter en CSV… pour enregistrer le rapport.
+  Exporter en CSV… pour enregistrer le rapport. Choisissez « Doublons » pour trouver
+  les pistes en double, comparées par Artiste + Titre, Artiste + Titre + Album, ou Nom
+  de fichier ; chaque ensemble liste chaque copie avec son chemin complet et son nombre
+  de lectures pour que vous puissiez décider lesquelles garder.
 
 LISTES DE LECTURE :
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

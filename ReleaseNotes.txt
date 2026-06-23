@@ -1,6 +1,17 @@
 Release notes
 KrankyBear MediaPlayer: - Windows, Linux and MacOS music library manager & player
 
+Version 1.0.1 - June 23, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Minor icon / branding update
+- Duplicate report (Library → Library Report… → Group by: Duplicates): find duplicate
+  tracks in your catalog, matched by Artist + Title, Artist + Title + Album, or Filename.
+  Each duplicate set lists every copy with its full path and play count, so you can decide
+  which to keep; export the whole report to CSV. It runs off the library database (no disk
+  scan, so it's fast) and can report on the whole library or just the current filtered view.
+
 Version 1.0.0 - June 22, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ NEW FEATURES

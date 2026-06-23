@@ -118,6 +118,9 @@ VIND & ORGANISEER:
   Kunstenaar); of as 'n plat snitlys. Merk "Lys snitte" om elke groepering uit te brei en die
   snitte daarin te wys. Sorteer volgens Naam of Jaar met 'n stygende/dalende wissel, skakel tussen
   die hele biblioteek en die huidige gefilterde aansig, en Voer CSV uit… om die verslag te stoor.
+  Kies "Duplikate" om duplikaatsnitte te vind, gepas volgens Kunstenaar + Titel, Kunstenaar +
+  Titel + Album, of Lêernaam; elke stel lys elke kopie met sy volle pad en speeltelling sodat
+  jy kan besluit watter een om te hou.
 
 SPEELLYSTE:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

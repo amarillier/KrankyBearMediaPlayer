@@ -295,7 +295,12 @@
     "mode_all_tracks": "Toutes les pistes",
     "mode_artist_album": "Artiste → Album",
     "mode_album_artist": "Album → Artiste",
-    "mode_genre_artist": "Genre → Artiste"
+    "mode_genre_artist": "Genre → Artiste",
+    "mode_duplicates": "Doublons",
+    "match_by": "Comparer par :",
+    "match_artist_title": "Artiste + Titre",
+    "match_artist_title_album": "Artiste + Titre + Album",
+    "match_filename": "Nom de fichier"
   },
   "smart": {
     "name_ph": "Nom de la liste de lecture",

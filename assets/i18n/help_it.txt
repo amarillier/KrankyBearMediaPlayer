@@ -126,7 +126,10 @@ TROVARE E ORGANIZZARE:
   Artista); o come elenco piatto di brani. Spunta "Elenca brani" per espandere ciascun raggruppamento
   e mostrare i brani al suo interno. Ordina per Nome o Anno con un interruttore crescente/decrescente,
   alterna tra l'intera libreria e la vista filtrata corrente, ed
-  Esporta CSV… per salvare il resoconto.
+  Esporta CSV… per salvare il resoconto. Scegli "Duplicati" per trovare i brani duplicati,
+  confrontati per Artista + Titolo, Artista + Titolo + Album o Nome file; ogni insieme elenca
+  ogni copia con il suo percorso completo e il conteggio delle riproduzioni così da poter
+  decidere quali conservare.
 
 PLAYLIST:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

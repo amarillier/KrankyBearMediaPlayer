@@ -292,7 +292,12 @@
     "mode_all_tracks": "Alle snitte",
     "mode_artist_album": "Kunstenaar → Album",
     "mode_album_artist": "Album → Kunstenaar",
-    "mode_genre_artist": "Genre → Kunstenaar"
+    "mode_genre_artist": "Genre → Kunstenaar",
+    "mode_duplicates": "Duplikate",
+    "match_by": "Pas volgens:",
+    "match_artist_title": "Kunstenaar + Titel",
+    "match_artist_title_album": "Kunstenaar + Titel + Album",
+    "match_filename": "Lêernaam"
   },
   "smart": {
     "name_ph": "Speellys-naam",

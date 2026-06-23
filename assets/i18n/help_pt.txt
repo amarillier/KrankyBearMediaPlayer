@@ -126,7 +126,10 @@ LOCALIZAR E ORGANIZAR:
   Artista); ou como uma listagem plana de faixas. Marque "Listar faixas" para expandir cada agrupamento
   e mostrar as faixas dentro dele. Ordene por Nome ou Ano com um alternador crescente/decrescente,
   alterne entre toda a biblioteca e a vista filtrada atual, e
-  Exporte CSV… para guardar o relatório.
+  Exporte CSV… para guardar o relatório. Escolha "Duplicados" para encontrar faixas
+  duplicadas, comparadas por Artista + Título, Artista + Título + Álbum, ou Nome de
+  ficheiro; cada conjunto lista todas as cópias com o seu caminho completo e contagem de
+  reproduções, para que possa decidir quais manter.
 
 LISTAS DE REPRODUÇÃO:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

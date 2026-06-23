@@ -295,7 +295,12 @@
     "mode_all_tracks": "Alle nummers",
     "mode_artist_album": "Artiest → Album",
     "mode_album_artist": "Album → Artiest",
-    "mode_genre_artist": "Genre → Artiest"
+    "mode_genre_artist": "Genre → Artiest",
+    "mode_duplicates": "Duplicaten",
+    "match_by": "Vergelijken op:",
+    "match_artist_title": "Artiest + Titel",
+    "match_artist_title_album": "Artiest + Titel + Album",
+    "match_filename": "Bestandsnaam"
   },
   "smart": {
     "name_ph": "Naam afspeellijst",

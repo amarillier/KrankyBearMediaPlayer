@@ -126,7 +126,10 @@ BUSCAR Y ORGANIZAR:
   Artista); o como un listado plano de pistas. Marque "Listar pistas" para expandir cada agrupación
   y mostrar las pistas que contiene. Ordene por Nombre o Año con un conmutador ascendente/descendente,
   alterne entre toda la biblioteca y la vista filtrada actual, y
-  Exportar CSV… para guardar el informe.
+  Exportar CSV… para guardar el informe. Elija "Duplicados" para encontrar pistas
+  duplicadas, comparadas por Artista + Título, Artista + Título + Álbum o Nombre de
+  archivo; cada conjunto lista todas las copias con su ruta completa y número de
+  reproducciones para que decida cuáles conservar.
 
 LISTAS DE REPRODUCCIÓN:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

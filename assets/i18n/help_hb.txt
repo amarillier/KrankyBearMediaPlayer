@@ -114,7 +114,9 @@ FINDIN' & SORTIN' OUT:
   Record, or Kind; in layers (Who Sung It → Record, Record → Who Sung It, Kind → Who Sung It); or
   as a flat song list. Tick "List tracks" to open up ever group an' show the songs in it. Sort by
   Name or Year with an up/down toggle, switch between the whole stash an' the current sifted view,
-  an' Export CSV… to save the rundown.
+  an' Export CSV… to save the rundown. Pick "Double-Ups" to sniff out songs ya got more'n
+  once, matched by Who Sung It + Song Name, Who Sung It + Song Name + Record, or File Name; ever
+  bunch lists every copy with its whole path an' play count so ya can pick which'ns to keep.
 
 SONG LISTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

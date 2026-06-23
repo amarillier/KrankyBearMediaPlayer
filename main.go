@@ -18,7 +18,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "1.0.0" // see FyneApp.toml
+	appVersion = "1.0.1" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -40,7 +40,7 @@ func main() {
 	flag.Parse()
 
 	a := app.NewWithID("com.github.amarillier.KrankyBearMediaPlayer")
-	a.SetIcon(resourceKrankyBearMediaPlayerPng)
+	a.SetIcon(holidayAppIcon()) // holiday-themed bear on holidays, default otherwise
 	setupI18n(a, *langFlag) // load message catalog + resolve UI language before building any UI
 	loadTheme(a)
 
@@ -58,7 +58,7 @@ func main() {
 	player := NewPlayer(db)
 
 	win := a.NewWindow(appName)
-	win.SetIcon(resourceKrankyBearMediaPlayerPng)
+	win.SetIcon(holidayAppIcon())
 	win.Resize(mainWindowLaunchSize(a)) // restore previous size (size only - Fyne can't do position)
 
 	u := buildMainWindow(a, win, db, player)
@@ -126,7 +126,7 @@ func setupSystemTray(a fyne.App, u *ui) {
 		fyne.NewMenuItem(i18n.T("tray.quit"), func() { fyne.Do(u.quit) }), // tray runs off the main goroutine
 	)
 	desk.SetSystemTrayMenu(menu)
-	desk.SetSystemTrayIcon(resourceKrankyBearMediaPlayerPng)
+	desk.SetSystemTrayIcon(holidayAppIcon())
 }
 
 // defaultDBName is the catalog database's filename in default/portable locations.

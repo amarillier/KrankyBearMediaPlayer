@@ -297,7 +297,12 @@
     "mode_all_tracks": "All tracks",
     "mode_artist_album": "Artist → Album",
     "mode_album_artist": "Album → Artist",
-    "mode_genre_artist": "Genre → Artist"
+    "mode_genre_artist": "Genre → Artist",
+    "mode_duplicates": "Duplicates",
+    "match_by": "Match by:",
+    "match_artist_title": "Artist + Title",
+    "match_artist_title_album": "Artist + Title + Album",
+    "match_filename": "Filename"
   },
   "smart": {
     "name_ph": "Playlist name",

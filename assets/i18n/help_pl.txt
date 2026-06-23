@@ -126,7 +126,10 @@ WYSZUKIWANIE I PORZĄDKOWANIE:
   Wykonawca); lub jako płaską listę utworów. Zaznacz "Wypisz utwory", aby rozwinąć każde grupowanie
   i pokazać utwory w jego obrębie. Sortuj według Nazwy lub Roku z przełącznikiem rosnąco/malejąco,
   przełączaj między całą biblioteką a bieżącym filtrowanym widokiem oraz
-  Eksportuj CSV…, aby zapisać raport.
+  Eksportuj CSV…, aby zapisać raport. Wybierz "Duplikaty", aby znaleźć
+  zduplikowane utwory, dopasowane według Wykonawca + Tytuł, Wykonawca +
+  Tytuł + Album lub Nazwa pliku; każdy zestaw wymienia wszystkie kopie z
+  ich pełną ścieżką i liczbą odtworzeń, abyś mógł zdecydować, które zachować.
 
 LISTY ODTWARZANIA:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

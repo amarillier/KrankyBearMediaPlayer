@@ -292,7 +292,12 @@
     "mode_all_tracks": "모든 트랙",
     "mode_artist_album": "아티스트 → 앨범",
     "mode_album_artist": "앨범 → 아티스트",
-    "mode_genre_artist": "장르 → 아티스트"
+    "mode_genre_artist": "장르 → 아티스트",
+    "mode_duplicates": "중복",
+    "match_by": "일치 기준:",
+    "match_artist_title": "아티스트 + 제목",
+    "match_artist_title_album": "아티스트 + 제목 + 앨범",
+    "match_filename": "파일명"
   },
   "smart": {
     "name_ph": "재생목록 이름",

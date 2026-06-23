@@ -694,7 +694,7 @@ func (u *ui) buildTransport() fyne.CanvasObject {
 	// transport block (seek bar / controls / status), nudging those toward the
 	// volume controls. Contained at ~128px so it's clearly visible without eating
 	// much width.
-	logo := newTappableImage(resourceKrankyBearMediaPlayerPng, fyne.NewSize(128, 128),
+	logo := newTappableImage(holidayAppIcon(), fyne.NewSize(128, 128),
 		func() { showEasterEgg(u.app, "🐻 You poked the bear!") })
 
 	bottom := container.NewVBox(widget.NewSeparator(), seekRow, controls, u.status)

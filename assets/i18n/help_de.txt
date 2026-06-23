@@ -126,7 +126,10 @@ FINDEN & ORGANISIEREN:
   Interpret); oder als flache Titelliste. Aktivieren Sie "Titel auflisten", um jede Gruppierung zu erweitern
   und die darin enthaltenen Titel anzuzeigen. Sortieren Sie nach Name oder Jahr mit einem Umschalter für aufsteigend/absteigend,
   wechseln Sie zwischen der gesamten Bibliothek und der aktuellen gefilterten Ansicht, und
-  CSV exportieren…, um den Bericht zu speichern.
+  CSV exportieren…, um den Bericht zu speichern. Wählen Sie "Duplikate", um doppelte Titel
+  zu finden, abgeglichen nach Interpret + Titel, Interpret + Titel + Album oder Dateiname;
+  jeder Satz listet jede Kopie mit ihrem vollständigen Pfad und ihrer Wiedergabezahl auf,
+  damit Sie entscheiden können, welche Sie behalten.
 
 WIEDERGABELISTEN:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -29,14 +30,27 @@ const (
 	reportArtistAlbum = "Artist → Album"
 	reportAlbumArtist = "Album → Artist"
 	reportGenreArtist = "Genre → Artist"
+	reportDuplicates  = "Duplicates"
 )
 
 var reportModes = []string{
 	reportByArtist, reportByAlbum, reportByGenre,
 	reportArtistAlbum, reportAlbumArtist, reportGenreArtist, reportTracks,
+	reportDuplicates,
 }
 
 var reportSorts = []string{"Name", "Year"}
+
+// duplicate match keys (stable logic keys; the dialog shows translated labels). The
+// duplicate report flags catalog tracks that share a match key - computed from the
+// library database, not a disk crawl.
+const (
+	dupArtistTitle      = "Artist + Title"
+	dupArtistTitleAlbum = "Artist + Title + Album"
+	dupFilename         = "Filename"
+)
+
+var dupMatchKeys = []string{dupArtistTitle, dupArtistTitleAlbum, dupFilename}
 
 func orUnknown(s string) string {
 	if strings.TrimSpace(s) == "" {
@@ -409,6 +423,97 @@ func buildReport(tracks []Track, mode, sortBy string, desc, listTracks bool) (he
 	return header, rows, display, summary
 }
 
+// dupKey returns the normalized grouping key for a track under the given match mode,
+// plus a human-readable label for the group header. ok is false when the track lacks
+// the identifying field (no title, or no filename) so it can't be meaningfully deduped.
+func dupKey(t Track, match string) (key, label string, ok bool) {
+	norm := func(s string) string { return strings.ToLower(strings.TrimSpace(s)) }
+	switch match {
+	case dupFilename:
+		base := filepath.Base(filepath.FromSlash(t.RelPath))
+		if strings.TrimSpace(base) == "" || base == "." {
+			return "", "", false
+		}
+		return strings.ToLower(base), base, true
+	case dupArtistTitleAlbum:
+		ti := norm(t.Title)
+		if ti == "" {
+			return "", "", false
+		}
+		return norm(t.Artist) + "\x00" + ti + "\x00" + norm(t.Album),
+			orUnknown(t.Artist) + " — " + orUnknown(t.Title) + " — " + orUnknown(t.Album), true
+	default: // dupArtistTitle
+		ti := norm(t.Title)
+		if ti == "" {
+			return "", "", false
+		}
+		return norm(t.Artist) + "\x00" + ti, orUnknown(t.Artist) + " — " + orUnknown(t.Title), true
+	}
+}
+
+// buildDuplicatesReport groups catalog tracks by the chosen match key and returns only
+// the groups with two or more members (the duplicates), as CSV header+rows, an indented
+// on-screen listing (group header then each duplicate file's path), and a summary. Pure
+// (no UI, no disk access) so it's unit-testable. CSV/body text stays English like the
+// other report modes.
+func buildDuplicatesReport(tracks []Track, match, sortBy string, desc bool) (header []string, rows [][]string, display []string, summary string) {
+	header = []string{"Artist", "Title", "Album", "Year", "Plays", "File"}
+
+	type grp struct {
+		label string
+		year  int // earliest member year, for the Year sort
+		items []Track
+	}
+	gm := map[string]*grp{}
+	var order []string
+	for _, t := range tracks {
+		k, lbl, ok := dupKey(t, match)
+		if !ok {
+			continue
+		}
+		g := gm[k]
+		if g == nil {
+			g = &grp{label: lbl}
+			gm[k] = g
+			order = append(order, k)
+		}
+		g.items = append(g.items, t)
+		if t.Year > 0 && (g.year == 0 || t.Year < g.year) {
+			g.year = t.Year
+		}
+	}
+
+	dupGroups := make([]*grp, 0)
+	dupTracks := 0
+	for _, k := range order {
+		if g := gm[k]; len(g.items) >= 2 {
+			dupGroups = append(dupGroups, g)
+			dupTracks += len(g.items)
+		}
+	}
+	byYear := sortBy == "Year"
+	sort.Slice(dupGroups, func(i, j int) bool {
+		if byYear && dupGroups[i].year != dupGroups[j].year {
+			return ordInt(dupGroups[i].year, dupGroups[j].year, desc)
+		}
+		return ordStr(dupGroups[i].label, dupGroups[j].label, desc)
+	})
+	for _, g := range dupGroups {
+		items := append([]Track(nil), g.items...)
+		sort.Slice(items, func(i, j int) bool { return items[i].AbsPath() < items[j].AbsPath() })
+		display = append(display, fmt.Sprintf("%s  (×%d)", g.label, len(items)))
+		for _, t := range items {
+			rows = append(rows, []string{
+				orUnknown(t.Artist), orUnknown(t.Title), orUnknown(t.Album),
+				yearStr(t.Year), strconv.Itoa(t.PlayCount), t.AbsPath(),
+			})
+			display = append(display, "    "+t.AbsPath())
+		}
+	}
+	summary = fmt.Sprintf("%d duplicate sets · %d tracks", len(dupGroups), dupTracks)
+	return header, rows, display, summary
+}
+
 // showLibraryReport opens the report dialog (Library → Library Report…).
 func (u *ui) showLibraryReport() {
 	// The report's group-by/sort/source values double as internal logic keys (used in
@@ -427,6 +532,7 @@ func (u *ui) showLibraryReport() {
 		reportAlbumArtist: i18n.T("report.mode_album_artist"),
 		reportGenreArtist: i18n.T("report.mode_genre_artist"),
 		reportTracks:      i18n.T("report.mode_all_tracks"),
+		reportDuplicates:  i18n.T("report.mode_duplicates"),
 	}
 	modeKeyByLabel := map[string]string{}
 	modeLabels := make([]string, len(reportModes))
@@ -437,6 +543,24 @@ func (u *ui) showLibraryReport() {
 	modeSel := widget.NewSelect(modeLabels, nil)
 	modeSel.SetSelected(modeLabelByKey[reportByArtist])
 	modeKey := func() string { return modeKeyByLabel[modeSel.Selected] }
+
+	// "Match by" applies only to the Duplicates mode; it's disabled otherwise. Like the
+	// mode/sort Selects, it shows translated labels mapped back to stable logic keys.
+	matchLabelByKey := map[string]string{
+		dupArtistTitle:      i18n.T("report.match_artist_title"),
+		dupArtistTitleAlbum: i18n.T("report.match_artist_title_album"),
+		dupFilename:         i18n.T("report.match_filename"),
+	}
+	matchKeyByLabel := map[string]string{}
+	matchLabels := make([]string, len(dupMatchKeys))
+	for i, k := range dupMatchKeys {
+		matchLabels[i] = matchLabelByKey[k]
+		matchKeyByLabel[matchLabelByKey[k]] = k
+	}
+	matchSel := widget.NewSelect(matchLabels, nil)
+	matchSel.SetSelected(matchLabelByKey[dupArtistTitle])
+	matchSel.Disable() // default mode isn't Duplicates
+	matchKey := func() string { return matchKeyByLabel[matchSel.Selected] }
 
 	sortLabelByKey := map[string]string{"Name": i18n.T("report.sort_name"), "Year": i18n.T("report.sort_year")}
 	sortKeyByLabel := map[string]string{}
@@ -481,20 +605,31 @@ func (u *ui) showLibraryReport() {
 			tracks = t
 		}
 		var s string
-		header, rows, display, s = buildReport(tracks, modeKey(), sortKeyByLabel[sortSel.Selected], descChk.Checked, tracksChk.Checked)
+		if modeKey() == reportDuplicates {
+			header, rows, display, s = buildDuplicatesReport(tracks, matchKey(), sortKeyByLabel[sortSel.Selected], descChk.Checked)
+		} else {
+			header, rows, display, s = buildReport(tracks, modeKey(), sortKeyByLabel[sortSel.Selected], descChk.Checked, tracksChk.Checked)
+		}
 		summary.SetText(strings.Join(header, "   |   ") + "\n" + s)
 		list.Refresh()
 		list.ScrollToTop()
 	}
-	// "List tracks" is meaningless for the flat All-tracks listing.
+	// "List tracks" only applies to the grouped modes; "Match by" only to Duplicates.
 	modeSel.OnChanged = func(string) {
-		if modeKey() == reportTracks {
+		switch modeKey() {
+		case reportDuplicates:
 			tracksChk.Disable()
-		} else {
+			matchSel.Enable()
+		case reportTracks:
+			tracksChk.Disable()
+			matchSel.Disable()
+		default:
 			tracksChk.Enable()
+			matchSel.Disable()
 		}
 		rebuild()
 	}
+	matchSel.OnChanged = func(string) { rebuild() }
 	sourceSel.OnChanged = func(string) { rebuild() }
 	sortSel.OnChanged = func(string) { rebuild() }
 	descChk.OnChanged = func(bool) { rebuild() }
@@ -511,6 +646,7 @@ func (u *ui) showLibraryReport() {
 			container.NewBorder(nil, nil, widget.NewLabel(i18n.T("report.group_by")), nil, modeSel),
 			container.NewBorder(nil, nil, widget.NewLabel(i18n.T("report.sort")), descChk, sortSel),
 		),
+		container.NewBorder(nil, nil, widget.NewLabel(i18n.T("report.match_by")), nil, matchSel),
 		container.NewBorder(nil, nil, nil, exportBtn, summary),
 		widget.NewSeparator(),
 	)
