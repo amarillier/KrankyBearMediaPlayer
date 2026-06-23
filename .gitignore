@@ -46,6 +46,7 @@ rsrc_windows_amd64.syso
 /KrankyBearMediaPlayer.db-wal
 /KrankyBearMediaPlayer
 /mediaplayer
+/media-player
 /iconprep.sh
 /images-optimize.sh
 /build-config.sh
