@@ -18,7 +18,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "1.0.1" // see FyneApp.toml
+	appVersion = "1.0.2" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -219,6 +219,7 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 		fyne.NewMenuItem(i18n.T("menu.library.rename_selected"), u.renameSelectedFromTags),
 		fyne.NewMenuItem(i18n.T("menu.library.scan_replaygain"), u.scanReplayGainSelected),
 		fyne.NewMenuItem(i18n.T("menu.library.add_selected_queue"), u.enqueueSelected),
+		fyne.NewMenuItem(i18n.T("menu.library.delete_selected"), u.deleteSelectedFiles),
 		fyne.NewMenuItemSeparator(),
 		fyne.NewMenuItem(i18n.T("menu.library.library_report"), u.showLibraryReport),
 		fyne.NewMenuItem(i18n.T("menu.library.add_all_queue"), u.enqueueShown),

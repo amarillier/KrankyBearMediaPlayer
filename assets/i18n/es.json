@@ -72,7 +72,8 @@
       "add_selected_queue": "Añadir selección a la cola",
       "library_report": "Informe de la biblioteca…",
       "add_all_queue": "Añadir todo lo mostrado a la cola",
-      "quit": "Salir"
+      "quit": "Salir",
+      "delete_selected": "Delete Selected Files…"
     },
     "playback": {
       "label": "Reproducción",
@@ -218,7 +219,9 @@
     "edit_tags": "Editar etiquetas…",
     "edit_tags_marked": "Editar etiquetas de {{n}} marcadas…",
     "scan_rg": "Analizar ReplayGain",
-    "scan_rg_marked": "Analizar ReplayGain ({{n}} marcadas)"
+    "scan_rg_marked": "Analizar ReplayGain ({{n}} marcadas)",
+    "delete_file": "Delete file…",
+    "delete_marked": "Delete {{n}} marked files…"
   },
   "copy": {
     "title": "Copiar lo seleccionado",
@@ -487,5 +490,11 @@
     "_comment": "Native endonyms for each supported UI language.",
     "en": "English",
     "es": "Español"
+  },
+  "delete": {
+    "title": "Delete files",
+    "delete": "Delete",
+    "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
+    "deleted": "Deleted {{n}} file(s)"
   }
 }

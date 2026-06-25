@@ -67,7 +67,8 @@
       "add_selected_queue": "선택 항목을 대기열에 추가",
       "library_report": "라이브러리 보고서…",
       "add_all_queue": "표시된 항목 모두 대기열에 추가",
-      "quit": "종료"
+      "quit": "종료",
+      "delete_selected": "Delete Selected Files…"
     },
     "playback": {
       "label": "재생",
@@ -213,7 +214,9 @@
     "edit_tags": "태그 편집…",
     "edit_tags_marked": "표시된 {{n}}개의 태그 편집…",
     "scan_rg": "ReplayGain 검색",
-    "scan_rg_marked": "ReplayGain 검색 ({{n}}개 표시됨)"
+    "scan_rg_marked": "ReplayGain 검색 ({{n}}개 표시됨)",
+    "delete_file": "Delete file…",
+    "delete_marked": "Delete {{n}} marked files…"
   },
   "copy": {
     "title": "선택 항목 복사",
@@ -485,5 +488,11 @@
   },
   "app": {
     "name": "KrankyBear MediaPlayer"
+  },
+  "delete": {
+    "title": "Delete files",
+    "delete": "Delete",
+    "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
+    "deleted": "Deleted {{n}} file(s)"
   }
 }

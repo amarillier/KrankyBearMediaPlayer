@@ -1,6 +1,19 @@
 Release notes
 KrankyBear MediaPlayer: - Windows, Linux and MacOS music library manager & player
 
+Version 1.0.2 - June 25, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Delete files (right-click a track → Delete file…, or Library → Delete Selected Files…):
+  permanently remove one or more files from disk and the library in one step — handy for
+  clearing out corrupted tracks or downloads you've decided against. A confirmation dialog
+  lists every file first, since this cannot be undone (there's no trash step). Right-clicking
+  an unmarked track deletes just that one; right-clicking a marked (✓) track, or using the
+  Library menu, deletes the whole marked set. If the currently-playing track is among them,
+  playback stops first so the file can be removed. To take a track out of the library but
+  keep the file on disk, use Manage Folders instead.
+
 Version 1.0.1 - June 23, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ NEW FEATURES

@@ -70,7 +70,8 @@
       "add_selected_queue": "Ajouter la sélection à la file",
       "library_report": "Rapport de bibliothèque…",
       "add_all_queue": "Ajouter tous les affichés à la file",
-      "quit": "Quitter"
+      "quit": "Quitter",
+      "delete_selected": "Delete Selected Files…"
     },
     "playback": {
       "label": "Lecture",
@@ -216,7 +217,9 @@
     "edit_tags": "Modifier les tags…",
     "edit_tags_marked": "Modifier les tags de {{n}} cochée(s)…",
     "scan_rg": "Analyser le ReplayGain",
-    "scan_rg_marked": "Analyser le ReplayGain ({{n}} cochée(s))"
+    "scan_rg_marked": "Analyser le ReplayGain ({{n}} cochée(s))",
+    "delete_file": "Delete file…",
+    "delete_marked": "Delete {{n}} marked files…"
   },
   "copy": {
     "title": "Copier la sélection",
@@ -485,5 +488,11 @@
     "_comment": "Native endonyms for each supported UI language.",
     "en": "English",
     "fr": "Français"
+  },
+  "delete": {
+    "title": "Delete files",
+    "delete": "Delete",
+    "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
+    "deleted": "Deleted {{n}} file(s)"
   }
 }

@@ -70,6 +70,7 @@
       "rename_selected": "Rename Selected from pattern…",
       "scan_replaygain": "Scan ReplayGain of Selected…",
       "add_selected_queue": "Add Selected to Queue",
+      "delete_selected": "Delete Selected Files…",
       "library_report": "Library Report…",
       "add_all_queue": "Add All Shown to Queue",
       "quit": "Quit"
@@ -218,7 +219,9 @@
     "edit_tags": "Edit tags…",
     "edit_tags_marked": "Edit tags of {{n}} marked…",
     "scan_rg": "Scan ReplayGain",
-    "scan_rg_marked": "Scan ReplayGain ({{n}} marked)"
+    "scan_rg_marked": "Scan ReplayGain ({{n}} marked)",
+    "delete_file": "Delete file…",
+    "delete_marked": "Delete {{n}} marked files…"
   },
   "copy": {
     "title": "Copy selected",
@@ -486,5 +489,11 @@
   "locale_labels": {
     "_comment": "Native endonyms for each supported UI language.",
     "en": "English"
+  },
+  "delete": {
+    "title": "Delete files",
+    "delete": "Delete",
+    "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
+    "deleted": "Deleted {{n}} file(s)"
   }
 }

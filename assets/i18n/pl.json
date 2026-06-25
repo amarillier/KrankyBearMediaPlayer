@@ -67,7 +67,8 @@
       "add_selected_queue": "Dodaj zaznaczone do kolejki",
       "library_report": "Raport biblioteki…",
       "add_all_queue": "Dodaj wszystkie widoczne do kolejki",
-      "quit": "Zakończ"
+      "quit": "Zakończ",
+      "delete_selected": "Delete Selected Files…"
     },
     "playback": {
       "label": "Odtwarzanie",
@@ -213,7 +214,9 @@
     "edit_tags": "Edytuj znaczniki…",
     "edit_tags_marked": "Edytuj znaczniki {{n}} zaznaczonych…",
     "scan_rg": "Skanuj ReplayGain",
-    "scan_rg_marked": "Skanuj ReplayGain ({{n}} zaznaczonych)"
+    "scan_rg_marked": "Skanuj ReplayGain ({{n}} zaznaczonych)",
+    "delete_file": "Delete file…",
+    "delete_marked": "Delete {{n}} marked files…"
   },
   "copy": {
     "title": "Kopiuj zaznaczone",
@@ -485,5 +488,11 @@
   },
   "app": {
     "name": "KrankyBear MediaPlayer"
+  },
+  "delete": {
+    "title": "Delete files",
+    "delete": "Delete",
+    "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
+    "deleted": "Deleted {{n}} file(s)"
   }
 }

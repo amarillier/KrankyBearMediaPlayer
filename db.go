@@ -315,6 +315,14 @@ func (d *DB) UpdateTrackPath(trackID int64, relPath string) error {
 	return err
 }
 
+// DeleteTrack removes a single track from the catalog by id. Via ON DELETE CASCADE
+// (foreign keys are enabled) its thumbnail and any playlist memberships go with it.
+// The file on disk is the caller's responsibility.
+func (d *DB) DeleteTrack(id int64) error {
+	_, err := d.sql.Exec(`DELETE FROM tracks WHERE id=?`, id)
+	return err
+}
+
 // TrackRelPath returns a track's stored rel_path (forward-slash normalized). Used
 // by batch rename to derive a new rel_path for marked tracks that may not be in the
 // current view.

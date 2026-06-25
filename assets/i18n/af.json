@@ -67,7 +67,8 @@
       "add_selected_queue": "Voeg gemerktes by tou",
       "library_report": "Biblioteekverslag…",
       "add_all_queue": "Voeg almal wat wys by tou",
-      "quit": "Sluit af"
+      "quit": "Sluit af",
+      "delete_selected": "Delete Selected Files…"
     },
     "playback": {
       "label": "Terugspeel",
@@ -213,7 +214,9 @@
     "edit_tags": "Wysig etikette…",
     "edit_tags_marked": "Wysig etikette van {{n}} gemerktes…",
     "scan_rg": "Skandeer ReplayGain",
-    "scan_rg_marked": "Skandeer ReplayGain ({{n}} gemerk)"
+    "scan_rg_marked": "Skandeer ReplayGain ({{n}} gemerk)",
+    "delete_file": "Delete file…",
+    "delete_marked": "Delete {{n}} marked files…"
   },
   "copy": {
     "title": "Kopieer gemerktes",
@@ -484,5 +487,11 @@
   },
   "app": {
     "name": "KrankyBear MediaPlayer"
+  },
+  "delete": {
+    "title": "Delete files",
+    "delete": "Delete",
+    "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
+    "deleted": "Deleted {{n}} file(s)"
   }
 }

@@ -70,7 +70,8 @@
       "add_selected_queue": "Geselecteerde aan wachtrij toevoegen",
       "library_report": "Bibliotheekrapport…",
       "add_all_queue": "Alles getoonde aan wachtrij toevoegen",
-      "quit": "Afsluiten"
+      "quit": "Afsluiten",
+      "delete_selected": "Delete Selected Files…"
     },
     "playback": {
       "label": "Afspelen",
@@ -216,7 +217,9 @@
     "edit_tags": "Tags bewerken…",
     "edit_tags_marked": "Tags van {{n}} gemarkeerde bewerken…",
     "scan_rg": "ReplayGain scannen",
-    "scan_rg_marked": "ReplayGain scannen ({{n}} gemarkeerd)"
+    "scan_rg_marked": "ReplayGain scannen ({{n}} gemarkeerd)",
+    "delete_file": "Delete file…",
+    "delete_marked": "Delete {{n}} marked files…"
   },
   "copy": {
     "title": "Geselecteerde kopiëren",
@@ -485,5 +488,11 @@
     "_comment": "Native endonyms for each supported UI language.",
     "en": "English",
     "nl": "Nederlands"
+  },
+  "delete": {
+    "title": "Delete files",
+    "delete": "Delete",
+    "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
+    "deleted": "Deleted {{n}} file(s)"
   }
 }

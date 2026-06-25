@@ -91,10 +91,14 @@ FINDING & ORGANISING:
 • Right-click a track for Play, rating, Add album art (local image file or URL,
   stored in the library), Show in your file manager, and Show full path (with a
   Copy button).
-• Right-click Rename file… / Edit tags… / Set rating normally act on just that
-  track. But if you right-click a track that's marked (✓), they act on the whole
-  marked set instead — the menu label says which (e.g. "Edit tags of 5 marked…",
-  "Set rating (5 marked)").
+• Right-click Rename file… / Edit tags… / Set rating / Delete file… normally act
+  on just that track. But if you right-click a track that's marked (✓), they act on
+  the whole marked set instead — the menu label says which (e.g. "Edit tags of 5
+  marked…", "Set rating (5 marked)").
+• Delete file… (right-click, or Library → Delete Selected Files…) permanently
+  deletes the file(s) from disk after a confirmation that lists them, and removes
+  them from the library. This cannot be undone — there is no trash step. To remove a
+  track from the library but keep the file, use Manage Folders instead.
 • Rename file… (right-click) renames the file on disk from its tags using a
   pattern of tokens — %track% %title% %artist% %album% %albumartist% %year%
   %genre% — e.g. "%track% %title% - %artist%". A live preview shows the new name

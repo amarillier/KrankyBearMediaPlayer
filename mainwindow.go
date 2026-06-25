@@ -1628,14 +1628,18 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 	renameFn := func() { u.renameFromTags(r) }
 	editFn := func() { u.editTags(r) }
 	scanFn := func() { u.scanReplayGainOf([]Track{u.tracks[r]}) }
+	deleteLabel := i18n.T("ctx.delete_file")
+	deleteFn := func() { u.deleteRow(r) }
 	if rowMarked {
 		marked := map[string]string{"n": fmt.Sprintf("%d", nMarked)}
 		renameLabel = i18n.TC("ctx.rename_marked", marked)
 		editLabel = i18n.TC("ctx.edit_tags_marked", marked)
 		scanLabel = i18n.TC("ctx.scan_rg_marked", marked)
+		deleteLabel = i18n.TC("ctx.delete_marked", marked)
 		renameFn = u.renameSelectedFromTags
 		editFn = u.editTagsOfSelected
 		scanFn = func() { u.scanReplayGainOf(u.markedTracksForScan()) }
+		deleteFn = u.deleteSelectedFiles
 	}
 
 	menu := fyne.NewMenu("",
@@ -1650,6 +1654,8 @@ func (u *ui) showRowMenu(row int, pos fyne.Position) {
 		fyne.NewMenuItem(renameLabel, renameFn),
 		fyne.NewMenuItem(editLabel, editFn),
 		fyne.NewMenuItem(scanLabel, scanFn),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem(deleteLabel, deleteFn),
 	)
 	widget.ShowPopUpMenuAtPosition(menu, u.win.Canvas(), pos)
 }
@@ -1688,6 +1694,114 @@ func (u *ui) revealRow(row int) {
 	}
 	if err := revealInFileManager(u.tracks[row].AbsPath()); err != nil {
 		dialog.ShowError(fmt.Errorf("could not open %s: %w", fileManagerName(), err), u.win)
+	}
+}
+
+// deleteItem is one file targeted for permanent deletion: catalog id + on-disk path.
+type deleteItem struct {
+	id   int64
+	path string
+}
+
+// deleteRow deletes a single track's file (right-click on an unmarked row).
+func (u *ui) deleteRow(row int) {
+	if row < 0 || row >= len(u.tracks) {
+		return
+	}
+	t := u.tracks[row]
+	u.confirmDeleteFiles([]deleteItem{{id: t.ID, path: t.AbsPath()}})
+}
+
+// deleteSelectedFiles deletes every marked track's file (Library menu / right-click
+// on a marked row). Covers marked tracks scrolled out of the current view.
+func (u *ui) deleteSelectedFiles() {
+	if len(u.marked) == 0 {
+		dialog.ShowInformation(i18n.T("delete.title"), i18n.T("queue.none_marked"), u.win)
+		return
+	}
+	items := make([]deleteItem, 0, len(u.marked))
+	for id, e := range u.marked {
+		items = append(items, deleteItem{id: id, path: e.path})
+	}
+	u.confirmDeleteFiles(items)
+}
+
+// confirmDeleteFiles asks for confirmation (listing the files), then permanently
+// deletes each file from disk and purges its catalog entry. Deletion is NOT
+// recoverable - there is no trash step. A file already missing on disk is treated as
+// deleted so its stale catalog row is cleaned up too.
+func (u *ui) confirmDeleteFiles(items []deleteItem) {
+	if len(items) == 0 {
+		return
+	}
+
+	// List the targeted files (basenames) so the user can sanity-check before the
+	// irreversible step; scrolls when many are marked.
+	var b strings.Builder
+	for _, it := range items {
+		b.WriteString(filepath.Base(it.path))
+		b.WriteByte('\n')
+	}
+	fileList := widget.NewLabel(strings.TrimRight(b.String(), "\n"))
+	listScroll := container.NewVScroll(fileList)
+	listScroll.SetMinSize(fyne.NewSize(420, 160))
+
+	warn := widget.NewLabelWithStyle(
+		i18n.TC("delete.confirm", map[string]string{"n": fmt.Sprintf("%d", len(items))}),
+		fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+	warn.Wrapping = fyne.TextWrapWord
+	body := container.NewBorder(warn, nil, nil, nil, listScroll)
+
+	d := dialog.NewCustomConfirm(i18n.T("delete.title"), i18n.T("delete.delete"), i18n.T("common.cancel"),
+		body, func(ok bool) {
+			if ok {
+				u.doDeleteFiles(items)
+			}
+		}, u.win)
+	d.Resize(fyne.NewSize(460, 300))
+	d.Show()
+}
+
+// doDeleteFiles performs the deletion after confirmation. Runs on the UI thread;
+// os.Remove is fast even for many files.
+func (u *ui) doDeleteFiles(items []deleteItem) {
+	// Stop playback if a target is the currently-playing track - an open handle
+	// blocks the delete on Windows, and we don't want to keep playing a file we're
+	// removing.
+	if cur, ok := u.player.Current(); ok {
+		for _, it := range items {
+			if it.id == cur.ID {
+				u.player.Stop()
+				break
+			}
+		}
+	}
+
+	var deleted, failed int
+	for _, it := range items {
+		if err := os.Remove(it.path); err != nil && !os.IsNotExist(err) {
+			log.Printf("delete: remove %q: %v", it.path, err)
+			failed++
+			continue
+		}
+		if err := u.db.DeleteTrack(it.id); err != nil {
+			log.Printf("delete: catalog purge %d (%q): %v", it.id, it.path, err)
+			failed++
+			continue
+		}
+		delete(u.marked, it.id)
+		deleted++
+	}
+
+	u.reload()
+	u.refreshNowPlaying()
+	summary := i18n.TC("delete.deleted", map[string]string{"n": fmt.Sprintf("%d", deleted)})
+	if failed > 0 {
+		summary += i18n.TC("common.failed_log", map[string]string{"n": fmt.Sprintf("%d", failed)})
+	}
+	u.status.SetText(summary)
+	if failed > 0 {
+		dialog.ShowInformation(i18n.T("delete.title"), summary, u.win)
 	}
 }
 

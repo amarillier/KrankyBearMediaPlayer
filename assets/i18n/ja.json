@@ -67,7 +67,8 @@
       "add_selected_queue": "選択項目をキューに追加",
       "library_report": "ライブラリレポート…",
       "add_all_queue": "表示中をすべてキューに追加",
-      "quit": "終了"
+      "quit": "終了",
+      "delete_selected": "Delete Selected Files…"
     },
     "playback": {
       "label": "再生",
@@ -213,7 +214,9 @@
     "edit_tags": "タグを編集…",
     "edit_tags_marked": "マーク中の {{n}} 件のタグを編集…",
     "scan_rg": "ReplayGain をスキャン",
-    "scan_rg_marked": "ReplayGain をスキャン（{{n}} 件マーク中）"
+    "scan_rg_marked": "ReplayGain をスキャン（{{n}} 件マーク中）",
+    "delete_file": "Delete file…",
+    "delete_marked": "Delete {{n}} marked files…"
   },
   "copy": {
     "title": "選択項目をコピー",
@@ -484,5 +487,11 @@
   },
   "app": {
     "name": "KrankyBear MediaPlayer"
+  },
+  "delete": {
+    "title": "Delete files",
+    "delete": "Delete",
+    "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
+    "deleted": "Deleted {{n}} file(s)"
   }
 }

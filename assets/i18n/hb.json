@@ -67,7 +67,8 @@
       "add_selected_queue": "Add Marked to the Line",
       "library_report": "Stash Rundown…",
       "add_all_queue": "Add All Showin' to the Line",
-      "quit": "Skedaddle"
+      "quit": "Skedaddle",
+      "delete_selected": "Delete Selected Files…"
     },
     "playback": {
       "label": "Pickin' & Grinnin'",
@@ -213,7 +214,9 @@
     "edit_tags": "Fix the Tags…",
     "edit_tags_marked": "Fix Tags on {{n}} marked…",
     "scan_rg": "Measure Loudness",
-    "scan_rg_marked": "Measure Loudness ({{n}} marked)"
+    "scan_rg_marked": "Measure Loudness ({{n}} marked)",
+    "delete_file": "Delete file…",
+    "delete_marked": "Delete {{n}} marked files…"
   },
   "copy": {
     "title": "Copy Marked",
@@ -484,5 +487,11 @@
   },
   "app": {
     "name": "KrankyBear MediaPlayer"
+  },
+  "delete": {
+    "title": "Delete files",
+    "delete": "Delete",
+    "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
+    "deleted": "Deleted {{n}} file(s)"
   }
 }

@@ -266,3 +266,38 @@ func TestDeleteFolderCascade(t *testing.T) {
 		t.Fatalf("expected 0 folders after delete, got %d", len(folders))
 	}
 }
+
+func TestDeleteTrackCascade(t *testing.T) {
+	db, err := openDB(filepath.Join(t.TempDir(), "lib.db"))
+	if err != nil {
+		t.Fatalf("openDB: %v", err)
+	}
+	defer db.Close()
+	fid, err := db.AddFolder(t.TempDir(), true)
+	if err != nil {
+		t.Fatalf("AddFolder: %v", err)
+	}
+	keep := &Track{FolderID: fid, RelPath: "keep.mp3", Title: "keep"}
+	drop := &Track{FolderID: fid, RelPath: "drop.mp3", Title: "drop"}
+	for _, tr := range []*Track{keep, drop} {
+		if err := db.UpsertTrack(tr); err != nil {
+			t.Fatalf("UpsertTrack: %v", err)
+		}
+	}
+	// Give the doomed track a thumbnail so we can confirm the side table cascades.
+	if err := db.SetThumb(drop.ID, []byte("png")); err != nil {
+		t.Fatalf("SetThumb: %v", err)
+	}
+
+	if err := db.DeleteTrack(drop.ID); err != nil {
+		t.Fatalf("DeleteTrack: %v", err)
+	}
+
+	got, _ := db.Tracks(TrackQuery{Filter: FilterAll, SortCol: -1})
+	if len(got) != 1 || got[0].ID != keep.ID {
+		t.Fatalf("after DeleteTrack expected only the kept track, got %d rows", len(got))
+	}
+	if db.Thumb(drop.ID) != nil {
+		t.Fatalf("expected thumbnail to cascade-delete with the track")
+	}
+}
