@@ -181,8 +181,11 @@ ATAJOS DE TECLADO:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Alt+P — Reproducir / Pausar
 • Alt+→ — Pista siguiente   • Alt+← — Pista anterior
-• Alt+H — Ocultar todas las ventanas (y pausar). No hay atajo para volver a mostrar, por diseño —
-  use la bandeja del sistema o Ver → Mostrar todas las ventanas.
+• Alt+H — Ocultar todas las ventanas (y pausar). Tras ocultarlas, use la bandeja del sistema o
+  Ver → Mostrar todas las ventanas para volver a mostrarlas (Alt+S solo funciona mientras la
+  ventana principal está visible).
+• Alt+S — Mostrar todas las ventanas. Trae al frente la ventana principal y cada ventana
+  secundaria abierta (ecualizador, ayuda, etc.).
 • Alt+R — Preferencias
 • Cmd/Ctrl+Q — Salir   • Cmd/Ctrl+W — Cerrar ventana   • Cmd/Ctrl+M — Minimizar
 

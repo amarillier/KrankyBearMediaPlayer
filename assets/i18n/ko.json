@@ -494,5 +494,13 @@
     "delete": "Delete",
     "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
     "deleted": "Deleted {{n}} file(s)"
+  },
+  "missing": {
+    "title": "누락된 트랙",
+    "intro": "라이브러리의 트랙 {{n}}개가 더 이상 디스크에 없습니다. 라이브러리에서 제거할까요?",
+    "relocate_hint": "폴더 전체를 옮긴 경우에는 취소하고 폴더 관리 → 재배치를 사용하세요 — 어느 쪽이든 디스크의 파일은 삭제되지 않습니다.",
+    "remove": "라이브러리에서 제거",
+    "keep": "유지",
+    "removed": "누락된 트랙 {{n}}개를 라이브러리에서 제거했습니다"
   }
 }

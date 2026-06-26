@@ -495,5 +495,13 @@
     "delete": "Delete",
     "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
     "deleted": "Deleted {{n}} file(s)"
+  },
+  "missing": {
+    "title": "Brani mancanti",
+    "intro": "{{n}} brano/i nella tua libreria non sono più presenti su disco. Rimuoverli dalla libreria?",
+    "relocate_hint": "Se hai spostato l'intera cartella, annulla e usa invece Gestisci cartelle → Ricolloca — in nessun caso vengono eliminati file su disco.",
+    "remove": "Rimuovi dalla libreria",
+    "keep": "Mantieni",
+    "removed": "Rimossi {{n}} brano/i mancanti dalla libreria"
   }
 }

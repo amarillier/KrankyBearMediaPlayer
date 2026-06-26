@@ -494,5 +494,13 @@
     "delete": "Delete",
     "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
     "deleted": "Deleted {{n}} file(s)"
+  },
+  "missing": {
+    "title": "Pistes introuvables",
+    "intro": "{{n}} piste(s) de votre bibliothèque ne sont plus sur le disque. Les retirer de la bibliothèque ?",
+    "relocate_hint": "Si vous avez déplacé tout le dossier, annulez et utilisez plutôt Gérer les dossiers → Relocaliser — dans les deux cas, aucun fichier sur le disque n'est supprimé.",
+    "remove": "Retirer de la bibliothèque",
+    "keep": "Conserver",
+    "removed": "{{n}} piste(s) introuvable(s) retirée(s) de la bibliothèque"
   }
 }

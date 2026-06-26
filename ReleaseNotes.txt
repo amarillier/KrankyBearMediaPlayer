@@ -1,6 +1,22 @@
 Release notes
 KrankyBear MediaPlayer: - Windows, Linux and MacOS music library manager & player
 
+Version 1.0.3 - June 26, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ NEW FEATURES
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+- Missing track cleanup on scan: when you Scan or Rescan, the player now notices any
+  catalogued tracks whose files have disappeared from disk — for example deleted or moved
+  in Finder, Explorer or a shell, outside the app. It lists the missing tracks and offers
+  to remove them from the library in one step (the files on disk are not touched — there's
+  nothing left to remove). Nothing is deleted without your confirmation, so you can simply
+  Keep them if the drive is just temporarily unavailable. If you moved a whole folder, use
+  Manage Folders → Relocate instead, which repoints every track at once.
+- Alt+S — Show all windows: brings the main window and every open secondary window
+  (equalizer, help, and so on) to the front. Handy when the player is buried behind other
+  apps. Because it fires on the main window, it works while the player is visible; after
+  Alt+H (Hide all) use the system tray or View → Show All Windows to reveal them again.
+
 Version 1.0.2 - June 25, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ NEW FEATURES

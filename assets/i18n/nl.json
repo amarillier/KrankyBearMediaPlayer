@@ -494,5 +494,13 @@
     "delete": "Delete",
     "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
     "deleted": "Deleted {{n}} file(s)"
+  },
+  "missing": {
+    "title": "Ontbrekende nummers",
+    "intro": "{{n}} nummer(s) in je bibliotheek staan niet meer op de schijf. Wil je ze uit de bibliotheek verwijderen?",
+    "relocate_hint": "Als je de hele map hebt verplaatst, annuleer dan en gebruik in plaats daarvan Mappen beheren → Verplaatsen — er worden hoe dan ook geen bestanden op de schijf verwijderd.",
+    "remove": "Uit bibliotheek verwijderen",
+    "keep": "Behouden",
+    "removed": "{{n}} ontbrekend(e) nummer(s) uit de bibliotheek verwijderd"
   }
 }

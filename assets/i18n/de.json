@@ -494,5 +494,13 @@
     "delete": "Delete",
     "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
     "deleted": "Deleted {{n}} file(s)"
+  },
+  "missing": {
+    "title": "Fehlende Titel",
+    "intro": "{{n}} Titel in Ihrer Bibliothek befinden sich nicht mehr auf der Festplatte. Aus der Bibliothek entfernen?",
+    "relocate_hint": "Wenn Sie den ganzen Ordner verschoben haben, brechen Sie ab und verwenden Sie stattdessen Ordner verwalten → Verschieben — so oder so werden keine Dateien auf der Festplatte gelöscht.",
+    "remove": "Aus der Bibliothek entfernen",
+    "keep": "Behalten",
+    "removed": "{{n}} fehlende Titel aus der Bibliothek entfernt"
   }
 }

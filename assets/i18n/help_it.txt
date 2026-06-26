@@ -181,8 +181,10 @@ SCORCIATOIE DA TASTIERA:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Alt+P — Riproduci / Pausa
 • Alt+→ — Brano successivo   • Alt+← — Brano precedente
-• Alt+H — Nascondi tutte le finestre (e metti in pausa). Nessuna scorciatoia per rimostrarle, per scelta —
-  usa l'area di notifica o Visualizza → Mostra tutte le finestre.
+• Alt+H — Nascondi tutte le finestre (e metti in pausa). Dopo averle nascoste, usa l'area di notifica o
+  Visualizza → Mostra tutte le finestre per rimostrarle (Alt+S funziona solo mentre la finestra principale è visibile).
+• Alt+S — Mostra tutte le finestre. Porta in primo piano la finestra principale e ogni finestra secondaria aperta
+  (equalizzatore, guida, ecc.).
 • Alt+R — Preferenze
 • Cmd/Ctrl+Q — Esci   • Cmd/Ctrl+W — Chiudi finestra   • Cmd/Ctrl+M — Riduci a icona
 

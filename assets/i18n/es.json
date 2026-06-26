@@ -496,5 +496,13 @@
     "delete": "Delete",
     "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
     "deleted": "Deleted {{n}} file(s)"
+  },
+  "missing": {
+    "title": "Pistas que faltan",
+    "intro": "{{n}} pista(s) de su biblioteca ya no están en el disco. ¿Quitarlas de la biblioteca?",
+    "relocate_hint": "Si movió toda la carpeta, cancele y use Gestionar carpetas → Reubicar en su lugar — de cualquier forma no se elimina ningún archivo del disco.",
+    "remove": "Quitar de la biblioteca",
+    "keep": "Conservar",
+    "removed": "Se quitaron {{n}} pista(s) que faltaban de la biblioteca"
   }
 }

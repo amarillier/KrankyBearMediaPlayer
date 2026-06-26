@@ -181,8 +181,10 @@ RACCOURCIS CLAVIER :
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Alt+P — Lecture / Pause
 • Alt+→ — Piste suivante   • Alt+← — Piste précédente
-• Alt+H — Masquer toutes les fenêtres (et mettre en pause). Pas de raccourci pour réafficher, par conception —
-  utilisez la zone de notification ou Affichage → Afficher toutes les fenêtres.
+• Alt+H — Masquer toutes les fenêtres (et mettre en pause). Une fois masquées, utilisez la zone de notification ou
+  Affichage → Afficher toutes les fenêtres pour les réafficher (Alt+S ne fonctionne que lorsque la fenêtre principale est visible).
+• Alt+S — Afficher toutes les fenêtres. Ramène au premier plan la fenêtre principale et toutes les fenêtres
+  secondaires ouvertes (égaliseur, aide, etc.).
 • Alt+R — Préférences
 • Cmd/Ctrl+Q — Quitter   • Cmd/Ctrl+W — Fermer la fenêtre   • Cmd/Ctrl+M — Réduire
 

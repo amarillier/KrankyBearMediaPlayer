@@ -199,8 +199,11 @@ SNELTOETSEN:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Alt+P — Afspelen / Pauzeren
 • Alt+→ — Volgende nummer   • Alt+← — Vorige nummer
-• Alt+H — Alle vensters verbergen (en pauzeren). Geen sneltoets om weer te tonen, met
-  opzet — gebruik het systeemvak of Weergave → Alle vensters tonen.
+• Alt+H — Alle vensters verbergen (en pauzeren). Gebruik na het verbergen het systeemvak
+  of Weergave → Alle vensters tonen om ze weer te tonen (Alt+S werkt alleen wanneer het
+  hoofdvenster zichtbaar is).
+• Alt+S — Alle vensters tonen. Brengt het hoofdvenster en elk geopend secundair venster
+  (equalizer, help, enz.) naar de voorgrond.
 • Alt+R — Voorkeuren
 • Cmd/Ctrl+Q — Afsluiten   • Cmd/Ctrl+W — Venster sluiten   • Cmd/Ctrl+M — Minimaliseren
 

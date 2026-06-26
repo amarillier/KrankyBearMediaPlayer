@@ -301,3 +301,49 @@ func TestDeleteTrackCascade(t *testing.T) {
 		t.Fatalf("expected thumbnail to cascade-delete with the track")
 	}
 }
+
+// TestScanDetectsMissing confirms a rescan flags catalogued tracks whose file
+// has gone (deleted outside the app) without removing them itself.
+func TestScanDetectsMissing(t *testing.T) {
+	tmp := t.TempDir()
+	music := filepath.Join(tmp, "Music")
+	if err := os.MkdirAll(music, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeMinimalWAV(t, filepath.Join(music, "stay.wav"))
+	gone := filepath.Join(music, "gone.wav")
+	writeMinimalWAV(t, gone)
+
+	db, err := openDB(filepath.Join(tmp, "lib.db"))
+	if err != nil {
+		t.Fatalf("openDB: %v", err)
+	}
+	defer db.Close()
+
+	fid, err := db.AddFolder(music, true)
+	if err != nil {
+		t.Fatalf("AddFolder: %v", err)
+	}
+	folder := Folder{ID: fid, Path: music, Recursive: true}
+	if res, err := db.ScanFolder(folder, nil); err != nil {
+		t.Fatalf("ScanFolder: %v", err)
+	} else if len(res.Missing) != 0 {
+		t.Fatalf("first scan should report no missing tracks, got %d", len(res.Missing))
+	}
+
+	// Delete one file behind the app's back (shell/Finder), then rescan.
+	if err := os.Remove(gone); err != nil {
+		t.Fatalf("remove: %v", err)
+	}
+	res, err := db.ScanFolder(folder, nil)
+	if err != nil {
+		t.Fatalf("rescan: %v", err)
+	}
+	if len(res.Missing) != 1 || res.Missing[0].RelPath != "gone.wav" {
+		t.Fatalf("expected gone.wav flagged missing, got %+v", res.Missing)
+	}
+	// The scan must NOT prune on its own - the row is still there until removed.
+	if got, _ := db.Tracks(TrackQuery{Filter: FilterAll, SortCol: -1}); len(got) != 2 {
+		t.Fatalf("scan should not delete rows; expected 2 tracks, got %d", len(got))
+	}
+}

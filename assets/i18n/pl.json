@@ -494,5 +494,13 @@
     "delete": "Delete",
     "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
     "deleted": "Deleted {{n}} file(s)"
+  },
+  "missing": {
+    "title": "Brakujące utwory",
+    "intro": "{{n}} utwór(ów) w Twojej bibliotece nie ma już na dysku. Usunąć je z biblioteki?",
+    "relocate_hint": "Jeśli przeniosłeś cały folder, anuluj i zamiast tego użyj Menedżera folderów → Przenieś — w żadnym przypadku nie są usuwane pliki z dysku.",
+    "remove": "Usuń z biblioteki",
+    "keep": "Zachowaj",
+    "removed": "Usunięto {{n}} brakujący(ch) utwór(ów) z biblioteki"
   }
 }

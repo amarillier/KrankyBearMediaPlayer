@@ -165,8 +165,10 @@ KEYBOARD SHORTCUTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Alt+P — Play / Hold On
 • Alt+→ — Next song   • Alt+← — Song afore
-• Alt+H — Hide all winders (an' hold). No shortcut to show again, on purpose —
-  use the system tray or Lookin' → Show It All.
+• Alt+H — Hide all winders (an' hold). Once they's hid, use the system tray or
+  Lookin' → Show It All to fetch 'em back (Alt+S only works whilst the main winder's showin').
+• Alt+S — Show all winders. Brings the main winder an' ever open side winder
+  (equalizer, help, an' such) right up front.
 • Alt+R — Yer Druthers
 • Cmd/Ctrl+Q — Skedaddle   • Cmd/Ctrl+W — Close winder   • Cmd/Ctrl+M — Tuck Down
 

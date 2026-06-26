@@ -205,6 +205,26 @@ func (d *DB) CountTracksInFolder(id int64) (int, error) {
 	return n, err
 }
 
+// TracksInFolder returns the minimal track rows (id + rel_path) catalogued under
+// one folder, used by the scan to detect orphans whose file has gone missing.
+// FolderRoot is left to the caller to fill from the live folder path.
+func (d *DB) TracksInFolder(folderID int64) ([]Track, error) {
+	rows, err := d.sql.Query(`SELECT id, rel_path, title FROM tracks WHERE folder_id=?`, folderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Track
+	for rows.Next() {
+		t := Track{FolderID: folderID}
+		if err := rows.Scan(&t.ID, &t.RelPath, &t.Title); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
 // Folders returns all watched folders.
 func (d *DB) Folders() ([]Folder, error) {
 	rows, err := d.sql.Query(`SELECT id, path, recursive FROM folders ORDER BY path`)

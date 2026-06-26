@@ -493,5 +493,13 @@
     "delete": "Delete",
     "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
     "deleted": "Deleted {{n}} file(s)"
+  },
+  "missing": {
+    "title": "Songs gone missin'",
+    "intro": "{{n}} song(s) in yer stash ain't on disk no more. Chuck 'em outta the stash?",
+    "relocate_hint": "If ya done moved the whole folder, hold off an' use Wrangle Folders → Move instead — ain't no files on disk gettin' deleted either way.",
+    "remove": "Chuck outta stash",
+    "keep": "Keep 'Em",
+    "removed": "Chucked {{n}} missin' song(s) outta the stash"
   }
 }

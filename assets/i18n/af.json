@@ -493,5 +493,13 @@
     "delete": "Delete",
     "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
     "deleted": "Deleted {{n}} file(s)"
+  },
+  "missing": {
+    "title": "Vermiste snitte",
+    "intro": "{{n}} snit(te) in jou biblioteek is nie meer op skyf nie. Verwyder hulle uit die biblioteek?",
+    "relocate_hint": "As jy die hele gids verskuif het, kanselleer en gebruik eerder Bestuur gidse → Verskuif — geen lêers op skyf word in elk geval verwyder nie.",
+    "remove": "Verwyder uit biblioteek",
+    "keep": "Hou",
+    "removed": "{{n}} vermiste snit(te) uit die biblioteek verwyder"
   }
 }

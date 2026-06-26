@@ -386,6 +386,14 @@
     "name_unchanged": "Name unchanged",
     "checking_updates": "Checking for updates…"
   },
+  "missing": {
+    "title": "Missing tracks",
+    "intro": "{{n}} track(s) in your library are no longer on disk. Remove them from the library?",
+    "relocate_hint": "If you moved the whole folder, cancel and use Folder Manager → Relocate instead — no files on disk are deleted either way.",
+    "remove": "Remove from library",
+    "keep": "Keep",
+    "removed": "Removed {{n}} missing track(s) from the library"
+  },
   "help": {
     "github_link": "Visit GitHub Repository",
     "license_link": "View License"

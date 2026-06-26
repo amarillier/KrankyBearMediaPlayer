@@ -18,7 +18,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "1.0.2" // see FyneApp.toml
+	appVersion = "1.0.3" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -79,6 +79,10 @@ func main() {
 //   - Alt+P: fast play/pause toggle
 //   - Alt+H: "boss key" - hide all windows AND pause (no hotkey to show again;
 //     reveal via the tray/menu, then press play to resume)
+//   - Alt+S: show all windows - bring the main window and every open secondary
+//     window (equalizer, help, etc.) to the front. Unlike Alt+H's reveal, this
+//     fires on the main window's canvas, so it only works while the main window
+//     is visible (after Alt+H, use the tray/menu instead).
 //   - Alt+Right / Alt+Left: next / previous track
 //   - Alt+R: Preferences
 //
@@ -97,6 +101,7 @@ func registerHotkeys(win fyne.Window, u *ui) {
 	}
 	add(fyne.KeyP, fyne.KeyModifierAlt, u.onPlayPause)
 	add(fyne.KeyH, fyne.KeyModifierAlt, u.hideAllWindows)
+	add(fyne.KeyS, fyne.KeyModifierAlt, u.showAllWindows)
 	add(fyne.KeyRight, fyne.KeyModifierAlt, u.player.Next)
 	add(fyne.KeyLeft, fyne.KeyModifierAlt, u.player.Prev)
 	add(fyne.KeyR, fyne.KeyModifierAlt, u.showPreferences)
@@ -231,6 +236,8 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 
 	hideItem := fyne.NewMenuItem(i18n.T("menu.view.hide_all"), u.hideAllWindows)
 	hideItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyH, Modifier: fyne.KeyModifierAlt}
+	showAllItem := fyne.NewMenuItem(i18n.T("menu.view.show_all"), u.showAllWindows)
+	showAllItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyS, Modifier: fyne.KeyModifierAlt}
 	playPauseItem := fyne.NewMenuItem(i18n.T("menu.playback.play_pause"), u.onPlayPause)
 	playPauseItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyP, Modifier: fyne.KeyModifierAlt}
 	prevItem := fyne.NewMenuItem(i18n.T("menu.playback.previous"), u.player.Prev)
@@ -350,7 +357,7 @@ func buildMenu(a fyne.App, u *ui) *fyne.MainMenu {
 	viewItems = append(viewItems,
 		fyne.NewMenuItemSeparator(),
 		hideItem,
-		fyne.NewMenuItem(i18n.T("menu.view.show_all"), u.showAllWindows),
+		showAllItem,
 		fyne.NewMenuItemSeparator(),
 		trackColItem,
 		fileColItem,

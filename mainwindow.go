@@ -2191,6 +2191,7 @@ func (u *ui) scanFolders(folders []Folder, onDone ...func()) {
 			total.Found += res.Found
 			total.Updated += res.Updated
 			total.Errors += res.Errors
+			total.Missing = append(total.Missing, res.Missing...)
 		}
 		fyne.Do(func() {
 			u.reload()
@@ -2203,6 +2204,58 @@ func (u *ui) scanFolders(folders []Folder, onDone ...func()) {
 			for _, fn := range onDone {
 				fn()
 			}
+			if len(total.Missing) > 0 {
+				u.promptRemoveMissing(total.Missing)
+			}
 		})
 	}()
+}
+
+// promptRemoveMissing tells the user which catalogued tracks no longer exist on
+// disk (deleted/moved outside the app) and offers to prune them. Nothing is
+// removed unless they confirm; files on disk are never touched (there's nothing
+// left to touch). If a whole folder moved, Relocate is the better fix, so we say
+// so rather than build per-file locate.
+func (u *ui) promptRemoveMissing(missing []Track) {
+	paths := make([]string, len(missing))
+	for i, t := range missing {
+		paths[i] = t.AbsPath()
+	}
+	list := widget.NewList(
+		func() int { return len(paths) },
+		func() fyne.CanvasObject {
+			l := widget.NewLabel("")
+			l.Truncation = fyne.TextTruncateEllipsis
+			return l
+		},
+		func(i widget.ListItemID, o fyne.CanvasObject) {
+			o.(*widget.Label).SetText(paths[i])
+		},
+	)
+	scroll := container.NewScroll(list)
+	scroll.SetMinSize(fyne.NewSize(520, 200))
+
+	body := container.NewBorder(
+		widget.NewLabel(i18n.TC("missing.intro", map[string]string{"n": fmt.Sprintf("%d", len(missing))})),
+		widget.NewLabel(i18n.T("missing.relocate_hint")),
+		nil, nil, scroll,
+	)
+
+	dialog.ShowCustomConfirm(i18n.T("missing.title"), i18n.T("missing.remove"), i18n.T("missing.keep"), body,
+		func(remove bool) {
+			if !remove {
+				return
+			}
+			var failed int
+			for _, t := range missing {
+				if err := u.db.DeleteTrack(t.ID); err != nil {
+					log.Printf("remove missing %q: %v", t.RelPath, err)
+					failed++
+				}
+			}
+			u.reload()
+			u.status.SetText(i18n.TC("missing.removed", map[string]string{
+				"n": fmt.Sprintf("%d", len(missing)-failed),
+			}))
+		}, u.win)
 }

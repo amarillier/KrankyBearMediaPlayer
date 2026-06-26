@@ -181,8 +181,11 @@ ATALHOS DE TECLADO:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Alt+P — Reproduzir / Pausar
 • Alt+→ — Faixa seguinte   • Alt+← — Faixa anterior
-• Alt+H — Ocultar todas as janelas (e pausar). Não há atalho para voltar a mostrar, por opção —
-  use a bandeja do sistema ou Ver → Mostrar todas as janelas.
+• Alt+H — Ocultar todas as janelas (e pausar). Depois de ocultar, use a bandeja do sistema ou
+  Ver → Mostrar todas as janelas para voltar a mostrá-las (Alt+S só funciona enquanto a janela
+  principal estiver visível).
+• Alt+S — Mostrar todas as janelas. Traz a janela principal e todas as janelas secundárias abertas
+  (equalizador, ajuda, etc.) para a frente.
 • Alt+R — Preferências
 • Cmd/Ctrl+Q — Sair   • Cmd/Ctrl+W — Fechar janela   • Cmd/Ctrl+M — Minimizar
 

@@ -30,16 +30,23 @@ const thumbSize = 64 // album-art thumbnail edge, pixels
 
 // ScanResult summarizes one scan pass.
 type ScanResult struct {
-	Found   int // audio files seen
-	Updated int // rows inserted/updated
-	Errors  int // files that failed to read
+	Found   int     // audio files seen
+	Updated int     // rows inserted/updated
+	Errors  int     // files that failed to read
+	Missing []Track // catalogued tracks whose file no longer exists on disk
 }
 
 // ScanFolder walks one watched folder, cataloguing every supported audio file.
 // progress, if non-nil, is called with the current file path as it goes.
+//
+// It also detects orphans: rows in the catalog whose file is no longer present
+// on disk (deleted/moved outside the app). These are returned in
+// ScanResult.Missing so the caller can offer to prune them - the scan itself
+// never removes rows.
 func (d *DB) ScanFolder(f Folder, progress func(path string)) (ScanResult, error) {
 	var res ScanResult
 	root := f.Path
+	seen := make(map[string]bool) // rel_paths found on disk this pass
 
 	walkFn := func(path string, info os.DirEntry, err error) error {
 		if err != nil {
@@ -59,6 +66,9 @@ func (d *DB) ScanFolder(f Folder, progress func(path string)) (ScanResult, error
 		if progress != nil {
 			progress(path)
 		}
+		if rel, err := filepath.Rel(root, path); err == nil {
+			seen[filepath.ToSlash(rel)] = true
+		}
 		if err := d.catalogFile(f.ID, root, path); err != nil {
 			res.Errors++
 			return nil
@@ -70,6 +80,18 @@ func (d *DB) ScanFolder(f Folder, progress func(path string)) (ScanResult, error
 	if err := filepath.WalkDir(root, walkFn); err != nil {
 		return res, err
 	}
+
+	// Anything catalogued under this folder that we didn't just see on disk is
+	// an orphan (its file was deleted or moved outside the app).
+	if catalogued, err := d.TracksInFolder(f.ID); err == nil {
+		for _, t := range catalogued {
+			if !seen[t.RelPath] {
+				t.FolderRoot = root
+				res.Missing = append(res.Missing, t)
+			}
+		}
+	}
+
 	_ = d.SetFolderScanned(f.ID)
 	return res, nil
 }

@@ -181,8 +181,11 @@ SKRÓTY KLAWIATUROWE:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Alt+P — Odtwórz / Wstrzymaj
 • Alt+→ — Następny utwór   • Alt+← — Poprzedni utwór
-• Alt+H — Ukryj wszystkie okna (i wstrzymaj). Brak skrótu do ponownego pokazania, celowo —
-  użyj zasobnika systemowego lub Widok → Pokaż wszystkie okna.
+• Alt+H — Ukryj wszystkie okna (i wstrzymaj). Po ukryciu użyj zasobnika systemowego lub
+  Widok → Pokaż wszystkie okna, aby ponownie je wyświetlić (Alt+S działa tylko, gdy
+  główne okno jest widoczne).
+• Alt+S — Pokaż wszystkie okna. Przenosi główne okno oraz każde otwarte okno dodatkowe
+  (korektor, pomoc itp.) na wierzch.
 • Alt+R — Preferencje
 • Cmd/Ctrl+Q — Zakończ   • Cmd/Ctrl+W — Zamknij okno   • Cmd/Ctrl+M — Minimalizuj
 

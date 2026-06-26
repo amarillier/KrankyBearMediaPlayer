@@ -44,8 +44,8 @@ fixing and performance work. Some areas are a little slow; improving them is ong
   audio), and **window-size persistence**.
 - **ReplayGain** volume normalization (optional) and **gapless / crossfade** track
   transitions (experimental).
-- **Keyboard shortcuts**: `Alt+P` play/pause, `Alt+H` hide all windows, `Alt+←/→`
-  previous/next track, `Alt+R` Preferences.
+- **Keyboard shortcuts**: `Alt+P` play/pause, `Alt+H` hide all windows, `Alt+S`
+  show all windows, `Alt+←/→` previous/next track, `Alt+R` Preferences.
 - **Light / Dark / System** themes.
 
 ### Cross-platform support

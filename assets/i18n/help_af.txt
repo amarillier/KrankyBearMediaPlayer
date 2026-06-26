@@ -169,8 +169,10 @@ SNELTOETSE:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Alt+P — Speel / Wag
 • Alt+→ — Volgende snit   • Alt+← — Vorige snit
-• Alt+H — Versteek alle vensters (en wag). Geen sneltoets om weer te wys nie, met opset —
-  gebruik die stelselbalk of Aansig → Wys alle vensters.
+• Alt+H — Versteek alle vensters (en wag). Ná versteek, gebruik die stelselbalk of
+  Aansig → Wys alle vensters om hulle weer te wys (Alt+S werk net terwyl die hoofvenster sigbaar is).
+• Alt+S — Wys alle vensters. Bring die hoofvenster en elke oop sekondêre venster
+  (effenaar, hulp, ens.) na vore.
 • Alt+R — Voorkeure
 • Cmd/Ctrl+Q — Sluit af   • Cmd/Ctrl+W — Sluit venster   • Cmd/Ctrl+M — Minimeer
 

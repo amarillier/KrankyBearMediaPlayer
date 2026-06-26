@@ -184,8 +184,11 @@ KEYBOARD SHORTCUTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Alt+P — Play / Pause
 • Alt+→ — Next track   • Alt+← — Previous track
-• Alt+H — Hide all windows (and pause). No shortcut to show again, by design —
-  use the system tray or View → Show All Windows.
+• Alt+H — Hide all windows (and pause). After hiding, use the system tray or
+  View → Show All Windows to reveal them again (Alt+S only works while the main
+  window is visible).
+• Alt+S — Show all windows. Brings the main window and every open secondary
+  window (equalizer, help, etc.) to the front.
 • Alt+R — Preferences
 • Cmd/Ctrl+Q — Quit   • Cmd/Ctrl+W — Close window   • Cmd/Ctrl+M — Minimize
 

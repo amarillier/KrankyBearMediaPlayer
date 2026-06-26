@@ -493,5 +493,13 @@
     "delete": "Delete",
     "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
     "deleted": "Deleted {{n}} file(s)"
+  },
+  "missing": {
+    "title": "見つからないトラック",
+    "intro": "ライブラリ内の {{n}} 件のトラックがディスク上に見つかりません。ライブラリから削除しますか?",
+    "relocate_hint": "フォルダーごと移動した場合は、キャンセルして代わりに フォルダーを管理 → 再配置 を使ってください — いずれの場合もディスク上のファイルは削除されません。",
+    "remove": "ライブラリから削除",
+    "keep": "残す",
+    "removed": "見つからない {{n}} 件のトラックをライブラリから削除しました"
   }
 }

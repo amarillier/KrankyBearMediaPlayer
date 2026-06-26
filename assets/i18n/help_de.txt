@@ -181,8 +181,11 @@ TASTENKOMBINATIONEN:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Alt+P — Wiedergabe / Pause
 • Alt+→ — Nächster Titel   • Alt+← — Vorheriger Titel
-• Alt+H — Alle Fenster ausblenden (und pausieren). Kein Shortcut zum erneuten Anzeigen, beabsichtigt —
-  verwenden Sie die Systemleiste oder Ansicht → Alle Fenster anzeigen.
+• Alt+H — Alle Fenster ausblenden (und pausieren). Verwenden Sie nach dem Ausblenden die Systemleiste
+  oder Ansicht → Alle Fenster anzeigen, um sie wieder einzublenden (Alt+S funktioniert nur, solange das
+  Hauptfenster sichtbar ist).
+• Alt+S — Alle Fenster anzeigen. Bringt das Hauptfenster und jedes geöffnete Nebenfenster
+  (Equalizer, Hilfe usw.) in den Vordergrund.
 • Alt+R — Einstellungen
 • Cmd/Ctrl+Q — Beenden   • Cmd/Ctrl+W — Fenster schließen   • Cmd/Ctrl+M — Minimieren
 

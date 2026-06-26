@@ -494,5 +494,13 @@
     "delete": "Delete",
     "confirm": "Permanently delete these {{n}} file(s) from disk? This cannot be undone.",
     "deleted": "Deleted {{n}} file(s)"
+  },
+  "missing": {
+    "title": "Faixas em falta",
+    "intro": "{{n}} faixa(s) da sua biblioteca já não estão no disco. Removê-las da biblioteca?",
+    "relocate_hint": "Se moveu a pasta inteira, cancele e use antes Gerir pastas → Realojar — de qualquer forma, nenhum ficheiro no disco é eliminado.",
+    "remove": "Remover da biblioteca",
+    "keep": "Manter",
+    "removed": "Removidas {{n}} faixa(s) em falta da biblioteca"
   }
 }
