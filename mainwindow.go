@@ -1069,6 +1069,19 @@ func (c *cellWidget) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewStack(c.img, c.label))
 }
 
+// MinSize forces the cell's height to tableRowHeight. The Table derives its
+// default row height from this template's MinSize, so pinning it here makes every
+// row tableRowHeight tall without calling SetRowHeight per row. That matters at
+// scale: SetRowHeight triggers a full Table.Refresh on each new row id, so
+// setting it for N rows on load was O(N^2) and stalled launch on large libraries.
+func (c *cellWidget) MinSize() fyne.Size {
+	m := c.BaseWidget.MinSize()
+	if m.Height < tableRowHeight {
+		m.Height = tableRowHeight
+	}
+	return m
+}
+
 // Tapped: in the Rating column, set the rating from which star was clicked
 // (clicking the current manual rating again clears it). Elsewhere, select row.
 func (c *cellWidget) Tapped(e *fyne.PointEvent) {
@@ -1962,9 +1975,9 @@ func (u *ui) reload() {
 	u.thumbCache = map[int64]fyne.Resource{}
 	u.autosizeFilenameColumn() // fit the Filename column to the loaded data
 	u.table.Refresh()
-	for r := range u.tracks {
-		u.table.SetRowHeight(r, tableRowHeight)
-	}
+	// Row height is pinned via cellWidget.MinSize, so there's no per-row
+	// SetRowHeight loop here - that was O(N^2) (each call forces a full
+	// Table.Refresh) and stalled launch on large libraries.
 	// Reset the vertical scroll to the top. reload() means the result set changed
 	// (filter/search/sort/playlist/scan), so the top is the right place to land -
 	// and, crucially, it forces a relayout from a valid offset. Without this, when

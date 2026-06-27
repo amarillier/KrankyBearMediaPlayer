@@ -18,7 +18,7 @@ import (
 
 const (
 	// appName    = "KrankyBear MediaPlayer"
-	appVersion = "1.0.3" // see FyneApp.toml
+	appVersion = "1.0.4" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
