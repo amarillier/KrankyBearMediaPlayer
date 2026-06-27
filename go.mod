@@ -4,7 +4,7 @@ go 1.25.1
 
 require (
 	fyne.io/fyne/v2 v2.7.4
-	github.com/amarillier/go-update-checker v0.0.4
+	github.com/amarillier/go-update-checker v0.0.5
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/dweymouth/fyne-tooltip v0.4.0

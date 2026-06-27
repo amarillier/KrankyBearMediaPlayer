@@ -26,11 +26,19 @@ var updateWindow fyne.Window
 func (u *ui) checkForUpdatesManual() {
 	u.status.SetText(i18n.T("status.checking_updates"))
 	go func() {
-		msg, avail, remoteTag := updateChecker(updateRepoOwner, updateRepoName,
+		msg, avail, remoteTag, fetchErr := updateChecker(updateRepoOwner, updateRepoName,
 			updateRepoName, "", updateCheckStatePath(), 0)
 		ahead := versionIsNewer(appVersion, remoteTag)
 		fyne.Do(func() {
 			u.status.SetText("")
+			if fetchErr != nil {
+				// Couldn't reach GitHub: don't report a verdict built from stale cache
+				// (that's what made an upgraded build look like an "unreleased version").
+				// The update dialog body is English-only (it shows the library's own
+				// English messages), so this literal matches the rest of the dialog.
+				showUpdateDialog(u.app, "Could not check for updates.\n\nPlease check your internet connection and try again.", false, false)
+				return
+			}
 			showUpdateDialog(u.app, msg, avail, ahead)
 		})
 	}()

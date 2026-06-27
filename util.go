@@ -47,15 +47,18 @@ func updateCheckStatePath() string {
 // updateChecker queries GitHub for the latest release. minDays is the minimum
 // days between network checks (0 = always check; 1 = at most once/day, using the
 // cached result in between). Returns the display message, whether a newer release
-// is available, and the latest release tag (so callers can tell when the local
-// build is *ahead* of the published release).
-func updateChecker(repoOwner string, repo string, repoName string, repodl string, checkStatePath string, minDays int) (msg string, updateAvailable bool, remoteTag string) {
+// is available, the latest release tag (so callers can tell when the local build
+// is *ahead* of the published release), and fetchErr - the error from a failed
+// live query. When fetchErr is non-nil the GitHub call failed (offline, proxy,
+// rate limit) and the other return values came from a possibly-stale cache, so
+// the verdict must be treated as "could not check", not reported as authoritative.
+func updateChecker(repoOwner string, repo string, repoName string, repodl string, checkStatePath string, minDays int) (msg string, updateAvailable bool, remoteTag string, fetchErr error) {
 	if checkStatePath != "" {
 		updatechecker.SetCheckStatePath(checkStatePath)
 	}
 	uc := updatechecker.New(repoOwner, repo, repoName, repodl, minDays, false)
 	uc.CheckForUpdate(appVersion)
-	return uc.Message, uc.UpdateAvailable, uc.RemoteTag
+	return uc.Message, uc.UpdateAvailable, uc.RemoteTag, uc.LastError
 }
 
 // prefLastUpdateNotify remembers the last auto-notification we showed, as
@@ -72,9 +75,24 @@ const prefLastUpdateNotify = "lastUpdateNotify"
 // API 404s and nothing shows. The manual "Check for Updates" is never throttled.
 func checkForUpdatesAuto(a fyne.App) {
 	go func() {
-		msg, avail, remoteTag := updateChecker(updateRepoOwner, updateRepoName,
+		msg, avail, remoteTag, _ := updateChecker(updateRepoOwner, updateRepoName,
 			updateRepoName, "", updateCheckStatePath(), launchUpdateIntervalDays)
 		ahead := versionIsNewer(appVersion, remoteTag)
+		if avail || ahead {
+			// We're about to notify. The throttled check above may have used a STALE
+			// CACHE (e.g. just after an upgrade, the cached tag still points at the old
+			// release, so the new build looks "ahead"). Confirm with a forced live query
+			// before nagging - this also rewrites the cache to the true latest tag, so
+			// it self-heals. If the live query fails (offline/proxy/rate limit), stay
+			// silent rather than report a verdict built from stale data.
+			var fetchErr error
+			msg, avail, remoteTag, fetchErr = updateChecker(updateRepoOwner, updateRepoName,
+				updateRepoName, "", updateCheckStatePath(), 0)
+			if fetchErr != nil {
+				return
+			}
+			ahead = versionIsNewer(appVersion, remoteTag)
+		}
 		if !avail && !ahead {
 			return // exactly up to date (or release unreadable): stay quiet
 		}
